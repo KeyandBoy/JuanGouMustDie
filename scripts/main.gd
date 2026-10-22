@@ -1724,129 +1724,311 @@ func _show_menu() -> void:
 		_pop_modal(menu_layer)
 	menu_layer = CanvasLayer.new()
 	_push_modal(menu_layer)
-	var dim := ColorRect.new()
-	dim.color = Color(0.08, 0.08, 0.12)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	menu_layer.add_child(dim)
+	_build_menu_background(menu_layer)
 
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	UiTheme.apply(center)
 	menu_layer.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(460, 0)
+	panel.custom_minimum_size = Vector2(520, 0)
+	panel.add_theme_stylebox_override("panel", UiTheme.panel_style(UiTheme.COL_PANEL_BORDER, UiTheme.COL_PANEL_BG, 3))
 	center.add_child(panel)
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
+	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
 	var title := Label.new()
 	title.text = "卷狗必须死"
-	title.add_theme_font_size_override("font_size", 44)
+	title.add_theme_font_size_override("font_size", 58)
+	title.add_theme_color_override("font_color", UiTheme.COL_GOLD)
+	title.add_theme_color_override("font_shadow_color", Color(0.85, 0.12, 0.55, 0.9))
+	title.add_theme_constant_override("shadow_offset_x", 5)
+	title.add_theme_constant_override("shadow_offset_y", 5)
+	title.add_theme_constant_override("shadow_outline_size", 2)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "躺平世界 · 学习违法 · 内卷狗必须死"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.modulate = Color(0.8, 0.8, 0.9)
+	sub.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
+	sub.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(sub)
-	vbox.add_child(_volume_settings_box())
 
-	var start := Button.new()
-	start.text = "开始游戏"
-	start.custom_minimum_size = Vector2(0, 48)
-	start.pressed.connect(func(): _show_level_select())
-	vbox.add_child(start)
+	var buttons := VBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 9)
+	vbox.add_child(buttons)
+	var menu_buttons: Array[Button] = []
+
+	var start := _menu_button("开始游戏", UiTheme.COL_GOLD, true, func(): _show_level_select())
+	buttons.add_child(start)
+	menu_buttons.append(start)
 
 	if SaveManager.has_save():
-		var load_btn := Button.new()
-		load_btn.text = "继续游戏（读取存档）"
-		load_btn.pressed.connect(func():
+		var load_btn := _menu_button("继续游戏", UiTheme.COL_GREEN, false, func():
 			if SaveManager.load_run():
 				_pop_modal(menu_layer)
 				menu_layer = null
 				_setup_level()
-				hud.toast("已读取存档 · 第 %d 层" % GameState.level)
-		)
-		vbox.add_child(load_btn)
+				hud.toast("已读取存档 · 第 %d 层" % GameState.level))
+		buttons.add_child(load_btn)
+		menu_buttons.append(load_btn)
 
-	var intro_btn := Button.new()
-	intro_btn.text = "重看开场动画"
-	intro_btn.pressed.connect(func():
+	var intro_btn := _menu_button("重看开场动画", UiTheme.COL_CYAN, false, func():
 		_pop_modal(menu_layer)
 		menu_layer = null
 		_play_intro())
-	vbox.add_child(intro_btn)
+	buttons.add_child(intro_btn)
+	menu_buttons.append(intro_btn)
 
-	var shop_btn := Button.new()
-	shop_btn.text = "升级商店（★ %d）" % GameState.stars
-	shop_btn.pressed.connect(func(): _show_shop())
-	vbox.add_child(shop_btn)
+	var shop_btn := _menu_button("升级商店（★ %d）" % GameState.stars, UiTheme.COL_PURPLE, false, func(): _show_shop())
+	buttons.add_child(shop_btn)
+	menu_buttons.append(shop_btn)
 
-	var import_btn := Button.new()
-	import_btn.text = "导入题库（开发）"
-	import_btn.pressed.connect(func(): _import_bank())
-	import_btn.visible = DevMode.enabled and DevMode.import_bank
-	vbox.add_child(import_btn)
+	if DevMode.enabled and DevMode.import_bank:
+		var import_btn := _menu_button("导入题库（开发）", UiTheme.COL_ORANGE, false, func(): _import_bank())
+		buttons.add_child(import_btn)
+		menu_buttons.append(import_btn)
+
+	vbox.add_child(HSeparator.new())
+	vbox.add_child(_volume_settings_box())
 
 	var tip := Label.new()
-	tip.text = "任何地方按 F 都能学（课桌效率更高）· 通关后永久解锁下一层"
+	tip.text = "按 F 学习 · 通关后永久解锁下一层"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tip.modulate = Color(0.6, 0.6, 0.7)
+	tip.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
 	tip.add_theme_font_size_override("font_size", 13)
 	vbox.add_child(tip)
+
+	# 面板淡入 + 标题弹入 + 按钮错峰出现
+	panel.modulate.a = 0.0
+	var pt := create_tween()
+	pt.tween_property(panel, "modulate:a", 1.0, 0.22)
+	title.pivot_offset = Vector2(260, 36)
+	title.scale = Vector2(0.82, 0.82)
+	var tt := create_tween()
+	tt.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tt.tween_property(title, "scale", Vector2.ONE, 0.45)
+	for i in menu_buttons.size():
+		var b: Button = menu_buttons[i]
+		b.modulate.a = 0.0
+		b.scale = Vector2(0.96, 0.96)
+		var bt := create_tween()
+		bt.tween_interval(0.05 + 0.06 * i)
+		bt.tween_property(b, "modulate:a", 1.0, 0.18)
+		bt.parallel().tween_property(b, "scale", Vector2.ONE, 0.18)
 
 func _show_level_select() -> void:
 	var layer := CanvasLayer.new()
 	_push_modal(layer)
-	var dim := ColorRect.new()
-	dim.color = Color(0.02, 0.02, 0.03, 0.9)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	layer.add_child(dim)
+	_build_menu_background(layer)
+
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	UiTheme.apply(center)
 	layer.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(420, 0)
+	panel.custom_minimum_size = Vector2(620, 0)
+	panel.add_theme_stylebox_override("panel", UiTheme.panel_style())
 	center.add_child(panel)
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 14)
 	panel.add_child(vbox)
+
 	var title := Label.new()
 	title.text = "选择楼层"
-	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", UiTheme.COL_GOLD)
+	title.add_theme_color_override("font_shadow_color", Color(0.85, 0.12, 0.55, 0.85))
+	title.add_theme_constant_override("shadow_offset_x", 4)
+	title.add_theme_constant_override("shadow_offset_y", 4)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
+
 	var tip := Label.new()
 	tip.text = "通关第 n 层永久解锁第 n+1 层"
 	if DevMode.enabled and DevMode.unlock_all_levels:
 		tip.text += "（开发者版全开）"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tip.modulate = Color(0.7, 0.7, 0.8)
+	tip.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
 	tip.add_theme_font_size_override("font_size", 13)
 	vbox.add_child(tip)
+
+	var cards := HBoxContainer.new()
+	cards.alignment = BoxContainer.ALIGNMENT_CENTER
+	cards.add_theme_constant_override("separation", 10)
+	vbox.add_child(cards)
+	var card_nodes: Array[Control] = []
+
 	for lv in range(1, GameState.MAX_LEVEL + 1):
+		var accent := UiTheme.get_button_color(lv - 1)
 		var unlocked: bool = GameState.is_level_unlocked(lv)
-		var btn := Button.new()
 		var best: int = GameState.star_best(lv)
-		btn.text = "%dF" % lv
-		btn.custom_minimum_size = Vector2(0, 40)
-		if unlocked:
-			if best > 0:
-				btn.text += "  " + "★".repeat(best)
-			btn.pressed.connect(func():
-				AudioManager.kick()
-				_close_all_modals()
-				menu_layer = null
-				_start_level(lv))
+
+		var card := Control.new()
+		card.custom_minimum_size = Vector2(100, 120)
+		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		cards.add_child(card)
+
+		var card_sb := UiTheme.panel_style(accent if unlocked else Color(0.35, 0.33, 0.42), Color(0.11, 0.08, 0.19, 0.98), 2)
+		card_sb.border_width_top = 7
+		card_sb.shadow_size = 3
+		card_sb.content_margin_left = 4
+		card_sb.content_margin_right = 4
+		var bg := Panel.new()
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg.add_theme_stylebox_override("panel", card_sb)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(bg)
+
+		var card_v := VBoxContainer.new()
+		card_v.set_anchors_preset(Control.PRESET_FULL_RECT)
+		card_v.offset_top = 14
+		card_v.offset_bottom = -12
+		card_v.alignment = BoxContainer.ALIGNMENT_CENTER
+		card_v.add_theme_constant_override("separation", 2)
+		card_v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(card_v)
+
+		var lv_label := Label.new()
+		lv_label.text = "%dF" % lv
+		lv_label.add_theme_font_size_override("font_size", 28)
+		lv_label.add_theme_color_override("font_color", accent if unlocked else UiTheme.COL_TEXT_DIM)
+		lv_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lv_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_v.add_child(lv_label)
+
+		var star_label := Label.new()
+		if not unlocked:
+			star_label.text = "未解锁"
+			star_label.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
+		elif best <= 0:
+			star_label.text = "待通关"
+			star_label.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
 		else:
-			btn.text += "  未解锁"
-			btn.disabled = true
-		vbox.add_child(btn)
-	var back := Button.new()
-	back.text = "返回"
-	back.custom_minimum_size = Vector2(0, 40)
-	back.pressed.connect(func(): _pop_modal(layer))
+			star_label.text = "★".repeat(best)
+			star_label.add_theme_color_override("font_color", UiTheme.COL_GOLD)
+		star_label.add_theme_font_size_override("font_size", 15)
+		star_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		star_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_v.add_child(star_label)
+
+		if unlocked:
+			var hit := Button.new()
+			hit.flat = true
+			hit.text = ""
+			hit.set_anchors_preset(Control.PRESET_FULL_RECT)
+			hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			hit.pressed.connect(_on_level_card_pressed.bind(lv))
+			hit.mouse_entered.connect(func():
+				card.pivot_offset = card.size * 0.5
+				var tw := card.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				tw.tween_property(card, "scale", Vector2(1.07, 1.07), 0.14))
+			hit.mouse_exited.connect(func():
+				var tw := card.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				tw.tween_property(card, "scale", Vector2.ONE, 0.12))
+			card.add_child(hit)
+		else:
+			card.modulate = Color(0.72, 0.70, 0.80, 0.85)
+		card_nodes.append(card)
+
+	vbox.add_child(HSeparator.new())
+	var back := _menu_button("返回", UiTheme.COL_CYAN, false, func(): _pop_modal(layer))
 	vbox.add_child(back)
+
+	panel.modulate.a = 0.0
+	var pt := create_tween()
+	pt.tween_property(panel, "modulate:a", 1.0, 0.22)
+	for i in card_nodes.size():
+		var c: Control = card_nodes[i]
+		c.modulate.a = 0.0
+		c.scale = Vector2(0.88, 0.88)
+		c.pivot_offset = c.custom_minimum_size * 0.5
+		var ct := create_tween()
+		ct.tween_interval(0.04 * i)
+		ct.tween_property(c, "modulate:a", 1.0, 0.16)
+		ct.parallel().tween_property(c, "scale", Vector2.ONE, 0.16)
+
+func _on_level_card_pressed(lv: int) -> void:
+	AudioManager.kick()
+	_close_all_modals()
+	menu_layer = null
+	_start_level(lv)
+
+func _build_menu_background(layer: CanvasLayer) -> void:
+	var bg := ColorRect.new()
+	bg.color = UiTheme.COL_BG
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(bg)
+
+	var vs: Vector2 = get_viewport().get_visible_rect().size
+	for i in 9:
+		var blob := ColorRect.new()
+		blob.color = Color(UiTheme.get_button_color(i), 0.07)
+		blob.size = Vector2(randf_range(120, 300), randf_range(80, 200))
+		blob.position = Vector2(randf_range(-60, vs.x - 60), randf_range(-60, vs.y - 60))
+		blob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(blob)
+		var start := blob.position
+		var tw := blob.create_tween().set_loops()
+		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw.tween_property(blob, "position", start + Vector2(randf_range(-40, 40), randf_range(-30, 30)), randf_range(4, 8))
+		tw.tween_property(blob, "position", start, randf_range(4, 8))
+
+	for i in 30:
+		var px := ColorRect.new()
+		var c := UiTheme.get_button_color(i)
+		c.a = randf_range(0.35, 0.9)
+		px.color = c
+		px.size = Vector2.ONE * randf_range(4, 10)
+		px.position = Vector2(randf_range(0, vs.x), randf_range(0, vs.y))
+		px.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(px)
+		var start := px.position
+		var dur := randf_range(5, 11)
+		var tw := px.create_tween().set_loops()
+		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw.tween_property(px, "position", start + Vector2(randf_range(-36, 36), -randf_range(90, 240)), dur)
+		tw.tween_property(px, "position", start, 0.01)
+
+	var y := 0
+	while y < int(vs.y):
+		var line := ColorRect.new()
+		line.color = Color(0.0, 0.0, 0.0, 0.10)
+		line.position = Vector2(0, y)
+		line.size = Vector2(vs.x, 2)
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(line)
+		y += 6
+
+func _menu_button(label: String, accent: Color, big: bool, on_press: Callable) -> Button:
+	var b := Button.new()
+	b.text = label
+	b.custom_minimum_size = Vector2(0, 60 if big else 50)
+	b.add_theme_font_size_override("font_size", 20 if big else 16)
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.add_theme_stylebox_override("normal", UiTheme.accent_button_style(accent))
+	b.add_theme_stylebox_override("hover", UiTheme.accent_button_style(accent, true))
+	b.add_theme_stylebox_override("pressed", UiTheme.accent_button_style(accent.darkened(0.25), true))
+	var focus_sb := StyleBoxFlat.new()
+	focus_sb.draw_center = false
+	focus_sb.border_color = UiTheme.COL_GOLD
+	focus_sb.set_border_width_all(3)
+	focus_sb.set_corner_radius_all(0)
+	b.add_theme_stylebox_override("focus", focus_sb)
+	b.add_theme_color_override("font_color", UiTheme.COL_TEXT)
+	b.add_theme_color_override("font_hover_color", Color(0.05, 0.03, 0.10))
+	b.add_theme_color_override("font_pressed_color", Color(0.05, 0.03, 0.10))
+	b.pressed.connect(on_press)
+	b.resized.connect(func(): b.pivot_offset = b.size * 0.5)
+	b.mouse_entered.connect(func():
+		b.text = "▶  " + label
+		var tw := b.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(b, "scale", Vector2(1.03, 1.03), 0.12))
+	b.mouse_exited.connect(func():
+		b.text = label
+		var tw := b.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(b, "scale", Vector2.ONE, 0.12))
+	return b

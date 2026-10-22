@@ -28,6 +28,7 @@ const SCENES := [
 		"text": "这里是 躺平世界：内卷违法，被发现就会被打死。\n可我的「学习之魂」，不允许我裸考。",
 		"dur": 2.2,
 		"danger": false,
+		"hold_input": true,
 	},
 ]
 
@@ -162,7 +163,10 @@ func _run_scenes() -> void:
 			_line.modulate.a = 0.0
 		if scene["danger"]:
 			await _red_flash()
-		await _hold(_read_time(scene))
+		if bool(scene.get("hold_input", false)):
+			await _hold_until_advance(16.0)
+		else:
+			await _hold(_read_time(scene))
 		if show_line:
 			var tw_out := create_tween()
 			tw_out.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
@@ -171,9 +175,20 @@ func _run_scenes() -> void:
 		await _hold(0.25)
 		_clear_chalk()
 
+func _hold_until_advance(max_sec: float) -> void:
+	var t := 0.0
+	while t < max_sec:
+		if _skip:
+			return
+		if _advance:
+			_advance = false
+			return
+		await get_tree().create_timer(0.03).timeout
+		t += 0.03
+
 func _read_time(scene: Dictionary) -> float:
 	var text := String(scene.get("text", ""))
-	var by_length := float(text.length()) * 0.14 + 0.6
+	var by_length := float(text.length()) * 0.18 + 1.0
 	return maxf(float(scene.get("dur", 1.4)), by_length)
 
 func _clear_chalk() -> void:

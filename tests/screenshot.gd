@@ -32,10 +32,10 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
+	await get_tree().create_timer(0.7).timeout
 	_save(inst, "res://tests/shot_menu.png")
 	inst._show_level_select()
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await get_tree().create_timer(0.7).timeout
 	_save(inst, "res://tests/shot_level_select.png")
 	inst._pop_modal(inst.modal_stack[inst.modal_stack.size() - 1])
 	await get_tree().process_frame
