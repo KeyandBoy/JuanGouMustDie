@@ -1,0 +1,3085 @@
+{
+	"tiers": {
+		"1": {
+			"label": "小学",
+			"questions": [
+				{
+					"answer": "李白",
+					"id": "pri_cn_01",
+					"options": [
+						"李白",
+						"杜甫",
+						"白居易",
+						"苏轼"
+					],
+					"prompt": "\"床前明月光\"的作者是谁？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "处处闻啼鸟",
+					"id": "pri_cn_02",
+					"options": [
+						"处处闻啼鸟",
+						"花落知多少",
+						"夜来风雨声",
+						"疑是地上霜"
+					],
+					"prompt": "\"春眠不觉晓\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "师",
+					"id": "pri_cn_03",
+					"options": [
+						"师",
+						"友",
+						"道",
+						"心"
+					],
+					"prompt": "填空：三人行，必有我____焉。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "李白",
+					"id": "pri_cn_04",
+					"options": [
+						"李白",
+						"杜甫",
+						"王维",
+						"孟浩然"
+					],
+					"prompt": "\"望庐山瀑布\"的作者是谁？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "五言绝句",
+					"id": "pri_cn_05",
+					"options": [
+						"五言绝句",
+						"七言绝句",
+						"五言律诗",
+						"词"
+					],
+					"prompt": "\"静夜思\"属于什么体裁？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "苦",
+					"id": "pri_cn_06",
+					"options": [
+						"苦",
+						"甜",
+						"累",
+						"难"
+					],
+					"prompt": "填空：谁知盘中餐，粒粒皆辛____。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "李绅",
+					"id": "pri_cn_07",
+					"options": [
+						"李绅",
+						"李白",
+						"杜甫",
+						"白居易"
+					],
+					"prompt": "\"锄禾日当午\"的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "目",
+					"id": "pri_cn_08",
+					"options": [
+						"目",
+						"眼",
+						"远",
+						"山"
+					],
+					"prompt": "填空：欲穷千里____，更上一层楼。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "疑是地上霜",
+					"id": "t1_cn_09",
+					"options": [
+						"疑是地上霜",
+						"举头望明月",
+						"低头思故乡",
+						"春风送暖入屠苏"
+					],
+					"prompt": "\"床前明月光\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "吴承恩",
+					"id": "t1_cn_10",
+					"options": [
+						"吴承恩",
+						"罗贯中",
+						"施耐庵",
+						"曹雪芹"
+					],
+					"prompt": "《西游记》的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "出了问题及时补救",
+					"id": "t1_cn_11",
+					"options": [
+						"出了问题及时补救",
+						"丢了东西不要找",
+						"羊跑了要加锁",
+						"做事要提前计划"
+					],
+					"prompt": "\"亡羊补牢\"这个成语告诉我们？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "一年之计在于春",
+					"id": "t1_cn_12",
+					"options": [
+						"一年之计在于春",
+						"一寸光阴一寸金",
+						"早起的鸟儿有虫吃",
+						"光阴似箭"
+					],
+					"prompt": "\"一日之计在于晨\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "多此一举",
+					"id": "t1_cn_13",
+					"options": [
+						"多此一举",
+						"锦上添花",
+						"画龙点睛",
+						"精益求精"
+					],
+					"prompt": "\"画蛇添足\"比喻什么？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "诗仙",
+					"id": "t1_cn_14",
+					"options": [
+						"诗仙",
+						"诗圣",
+						"诗鬼",
+						"诗佛"
+					],
+					"prompt": "李白被后人称为？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "孟浩然",
+					"id": "t1_cn_15",
+					"options": [
+						"孟浩然",
+						"李白",
+						"杜甫",
+						"王维"
+					],
+					"prompt": "《春晓》的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "羊圈",
+					"id": "t1_cn_16",
+					"options": [
+						"羊圈",
+						"监牢",
+						"牢固",
+						"牢骚"
+					],
+					"prompt": "\"亡羊补牢\"里的\"牢\"指的是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "40",
+					"id": "pri_math_01",
+					"options": [
+						"38",
+						"40",
+						"42",
+						"44"
+					],
+					"prompt": "12 + 28 = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "56",
+					"id": "pri_math_02",
+					"prompt": "填空：7 × 8 = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "55",
+					"id": "pri_math_03",
+					"options": [
+						"55",
+						"54",
+						"56",
+						"57"
+					],
+					"prompt": "100 - 45 = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "81",
+					"id": "pri_math_04",
+					"prompt": "填空：9 × 9 = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "1/2",
+					"id": "pri_math_05",
+					"options": [
+						"1/2",
+						"1/3",
+						"2/3",
+						"1/4"
+					],
+					"prompt": "把 0.5 化成分数是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "42",
+					"id": "pri_math_06",
+					"prompt": "填空：15 + 27 = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "16厘米",
+					"id": "pri_math_07",
+					"options": [
+						"12厘米",
+						"16厘米",
+						"20厘米",
+						"8厘米"
+					],
+					"prompt": "一个正方形边长 4 厘米，周长是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "8",
+					"id": "pri_math_08",
+					"prompt": "填空：64 ÷ 8 = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "100",
+					"id": "t1_math_09",
+					"options": [
+						"90",
+						"100",
+						"110",
+						"120"
+					],
+					"prompt": "25 × 4 = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "0.75",
+					"id": "t1_math_10",
+					"options": [
+						"0.25",
+						"0.34",
+						"0.75",
+						"1.33"
+					],
+					"prompt": "3/4 化成小数是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "40 平方厘米",
+					"id": "t1_math_11",
+					"options": [
+						"13 平方厘米",
+						"26 平方厘米",
+						"40 平方厘米",
+						"80 平方厘米"
+					],
+					"prompt": "长方形长 8 厘米、宽 5 厘米，面积是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "1000",
+					"id": "t1_math_12",
+					"options": [
+						"100",
+						"500",
+						"1000",
+						"10000"
+					],
+					"prompt": "1 千米等于多少米？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "12",
+					"id": "t1_math_13",
+					"options": [
+						"4",
+						"6",
+						"12",
+						"18"
+					],
+					"prompt": "24 和 36 的最大公因数是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "1/4",
+					"id": "t1_math_14",
+					"options": [
+						"1/2",
+						"1/3",
+						"1/4",
+						"2/5"
+					],
+					"prompt": "0.25 化成分数是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "180°",
+					"id": "t1_math_15",
+					"options": [
+						"90°",
+						"180°",
+						"270°",
+						"360°"
+					],
+					"prompt": "平角是多少度？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "18",
+					"id": "t1_math_16",
+					"options": [
+						"9",
+						"12",
+						"18",
+						"24"
+					],
+					"prompt": "6 的 3 倍是多少？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "书",
+					"id": "t1_en_01",
+					"options": [
+						"书",
+						"笔",
+						"桌子",
+						"门"
+					],
+					"prompt": "\"book\" 的中文意思是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "red",
+					"id": "t1_en_02",
+					"options": [
+						"red",
+						"blue",
+						"green",
+						"yellow"
+					],
+					"prompt": "\"红色\"的英文是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "am",
+					"id": "t1_en_03",
+					"options": [
+						"am",
+						"is",
+						"are",
+						"be"
+					],
+					"prompt": "填空：I ___ a boy.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "cats",
+					"id": "t1_en_04",
+					"options": [
+						"cat",
+						"cats",
+						"cates",
+						"caties"
+					],
+					"prompt": "\"cat\" 的复数形式是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "星期一",
+					"id": "t1_en_05",
+					"options": [
+						"星期一",
+						"星期二",
+						"星期日",
+						"星期六"
+					],
+					"prompt": "\"Monday\" 是星期几？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "谢谢",
+					"id": "t1_en_06",
+					"options": [
+						"对不起",
+						"谢谢",
+						"再见",
+						"请"
+					],
+					"prompt": "\"thank you\" 的意思是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "blue",
+					"id": "t1_en_07",
+					"options": [
+						"blue",
+						"red",
+						"black",
+						"pink"
+					],
+					"prompt": "What color is the sky? It's ___.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "学校",
+					"id": "t1_en_08",
+					"options": [
+						"学校",
+						"医院",
+						"商店",
+						"公园"
+					],
+					"prompt": "\"school\" 的中文意思是？",
+					"subject": "english",
+					"type": "choice"
+				}
+			]
+		},
+		"2": {
+			"label": "初低",
+			"questions": [
+				{
+					"answer": "爱莲说",
+					"id": "jun_cn_01",
+					"options": [
+						"爱莲说",
+						"陋室铭",
+						"岳阳楼记",
+						"醉翁亭记"
+					],
+					"prompt": "\"出淤泥而不染\"出自哪篇古文？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "村",
+					"id": "jun_cn_04",
+					"options": [
+						"村",
+						"城",
+						"春",
+						"家"
+					],
+					"prompt": "填空：山重水复疑无路，柳暗花明又一____。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "苏轼",
+					"id": "jun_cn_05",
+					"options": [
+						"苏轼",
+						"李白",
+						"杜甫",
+						"辛弃疾"
+					],
+					"prompt": "\"但愿人长久\"的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "己",
+					"id": "jun_cn_06",
+					"options": [
+						"己",
+						"你",
+						"心",
+						"音"
+					],
+					"prompt": "填空：海内存知____，天涯若比邻。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "一览众山小",
+					"id": "t2_cn_09",
+					"options": [
+						"一览众山小",
+						"更上一层楼",
+						"直挂云帆济沧海",
+						"柳暗花明又一村"
+					],
+					"prompt": "\"会当凌绝顶\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "孔子",
+					"id": "t2_cn_10",
+					"options": [
+						"孔子",
+						"老子",
+						"孟子",
+						"庄子"
+					],
+					"prompt": "《论语》主要记录了谁的言行？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "化作春泥更护花",
+					"id": "t2_cn_11",
+					"options": [
+						"化作春泥更护花",
+						"柳暗花明又一村",
+						"病树前头万木春",
+						"一览众山小"
+					],
+					"prompt": "\"落红不是无情物\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "向学问不如自己的人请教",
+					"id": "t2_cn_12",
+					"options": [
+						"向学问不如自己的人请教",
+						"不好意思问问题",
+						"不耻于向别人发问",
+						"只问比自己强的人"
+					],
+					"prompt": "\"不耻下问\"的意思是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "4",
+					"id": "jun_math_01",
+					"options": [
+						"3",
+						"4",
+						"5",
+						"6"
+					],
+					"prompt": "解方程 2x + 6 = 14，x = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "12",
+					"id": "jun_math_02",
+					"prompt": "填空：√144 = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "180°",
+					"id": "jun_math_03",
+					"options": [
+						"90°",
+						"180°",
+						"270°",
+						"360°"
+					],
+					"prompt": "三角形内角和是多少度？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "25",
+					"id": "jun_math_04",
+					"prompt": "填空：3² + 4² = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "7",
+					"id": "jun_math_05",
+					"options": [
+						"6",
+						"7",
+						"8",
+						"9"
+					],
+					"prompt": "一次函数 y = 2x + 1，当 x=3 时 y=?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "r²",
+					"id": "jun_math_06",
+					"prompt": "填空：圆的面积公式 S = π____（填半径符号）",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "5",
+					"id": "jun_math_07",
+					"options": [
+						"5",
+						"-5",
+						"0",
+						"1/5"
+					],
+					"prompt": "-5 的绝对值是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "40",
+					"id": "jun_math_08",
+					"prompt": "填空：100 ÷ 4 + 15 = ?",
+					"subject": "math",
+					"type": "fill"
+				},
+				{
+					"answer": "5",
+					"id": "t2_math_10",
+					"options": [
+						"5",
+						"6",
+						"7",
+						"25"
+					],
+					"prompt": "直角三角形两直角边为 3 和 4，斜边长为？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "-8",
+					"id": "t2_math_11",
+					"options": [
+						"-8",
+						"-6",
+						"6",
+						"8"
+					],
+					"prompt": "(-2)³ = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "x>4",
+					"id": "t2_math_12",
+					"options": [
+						"x>1",
+						"x>2",
+						"x>4",
+						"x<4"
+					],
+					"prompt": "不等式 2x - 3 > 5 的解集是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "apple",
+					"id": "jun_en_01",
+					"options": [
+						"apple",
+						"banana",
+						"orange",
+						"grape"
+					],
+					"prompt": "\"苹果\"的英文是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "thank",
+					"id": "jun_en_02",
+					"options": [
+						"thank",
+						"meet",
+						"see",
+						"help"
+					],
+					"prompt": "填空：How are you? I'm fine, ____ you?",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "再见",
+					"id": "jun_en_03",
+					"options": [
+						"再见",
+						"你好",
+						"谢谢",
+						"对不起"
+					],
+					"prompt": "\"goodbye\" 的中文意思是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "am",
+					"id": "jun_en_04",
+					"options": [
+						"am",
+						"is",
+						"are",
+						"be"
+					],
+					"prompt": "填空：I ____ a student. (be)",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "goes",
+					"id": "jun_en_05",
+					"options": [
+						"goes",
+						"go",
+						"going",
+						"gone"
+					],
+					"prompt": "选择正确的：She ____ to school every day.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "an",
+					"id": "jun_en_06",
+					"options": [
+						"an",
+						"a",
+						"the",
+						"this"
+					],
+					"prompt": "填空：What's this? It's ____ apple.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "图书馆",
+					"id": "jun_en_07",
+					"options": [
+						"图书馆",
+						"实验室",
+						"教室",
+						"操场"
+					],
+					"prompt": "\"library\" 是什么意思？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "meet",
+					"id": "jun_en_08",
+					"options": [
+						"meet",
+						"see",
+						"know",
+						"thank"
+					],
+					"prompt": "Nice to ____ you.（初次见面）",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "went",
+					"id": "t2_en_09",
+					"options": [
+						"go",
+						"goes",
+						"went",
+						"gone"
+					],
+					"prompt": "填空：He ___ to school yesterday. (go)",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "bigger",
+					"id": "t2_en_10",
+					"options": [
+						"biger",
+						"bigger",
+						"more big",
+						"biggest"
+					],
+					"prompt": "\"big\" 的比较级是？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "since",
+					"id": "t2_en_11",
+					"options": [
+						"for",
+						"since",
+						"from",
+						"at"
+					],
+					"prompt": "填空：I have lived here ___ 2010.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "有趣的",
+					"id": "t2_en_12",
+					"options": [
+						"无聊的",
+						"有趣的",
+						"困难的",
+						"危险的"
+					],
+					"prompt": "\"interesting\" 的意思是？",
+					"subject": "english",
+					"type": "choice"
+				}
+			]
+		},
+		"3": {
+			"label": "初高",
+			"questions": [
+				{
+					"answer": "悠然见南山",
+					"id": "t3_cn_01",
+					"options": [
+						"悠然见南山",
+						"心远地自偏",
+						"山气日夕佳",
+						"飞鸟相与还"
+					],
+					"prompt": "\"采菊东篱下\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "司马迁",
+					"id": "t3_cn_02",
+					"options": [
+						"司马迁",
+						"班固",
+						"司马光",
+						"左丘明"
+					],
+					"prompt": "《史记》的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "在乎山水之间也",
+					"id": "t3_cn_03",
+					"options": [
+						"在乎山水之间也",
+						"得之心而寓之酒也",
+						"水落而石出者",
+						"四时之景不同也"
+					],
+					"prompt": "\"醉翁之意不在酒\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "拟人",
+					"id": "t3_cn_04",
+					"options": [
+						"拟人",
+						"比喻",
+						"夸张",
+						"排比"
+					],
+					"prompt": "\"月亮悄悄爬上树梢\"这句话用了什么修辞？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "x=2",
+					"id": "t3_math_01",
+					"options": [
+						"x=2",
+						"x=-2",
+						"x=4",
+						"x=1"
+					],
+					"prompt": "二次函数 y = x² - 4x + 3 的对称轴是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "x=±3",
+					"id": "t3_math_02",
+					"options": [
+						"x=3",
+						"x=-3",
+						"x=±3",
+						"x=9"
+					],
+					"prompt": "方程 x² = 9 的解是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "√2/2",
+					"id": "t3_math_03",
+					"options": [
+						"1/2",
+						"√2/2",
+						"√3/2",
+						"1"
+					],
+					"prompt": "sin 45° = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "(2,0)",
+					"id": "t3_math_04",
+					"options": [
+						"(0,4)",
+						"(2,0)",
+						"(-2,0)",
+						"(0,-4)"
+					],
+					"prompt": "一次函数 y = -2x + 4 与 x 轴的交点是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "nπr²/360",
+					"id": "t3_math_05",
+					"options": [
+						"nπr²/360",
+						"πr²",
+						"2πr",
+						"nπr/180"
+					],
+					"prompt": "半径为 r、圆心角为 n° 的扇形面积是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "70°",
+					"id": "t3_math_06",
+					"options": [
+						"70°",
+						"110°",
+						"20°",
+						"140°"
+					],
+					"prompt": "两直线平行，∠1 = 70°，它的同位角是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "rains",
+					"id": "t3_en_01",
+					"options": [
+						"rain",
+						"rains",
+						"rained",
+						"will rain"
+					],
+					"prompt": "填空：If it ___ tomorrow, we will stay home.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "at",
+					"id": "t3_en_02",
+					"options": [
+						"at",
+						"in",
+						"on",
+						"for"
+					],
+					"prompt": "填空：He is good ___ math.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "was written",
+					"id": "t3_en_03",
+					"options": [
+						"wrote",
+						"was written",
+						"is writing",
+						"has written"
+					],
+					"prompt": "填空：The book ___ by Lu Xun.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "就近原则",
+					"id": "t3_en_04",
+					"options": [
+						"就近原则",
+						"就远原则",
+						"复数原则",
+						"单数原则"
+					],
+					"prompt": "\"neither ... nor ...\" 连接两个主语时，谓语动词遵循？",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "ρ=m/V",
+					"id": "t3_ph_01",
+					"options": [
+						"ρ=m/V",
+						"ρ=V/m",
+						"ρ=mV",
+						"ρ=m+V"
+					],
+					"prompt": "密度的计算公式是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "10.3 米",
+					"id": "t3_ph_02",
+					"options": [
+						"1.3 米",
+						"10.3 米",
+						"76 米",
+						"100 米"
+					],
+					"prompt": "一个标准大气压大约能支持多高的水柱？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "处处相等",
+					"id": "t3_ph_03",
+					"options": [
+						"处处相等",
+						"越靠后越小",
+						"越靠后越大",
+						"无法确定"
+					],
+					"prompt": "串联电路中各处的电流？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "正立等大的虚像",
+					"id": "t3_ph_04",
+					"options": [
+						"正立等大的虚像",
+						"倒立放大的实像",
+						"正立缩小的实像",
+						"倒立等大的虚像"
+					],
+					"prompt": "平面镜成像的特点是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "瓦特",
+					"id": "t3_ph_05",
+					"options": [
+						"焦耳",
+						"瓦特",
+						"牛顿",
+						"帕斯卡"
+					],
+					"prompt": "功率的单位是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "折射",
+					"id": "t3_ph_06",
+					"options": [
+						"折射",
+						"反射",
+						"直线传播",
+						"散射"
+					],
+					"prompt": "筷子斜插入水中看起来向上弯折，这是光的？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "氮气",
+					"id": "t3_chem_01",
+					"options": [
+						"氧气",
+						"氮气",
+						"二氧化碳",
+						"稀有气体"
+					],
+					"prompt": "空气中体积分数最大的气体是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "澄清石灰水",
+					"id": "t3_chem_02",
+					"options": [
+						"澄清石灰水",
+						"紫色石蕊试液",
+						"燃着的木条",
+						"酚酞试液"
+					],
+					"prompt": "检验二氧化碳常用？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "氧气",
+					"id": "t3_chem_03",
+					"options": [
+						"氢气",
+						"氧气",
+						"氮气",
+						"二氧化碳"
+					],
+					"prompt": "电解水时正极产生的气体是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "酸性",
+					"id": "t3_chem_04",
+					"options": [
+						"酸性",
+						"碱性",
+						"中性",
+						"无法判断"
+					],
+					"prompt": "pH 小于 7 的溶液呈？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "氧气和水",
+					"id": "t3_chem_05",
+					"options": [
+						"氧气和水",
+						"二氧化碳和水",
+						"氮气和水",
+						"氧气和氮气"
+					],
+					"prompt": "铁生锈主要与什么有关？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "皮肤",
+					"id": "t3_bio_01",
+					"options": [
+						"皮肤",
+						"肝脏",
+						"肺",
+						"心脏"
+					],
+					"prompt": "人体最大的器官是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "叶绿体",
+					"id": "t3_bio_02",
+					"options": [
+						"叶绿体",
+						"线粒体",
+						"细胞核",
+						"液泡"
+					],
+					"prompt": "光合作用主要发生在细胞的？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "红细胞",
+					"id": "t3_bio_03",
+					"options": [
+						"红细胞",
+						"白细胞",
+						"血小板",
+						"血浆"
+					],
+					"prompt": "血液中运输氧气的主要是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "DNA",
+					"id": "t3_bio_04",
+					"options": [
+						"DNA",
+						"蛋白质",
+						"脂肪",
+						"糖类"
+					],
+					"prompt": "生物的遗传物质主要是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "小肠",
+					"id": "t3_bio_05",
+					"options": [
+						"小肠",
+						"胃",
+						"食道",
+						"大肠"
+					],
+					"prompt": "人体消化和吸收营养的主要场所是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "乐",
+					"id": "jun_cn_02",
+					"options": [
+						"乐",
+						"忧",
+						"喜",
+						"安"
+					],
+					"prompt": "填空：先天下之忧而忧，后天下之乐而____。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "范仲淹",
+					"id": "jun_cn_03",
+					"options": [
+						"范仲淹",
+						"欧阳修",
+						"苏轼",
+						"王安石"
+					],
+					"prompt": "《岳阳楼记》的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "岳阳楼记",
+					"id": "jun_cn_07",
+					"options": [
+						"岳阳楼记",
+						"醉翁亭记",
+						"桃花源记",
+						"赤壁赋"
+					],
+					"prompt": "\"不以物喜，不以己悲\"出自？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "青",
+					"id": "jun_cn_08",
+					"options": [
+						"青",
+						"清",
+						"情",
+						"心"
+					],
+					"prompt": "填空：人生自古谁无死，留取丹心照汗____。",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "x=2 或 x=3",
+					"id": "t2_math_09",
+					"options": [
+						"x=1 或 x=6",
+						"x=2 或 x=3",
+						"x=-2 或 x=-3",
+						"x=5 或 x=6"
+					],
+					"prompt": "方程 x² - 5x + 6 = 0 的解是？",
+					"subject": "math",
+					"type": "choice"
+				}
+			]
+		},
+		"4": {
+			"label": "高一二",
+			"questions": [
+				{
+					"answer": "3",
+					"id": "sen_math_01",
+					"options": [
+						"2",
+						"3",
+						"4",
+						"8"
+					],
+					"prompt": "log₂(8) = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "1/2",
+					"id": "sen_math_02",
+					"options": [
+						"1/2",
+						"1/3",
+						"2/3",
+						"3/4"
+					],
+					"prompt": "填空：sin(30°) = ?（分数形式）",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "29",
+					"id": "sen_math_03",
+					"options": [
+						"26",
+						"29",
+						"32",
+						"35"
+					],
+					"prompt": "等差数列 2,5,8,11,... 第10项是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "11",
+					"id": "sen_math_04",
+					"options": [
+						"11",
+						"10",
+						"7",
+						"5"
+					],
+					"prompt": "填空：向量 a=(1,2) 与 b=(3,4) 的点积 a·b = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "2x",
+					"id": "sen_math_05",
+					"options": [
+						"2x",
+						"x",
+						"x²",
+						"2"
+					],
+					"prompt": "函数 f(x)=x² 的导数 f'(x) = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "10",
+					"id": "sen_math_06",
+					"options": [
+						"10",
+						"20",
+						"5",
+						"15"
+					],
+					"prompt": "填空：C(5,2) = ?（组合数）",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "1",
+					"id": "sen_math_07",
+					"options": [
+						"0",
+						"1",
+						"e",
+						"无意义"
+					],
+					"prompt": "e^0 = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "3",
+					"id": "sen_math_08",
+					"options": [
+						"3",
+						"2",
+						"4",
+						"9"
+					],
+					"prompt": "填空：椭圆 x²/9 + y²/4 = 1 的长半轴长为？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "3×10⁸ m/s",
+					"id": "sen_ph_01",
+					"options": [
+						"3×10⁸ m/s",
+						"3×10⁶ m/s",
+						"3×10¹⁰ m/s",
+						"3×10⁵ m/s"
+					],
+					"prompt": "光速约为多少？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "a",
+					"id": "sen_ph_02",
+					"options": [
+						"a",
+						"v",
+						"t",
+						"R"
+					],
+					"prompt": "填空：F = m____（牛顿第二定律）",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "1.01×10⁵ Pa",
+					"id": "sen_ph_03",
+					"options": [
+						"1.01×10⁵ Pa",
+						"1.01×10³ Pa",
+						"1.01×10⁷ Pa",
+						"1.01×10⁴ Pa"
+					],
+					"prompt": "标准大气压约为？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "v",
+					"id": "sen_ph_04",
+					"options": [
+						"v",
+						"a",
+						"t",
+						"R"
+					],
+					"prompt": "填空：动能公式 Eₖ = ½m____²",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "340 m/s",
+					"id": "sen_ph_05",
+					"options": [
+						"340 m/s",
+						"34 m/s",
+						"3400 m/s",
+						"3.4 m/s"
+					],
+					"prompt": "声音在空气中的传播速度约为？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "R",
+					"id": "sen_ph_06",
+					"options": [
+						"R",
+						"I",
+						"P",
+						"t"
+					],
+					"prompt": "填空：欧姆定律 I = U/____",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "9.8 m/s²",
+					"id": "sen_ph_07",
+					"options": [
+						"9.8 m/s²",
+						"10.8 m/s²",
+						"8.9 m/s²",
+						"9.0 m/s²"
+					],
+					"prompt": "重力加速度 g 约为？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "735",
+					"id": "sen_ph_08",
+					"options": [
+						"735",
+						"750",
+						"1000",
+						"500"
+					],
+					"prompt": "填空：1 马力 ≈ ______ 瓦（填数字）",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "H₂O",
+					"id": "sen_chem_01",
+					"options": [
+						"H₂O",
+						"CO₂",
+						"O₂",
+						"NaCl"
+					],
+					"prompt": "水的化学式是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "Na",
+					"id": "sen_chem_02",
+					"options": [
+						"Na",
+						"N",
+						"S",
+						"Ne"
+					],
+					"prompt": "填空：钠元素的元素符号是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "中性",
+					"id": "sen_chem_03",
+					"options": [
+						"中性",
+						"酸性",
+						"碱性",
+						"强酸性"
+					],
+					"prompt": "pH=7 的溶液呈？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "6",
+					"id": "sen_chem_04",
+					"options": [
+						"6",
+						"12",
+						"14",
+						"8"
+					],
+					"prompt": "填空：碳的原子序数是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "HCl",
+					"id": "sen_chem_05",
+					"options": [
+						"HCl",
+						"NaOH",
+						"CaCO₃",
+						"H₂O"
+					],
+					"prompt": "下列哪种是酸？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "22.4",
+					"id": "sen_chem_06",
+					"options": [
+						"22.4",
+						"22.0",
+						"24.0",
+						"11.2"
+					],
+					"prompt": "填空：气体摩尔体积在标准状况下约为____ L/mol",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "Fe₃O₄",
+					"id": "sen_chem_07",
+					"options": [
+						"Fe₃O₄",
+						"FeO",
+						"Fe₂O₃",
+						"FeS"
+					],
+					"prompt": "铁在氧气中燃烧生成？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "CaO",
+					"id": "sen_chem_08",
+					"options": [
+						"CaO",
+						"Ca₂O",
+						"CaO₂",
+						"Ca(OH)₂"
+					],
+					"prompt": "填空：氧化钙的化学式是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "did",
+					"id": "t4_en_01",
+					"options": [
+						"did",
+						"does",
+						"has",
+						"was"
+					],
+					"prompt": "填空：Not until he came back ___ he realize his mistake.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "has been",
+					"id": "t4_en_02",
+					"options": [
+						"is",
+						"was",
+						"has been",
+						"had been"
+					],
+					"prompt": "填空：It is the third time that he ___ late.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "why",
+					"id": "t4_en_03",
+					"options": [
+						"why",
+						"which",
+						"what",
+						"when"
+					],
+					"prompt": "填空：The reason ___ he was late is that he missed the bus.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "had",
+					"id": "t4_en_04",
+					"options": [
+						"had",
+						"has",
+						"did",
+						"was"
+					],
+					"prompt": "填空：Hardly ___ he arrived when it began to rain.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "线粒体",
+					"id": "t4_bio_01",
+					"options": [
+						"线粒体",
+						"叶绿体",
+						"核糖体",
+						"高尔基体"
+					],
+					"prompt": "细胞进行有氧呼吸的主要场所是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "半保留复制",
+					"id": "t4_bio_02",
+					"options": [
+						"半保留复制",
+						"全保留复制",
+						"分散复制",
+						"随机复制"
+					],
+					"prompt": "DNA 的复制方式是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "减数第一次分裂",
+					"id": "t4_bio_03",
+					"options": [
+						"减数第一次分裂",
+						"减数第二次分裂",
+						"有丝分裂",
+						"受精作用"
+					],
+					"prompt": "减数分裂中染色体数目减半发生在？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "蛋白质",
+					"id": "t4_bio_04",
+					"options": [
+						"蛋白质",
+						"脂肪",
+						"糖类",
+						"核酸"
+					],
+					"prompt": "绝大多数酶的本质是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "池鱼思故渊",
+					"id": "t4_cn_01",
+					"options": [
+						"池鱼思故渊",
+						"开荒南野际",
+						"守拙归园田",
+						"榆柳荫后檐"
+					],
+					"prompt": "\"羁鸟恋旧林\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "苏轼",
+					"id": "t4_cn_02",
+					"options": [
+						"苏轼",
+						"欧阳修",
+						"王安石",
+						"韩愈"
+					],
+					"prompt": "《赤壁赋》的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				}
+			]
+		},
+		"5": {
+			"label": "高三",
+			"questions": [
+				{
+					"answer": "x=±1",
+					"id": "t5_math_01",
+					"options": [
+						"x=0",
+						"x=±1",
+						"x=±3",
+						"x=1"
+					],
+					"prompt": "函数 f(x)=x³-3x 的极值点（横坐标）是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "y=±(3/2)x",
+					"id": "t5_math_02",
+					"options": [
+						"y=±(3/2)x",
+						"y=±(2/3)x",
+						"y=±(9/4)x",
+						"y=±(4/9)x"
+					],
+					"prompt": "双曲线 x²/4 - y²/9 = 1 的渐近线是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "54",
+					"id": "t5_math_03",
+					"options": [
+						"18",
+						"24",
+						"54",
+						"162"
+					],
+					"prompt": "等比数列首项为 2、公比为 3，第 4 项是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "-1",
+					"id": "t5_math_04",
+					"options": [
+						"1",
+						"-1",
+						"i",
+						"-i"
+					],
+					"prompt": "i² 等于？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "5",
+					"id": "t5_math_05",
+					"options": [
+						"5",
+						"10",
+						"25",
+						"√5"
+					],
+					"prompt": "圆 x² + y² = 25 上任一点到原点的距离是？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "1",
+					"id": "t5_math_06",
+					"options": [
+						"1",
+						"2",
+						"3",
+						"1/3"
+					],
+					"prompt": "∫₀¹ 3x² dx = ?",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "N/C",
+					"id": "t5_ph_01",
+					"options": [
+						"N/C",
+						"C/N",
+						"J/C",
+						"W/A"
+					],
+					"prompt": "电场强度的单位是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "左手定则",
+					"id": "t5_ph_02",
+					"options": [
+						"左手定则",
+						"右手定则",
+						"右手螺旋定则",
+						"安培定则"
+					],
+					"prompt": "判断洛伦兹力方向用？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "粒子性",
+					"id": "t5_ph_03",
+					"options": [
+						"粒子性",
+						"波动性",
+						"干涉性",
+						"衍射性"
+					],
+					"prompt": "光电效应说明光具有？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "匝数比",
+					"id": "t5_ph_04",
+					"options": [
+						"匝数比",
+						"匝数比的平方",
+						"电流比",
+						"电阻比"
+					],
+					"prompt": "理想变压器原副线圈电压比等于？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "大小成正比、方向相反",
+					"id": "t5_ph_05",
+					"options": [
+						"大小成正比、方向相反",
+						"大小成正比、方向相同",
+						"大小不变",
+						"方向不变"
+					],
+					"prompt": "简谐运动中回复力与位移？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "1/4",
+					"id": "t5_ph_06",
+					"options": [
+						"1/2",
+						"1/3",
+						"1/4",
+						"1/8"
+					],
+					"prompt": "某放射性元素经过 2 个半衰期，剩余未衰变的比例是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "C6H6",
+					"id": "t5_chem_01",
+					"options": [
+						"C6H6",
+						"C6H12",
+						"C2H6",
+						"CH4"
+					],
+					"prompt": "苯的分子式是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "浓硫酸催化",
+					"id": "t5_chem_02",
+					"options": [
+						"浓硫酸催化",
+						"氢氧化钠催化",
+						"高温高压",
+						"光照"
+					],
+					"prompt": "酯化反应通常需要？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "氧化反应",
+					"id": "t5_chem_03",
+					"options": [
+						"氧化反应",
+						"还原反应",
+						"中和反应",
+						"取代反应"
+					],
+					"prompt": "原电池中负极发生的是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "酸性越强",
+					"id": "t5_chem_04",
+					"options": [
+						"酸性越强",
+						"酸性越弱",
+						"碱性越强",
+						"越难电离"
+					],
+					"prompt": "电离平衡常数 Ka 越大，说明该酸？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "氨基酸",
+					"id": "t5_chem_05",
+					"options": [
+						"氨基酸",
+						"葡萄糖",
+						"脂肪酸",
+						"核苷酸"
+					],
+					"prompt": "蛋白质水解的最终产物是？",
+					"subject": "chemistry",
+					"type": "choice"
+				},
+				{
+					"answer": "转录和翻译",
+					"id": "t5_bio_01",
+					"options": [
+						"转录和翻译",
+						"复制和转录",
+						"复制和翻译",
+						"分裂和分化"
+					],
+					"prompt": "基因表达包括哪两个过程？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "电信号",
+					"id": "t5_bio_02",
+					"options": [
+						"电信号",
+						"化学信号",
+						"机械信号",
+						"光信号"
+					],
+					"prompt": "兴奋在神经纤维上以什么形式传导？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "单向流动、逐级递减",
+					"id": "t5_bio_03",
+					"options": [
+						"单向流动、逐级递减",
+						"循环流动、逐级递增",
+						"单向流动、逐级递增",
+						"循环流动、逐级递减"
+					],
+					"prompt": "生态系统中能量流动的特点是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "XY",
+					"id": "t5_bio_04",
+					"options": [
+						"XY",
+						"XX",
+						"XO",
+						"YY"
+					],
+					"prompt": "正常男性的性染色体组成是？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "不尽长江滚滚来",
+					"id": "t5_cn_01",
+					"options": [
+						"不尽长江滚滚来",
+						"风急天高猿啸哀",
+						"艰难苦恨繁霜鬓",
+						"万里悲秋常作客"
+					],
+					"prompt": "\"无边落木萧萧下\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "秋水共长天一色",
+					"id": "t5_cn_02",
+					"options": [
+						"秋水共长天一色",
+						"渔舟唱晚",
+						"响穷彭蠡之滨",
+						"雁阵惊寒"
+					],
+					"prompt": "\"落霞与孤鹜齐飞\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "曹雪芹",
+					"id": "t5_cn_03",
+					"options": [
+						"曹雪芹",
+						"施耐庵",
+						"罗贯中",
+						"吴敬梓"
+					],
+					"prompt": "《红楼梦》的作者是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "悠悠我心",
+					"id": "t5_cn_04",
+					"options": [
+						"悠悠我心",
+						"但为君故",
+						"沉吟至今",
+						"呦呦鹿鸣"
+					],
+					"prompt": "\"青青子衿\"的下一句是？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "would",
+					"id": "t5_en_01",
+					"options": [
+						"would",
+						"will",
+						"did",
+						"was"
+					],
+					"prompt": "填空：Had I known the truth, I ___ have come.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "is",
+					"id": "t5_en_02",
+					"options": [
+						"is",
+						"are",
+						"were",
+						"be"
+					],
+					"prompt": "填空：Neither of the answers ___ correct.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "leave",
+					"id": "t5_en_03",
+					"options": [
+						"leave",
+						"leaves",
+						"left",
+						"leaving"
+					],
+					"prompt": "填空：She insisted that he ___ at once.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "is",
+					"id": "t6_en_01",
+					"options": [
+						"is",
+						"are",
+						"were",
+						"be"
+					],
+					"prompt": "填空：The news ___ very good today.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "be",
+					"id": "t6_en_02",
+					"options": [
+						"be",
+						"is",
+						"was",
+						"will be"
+					],
+					"prompt": "填空：He suggested that the meeting ___ postponed.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "Despite",
+					"id": "t6_en_03",
+					"options": [
+						"Despite",
+						"Although",
+						"Because",
+						"However"
+					],
+					"prompt": "填空：___ the heavy rain, the match continued.",
+					"subject": "english",
+					"type": "choice"
+				},
+				{
+					"answer": "was published",
+					"id": "t6_en_04",
+					"options": [
+						"was published",
+						"published",
+						"has published",
+						"is publishing"
+					],
+					"prompt": "填空：This paper ___ last year.",
+					"subject": "english",
+					"type": "choice"
+				}
+			]
+		},
+		"6": {
+			"label": "大学",
+			"questions": [
+				{
+					"answer": "1",
+					"id": "col_calc_01",
+					"options": [
+						"1",
+						"0",
+						"∞",
+						"不存在"
+					],
+					"prompt": "lim(x→0) sin(x)/x = ?",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "常数",
+					"id": "col_calc_02",
+					"options": [
+						"常数",
+						"变量",
+						"系数",
+						"指数"
+					],
+					"prompt": "填空：∫ 2x dx = x² + C 中的 C 叫做？",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "eˣ",
+					"id": "col_calc_03",
+					"options": [
+						"eˣ",
+						"xeˣ⁻¹",
+						"ln x",
+						"0"
+					],
+					"prompt": "d/dx (eˣ) = ?",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "π²/6",
+					"id": "col_calc_04",
+					"options": [
+						"π²/6",
+						"π/2",
+						"1",
+						"∞"
+					],
+					"prompt": "填空：级数 Σ 1/n² 收敛于？",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "1/2",
+					"id": "col_calc_05",
+					"options": [
+						"1/2",
+						"1",
+						"0",
+						"2"
+					],
+					"prompt": "∫₀¹ x dx = ?",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "n",
+					"id": "col_calc_06",
+					"options": [
+						"n",
+						"n+1",
+						"2n",
+						"n²"
+					],
+					"prompt": "填空：泰勒展开中 eˣ 的第 n 项分母是 ____!",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "6x",
+					"id": "col_calc_07",
+					"options": [
+						"6x",
+						"3x²",
+						"x",
+						"6"
+					],
+					"prompt": "f(x)=x³ 的二阶导数是？",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "偏",
+					"id": "col_calc_08",
+					"options": [
+						"偏",
+						"全",
+						"方向",
+						"高阶"
+					],
+					"prompt": "填空：∂z/∂x 这个记号表示对 x 的____导数",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "1",
+					"id": "col_lin_01",
+					"options": [
+						"1",
+						"0",
+						"2",
+						"-1"
+					],
+					"prompt": "2×2 单位矩阵的行列式是？",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "n",
+					"id": "col_lin_02",
+					"options": [
+						"n",
+						"n-1",
+						"n²",
+						"2n"
+					],
+					"prompt": "填空：n 维向量空间的维数是？",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "B和C都对",
+					"id": "col_lin_03",
+					"options": [
+						"交换律",
+						"结合律",
+						"分配律对加法",
+						"B和C都对"
+					],
+					"prompt": "矩阵乘法满足下列哪条？",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "值",
+					"id": "col_lin_04",
+					"options": [
+						"值",
+						"向量",
+						"方程",
+						"根"
+					],
+					"prompt": "填空：若 Ax=λx，则 λ 称为特征____",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "秩",
+					"id": "col_lin_05",
+					"options": [
+						"秩",
+						"迹",
+						"范数",
+						"条件数"
+					],
+					"prompt": "rank(A) 表示矩阵 A 的？",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "转置",
+					"id": "col_lin_06",
+					"options": [
+						"转置",
+						"伴随矩阵",
+						"负矩阵",
+						"平方"
+					],
+					"prompt": "正交矩阵的逆等于它的____",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "奇异矩阵",
+					"id": "col_lin_07",
+					"options": [
+						"奇异矩阵",
+						"正规矩阵",
+						"酉矩阵",
+						"对称矩阵"
+					],
+					"prompt": "行列式为 0 的矩阵称为？",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "正交",
+					"id": "col_lin_08",
+					"options": [
+						"正交",
+						"单位",
+						"标准",
+						"对角"
+					],
+					"prompt": "填空：施密特正交化用于将基变成____基",
+					"subject": "linear",
+					"type": "choice"
+				},
+				{
+					"answer": "F = dp/dt",
+					"id": "t6_ph_01",
+					"options": [
+						"F = dp/dt",
+						"F = mv",
+						"F = ma²",
+						"F = m/a"
+					],
+					"prompt": "牛顿第二定律的微分形式是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "ΔU = Q - W",
+					"id": "t6_ph_02",
+					"options": [
+						"ΔU = Q - W",
+						"ΔU = Q + W + PV",
+						"Q = W - ΔU",
+						"ΔU = W - Q"
+					],
+					"prompt": "热力学第一定律可写作？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "平方反比",
+					"id": "t6_ph_03",
+					"options": [
+						"平方反比",
+						"正比",
+						"平方正比",
+						"反比"
+					],
+					"prompt": "库仑力与距离的关系是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "波动性",
+					"id": "t6_ph_04",
+					"options": [
+						"波动性",
+						"粒子性",
+						"质量",
+						"惯性"
+					],
+					"prompt": "光的干涉现象说明光具有？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "孤立系统",
+					"id": "t6_ph_05",
+					"options": [
+						"孤立系统",
+						"开放系统",
+						"任何系统",
+						"只适用于气体"
+					],
+					"prompt": "熵增原理适用于？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "E = mc²",
+					"id": "t6_ph_06",
+					"options": [
+						"E = mc²",
+						"E = mc",
+						"E = m²c",
+						"E = ½mc²"
+					],
+					"prompt": "质能方程是？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "闭区间连续、开区间可导、端点值相等",
+					"id": "t6_math_01",
+					"options": [
+						"闭区间连续、开区间可导、端点值相等",
+						"闭区间可导、端点值相等、导数为零",
+						"开区间连续、闭区间可导、端点为极值",
+						"连续、可导、单调"
+					],
+					"prompt": "罗尔定理的三个条件是？",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "1",
+					"id": "t6_math_02",
+					"options": [
+						"0",
+						"1",
+						"2",
+						"π"
+					],
+					"prompt": "在单位正方形上 ∫∫ 1 dxdy = ?",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "正弦和余弦函数的和",
+					"id": "t6_math_03",
+					"options": [
+						"正弦和余弦函数的和",
+						"多项式的和",
+						"指数函数的积",
+						"对数的和"
+					],
+					"prompt": "傅里叶级数把周期函数分解为？",
+					"subject": "calculus",
+					"type": "choice"
+				},
+				{
+					"answer": "函数增长最快的方向",
+					"id": "t6_math_04",
+					"options": [
+						"函数增长最快的方向",
+						"函数下降最快的方向",
+						"等值线方向",
+						"与坐标轴平行的方向"
+					],
+					"prompt": "梯度 ∇f 的方向是？",
+					"subject": "calculus",
+					"type": "choice"
+				}
+			]
+		},
+		"7": {
+			"label": "打趣",
+			"questions": [
+				{
+					"answer": "水",
+					"id": "t7_01",
+					"options": [
+						"水",
+						"毛巾",
+						"肥皂",
+						"衣服"
+					],
+					"prompt": "什么东西越洗越脏？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "每个月",
+					"id": "t7_02",
+					"options": [
+						"每个月",
+						"二月",
+						"只有平年二月",
+						"十二月"
+					],
+					"prompt": "一年中哪个月有 28 天？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "球门",
+					"id": "t7_03",
+					"options": [
+						"球门",
+						"房门",
+						"校门",
+						"车门"
+					],
+					"prompt": "什么门永远关不上？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "瀑布",
+					"id": "t7_04",
+					"options": [
+						"瀑布",
+						"抹布",
+						"帆布",
+						"棉布"
+					],
+					"prompt": "什么布剪不断？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "圣诞老人",
+					"id": "t7_05",
+					"options": [
+						"圣诞老人",
+						"医生",
+						"老师",
+						"司机"
+					],
+					"prompt": "什么人一年只工作一天？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "脸蛋",
+					"id": "t7_06",
+					"options": [
+						"脸蛋",
+						"鸡蛋",
+						"鸭蛋",
+						"鹌鹑蛋"
+					],
+					"prompt": "什么蛋不能吃？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "秘书",
+					"id": "t7_07",
+					"options": [
+						"秘书",
+						"字典",
+						"漫画书",
+						"参考书"
+					],
+					"prompt": "什么书在书店买不到？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "螺丝帽",
+					"id": "t7_08",
+					"options": [
+						"螺丝帽",
+						"草帽",
+						"安全帽",
+						"鸭舌帽"
+					],
+					"prompt": "什么帽子不能戴？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "风车",
+					"id": "t7_09",
+					"options": [
+						"风车",
+						"火车",
+						"汽车",
+						"自行车"
+					],
+					"prompt": "什么车子寸步难行？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "15 分钟",
+					"id": "t7_10",
+					"options": [
+						"15 分钟",
+						"12 分钟",
+						"18 分钟",
+						"9 分钟"
+					],
+					"prompt": "小明从 1 楼走到 3 楼用了 6 分钟，照这样从 1 楼到 6 楼要几分钟？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "11 秒",
+					"id": "t7_11",
+					"options": [
+						"11 秒",
+						"10 秒",
+						"12 秒",
+						"22 秒"
+					],
+					"prompt": "时钟敲 6 下用 5 秒，敲 12 下要用几秒？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "榨成汁分",
+					"id": "t7_12",
+					"options": [
+						"榨成汁分",
+						"一人一个半再扔一个",
+						"先吃一个再分",
+						"按大小分"
+					],
+					"prompt": "三个苹果分给两个人，怎么分最公平？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "一个",
+					"id": "t7_13",
+					"options": [
+						"一个",
+						"两个",
+						"三个",
+						"随便吃"
+					],
+					"prompt": "一个人空着肚子最多能吃几个包子？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "狐狸",
+					"id": "t7_14",
+					"options": [
+						"狐狸",
+						"乌龟",
+						"大象",
+						"熊猫"
+					],
+					"prompt": "什么动物最容易摔倒？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "温度计",
+					"id": "t7_15",
+					"options": [
+						"温度计",
+						"蚂蚁",
+						"藤蔓",
+						"电梯"
+					],
+					"prompt": "什么东西天气越热爬得越高？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "薪水",
+					"id": "t7_16",
+					"options": [
+						"薪水",
+						"凉水",
+						"开水",
+						"矿泉水"
+					],
+					"prompt": "什么水不能喝？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "辞海",
+					"id": "t7_17",
+					"options": [
+						"辞海",
+						"大海",
+						"渤海",
+						"地中海"
+					],
+					"prompt": "什么海没有水？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "木马",
+					"id": "t7_18",
+					"options": [
+						"木马",
+						"斑马",
+						"河马",
+						"野马"
+					],
+					"prompt": "什么马不会跑？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "蜗牛",
+					"id": "t7_19",
+					"options": [
+						"蜗牛",
+						"奶牛",
+						"水牛",
+						"黄牛"
+					],
+					"prompt": "什么牛不吃草？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "壁虎",
+					"id": "t7_20",
+					"options": [
+						"壁虎",
+						"老虎",
+						"白虎",
+						"东北虎"
+					],
+					"prompt": "什么虎不吃人？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "木鱼",
+					"id": "t7_21",
+					"options": [
+						"木鱼",
+						"带鱼",
+						"鲤鱼",
+						"鲨鱼"
+					],
+					"prompt": "什么鱼不能吃？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "鸵鸟",
+					"id": "t7_22",
+					"options": [
+						"鸵鸟",
+						"麻雀",
+						"鸽子",
+						"老鹰"
+					],
+					"prompt": "什么鸟不会飞？",
+					"subject": "biology",
+					"type": "choice"
+				},
+				{
+					"answer": "银河",
+					"id": "t7_23",
+					"options": [
+						"银河",
+						"黄河",
+						"长江",
+						"小河"
+					],
+					"prompt": "什么河没有水？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "郑板桥",
+					"id": "t7_24",
+					"options": [
+						"郑板桥",
+						"石桥",
+						"木桥",
+						"天桥"
+					],
+					"prompt": "什么桥不能走？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "纪录",
+					"id": "t7_25",
+					"options": [
+						"纪录",
+						"窗户",
+						"碗",
+						"杯子"
+					],
+					"prompt": "什么东西打破了大家却叫好？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "手套",
+					"id": "t7_26",
+					"options": [
+						"手套",
+						"五角星",
+						"手掌",
+						"鞋子"
+					],
+					"prompt": "什么东西有五个头，但人不觉得奇怪？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "梳子",
+					"id": "t7_27",
+					"options": [
+						"梳子",
+						"老虎",
+						"锯子",
+						"鲨鱼"
+					],
+					"prompt": "什么东西有很多牙齿却咬不动人？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "桌子",
+					"id": "t7_28",
+					"options": [
+						"桌子",
+						"马",
+						"狗",
+						"人"
+					],
+					"prompt": "什么东西有脚却不能走路？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "针",
+					"id": "t7_29",
+					"options": [
+						"针",
+						"人",
+						"猫",
+						"相机"
+					],
+					"prompt": "什么东西有眼却看不见？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "错",
+					"id": "t7_30",
+					"options": [
+						"错",
+						"对",
+						"字",
+						"念"
+					],
+					"prompt": "什么字大家都会念错？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "四边形切掉一个角",
+					"id": "t7_31",
+					"options": [
+						"四边形切掉一个角",
+						"算错的时候",
+						"用计算器时",
+						"四减一本来就等于五"
+					],
+					"prompt": "什么时候四减一等于五？",
+					"subject": "math",
+					"type": "choice"
+				},
+				{
+					"answer": "飞机还没起飞",
+					"id": "t7_32",
+					"options": [
+						"飞机还没起飞",
+						"他会飞",
+						"有降落伞",
+						"掉在草地上"
+					],
+					"prompt": "一个人从飞机上掉下来为什么没摔死？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "医生",
+					"id": "t7_33",
+					"options": [
+						"医生",
+						"病人",
+						"护士",
+						"院长"
+					],
+					"prompt": "谁天天去看病？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "官司",
+					"id": "t7_34",
+					"options": [
+						"官司",
+						"饭",
+						"水果",
+						"茶"
+					],
+					"prompt": "什么东西别人请你吃，你还是要付钱？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "扇子",
+					"id": "t7_35",
+					"options": [
+						"扇子",
+						"风车",
+						"树叶",
+						"旗子"
+					],
+					"prompt": "什么东西有风不动、无风动？",
+					"subject": "physics",
+					"type": "choice"
+				},
+				{
+					"answer": "吃亏",
+					"id": "t7_36",
+					"options": [
+						"吃亏",
+						"苹果",
+						"米饭",
+						"药"
+					],
+					"prompt": "什么东西大家都不想吃？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "名字",
+					"id": "t7_37",
+					"options": [
+						"名字",
+						"手机",
+						"衣服",
+						"书包"
+					],
+					"prompt": "什么东西是你的，别人却用得比你多？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "雪人",
+					"id": "t7_38",
+					"options": [
+						"雪人",
+						"北极熊",
+						"企鹅",
+						"冬泳的人"
+					],
+					"prompt": "什么人最不怕冷？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "快乐",
+					"id": "t7_39",
+					"options": [
+						"快乐",
+						"钱",
+						"食物",
+						"水"
+					],
+					"prompt": "什么东西越分享越多？",
+					"subject": "chinese",
+					"type": "choice"
+				},
+				{
+					"answer": "眼球",
+					"id": "t7_40",
+					"options": [
+						"眼球",
+						"篮球",
+						"足球",
+						"地球"
+					],
+					"prompt": "什么球离你最近？",
+					"subject": "biology",
+					"type": "choice"
+				}
+			]
+		}
+	}
+}

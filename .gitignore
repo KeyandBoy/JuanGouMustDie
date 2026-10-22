@@ -23,3 +23,12 @@ mono_crash.*.json
 *.exe
 # Uncomment if your project does not version PCK files as runtime dependencies.
 # *.pck
+
+# Local tooling / generated intermediates
+.opencode/
+tools/_gen/
+
+# Test output logs
+tests/_*.txt
+tests/_*.log
+tests/__*.txt

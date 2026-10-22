@@ -1,0 +1,66 @@
+《卷狗必须死》背景音乐（全部 CC0 / 公共领域，可商用，无需署名）
+
+欢乐
+- happy_loop.mp3        "Happy Loop"          by wipics        https://opengameart.org/content/happy-loop
+
+紧张
+- chase_pursuit.mp3     "Vicegrip of Pursuit" by Sudocolon    https://opengameart.org/content/pursuit
+- chase_assault.ogg     "Assault"             by bambootracker https://opengameart.org/content/assault
+
+追逐
+- chase_electro.ogg     "Chase!"              by Wolfgang_     https://opengameart.org/content/chase
+
+荒诞
+- goofy_attitude.mp3    "Goofy Attitude!"     by SkyleTheFrench https://opengameart.org/content/goofy-attitude
+- fridge_hungry.ogg     "The Fridge is Hungry" by congusbongus  https://opengameart.org/content/the-fridge-is-hungry
+- wacky_wobblings.ogg   "Wacky Wobblings"     by Fupi           https://opengameart.org/content/wacky-wobblings
+
+暴君（程序合成本项目原创，CC0，可商用）
+- tyrant_dread.wav      "Tyrant Dread"        generated in-project
+- tyrant_dread_l5.wav   "Tyrant Dread L5"     generated in-project
+- alarm_a.wav           "Siren A (two-tone)"  generated in-project
+- alarm_b.wav           "Siren B (original)"  generated in-project
+- tyrant_step.wav       "Tyrant Footstep"     generated in-project
+- tyrant_swipe.wav      "Tyrant Swipe"        generated in-project
+- heartbeat.wav         "Heartbeat"           generated in-project
+- tyrant_roar.wav       "Tyrant Roar"         generated in-project
+
+用户提供素材（版权归提供者，替换/发布前请确认授权）
+- alarm.mp3             "警报声"              由用户提供（素材/警报声.mp3），用于暴君登场
+
+说明：以上合成音效由项目内 Python 脚本生成（无第三方版权），
+警报 A/B 为两版可选方案，默认使用 alarm_a.wav，可试听后替换；
+暴君登场优先使用用户提供的 alarm.mp3，缺失时回退 alarm_a.wav。
+《杀死比尔》原版警报受版权保护，本项目未使用其录音。
+
+================================================================
+以下为非音频素材（一并登记，便于发布前核查授权）
+================================================================
+
+过场 / 立绘美术（AI 生成，无第三方版权，可商用）
+- art/cutscene/intro_classroom.png   开场背景：陌生教室
+- art/cutscene/intro_board.png       开场背景：黑板（文字由游戏内叠加）
+- art/cutscene/intro_hall.png        开场背景：走廊
+- art/cutscene/tyrant_p1.png         暴君登场四格漫画 1/4
+- art/cutscene/tyrant_p2.png         暴君登场四格漫画 2/4
+- art/cutscene/tyrant_p3.png         暴君登场四格漫画 3/4
+- art/cutscene/tyrant_p4.png         暴君登场四格漫画 4/4
+- art/cutscene/ending_placeholder.png 结局占位图
+- art/sprites/tyrant/tyrant_front.png 暴君立绘（静止，抠图后 124x192 透明底）
+- art/sprites/tyrant/tyrant_chase.png 暴君立绘（追击，抠图后 163x192 透明底）
+  生成方式：tools/gen_art.ps1 调 imagefree.net（回退 pollinations.ai），
+  prompt 见脚本内清单；后处理（洋红抠图/裁边/缩放）见 tools/post_art.gd。
+  原始未抠图 PNG 保留在 tools/_gen/。
+
+UI 图标（AI 生成，无第三方版权，可商用）
+- art/ui/icons/*.png  17 枚（道具 13 + lock/star/speaker/music）
+  生成方式同上：tools/gen_art.ps1 -Manifest tools/manifests/ui_icons.json，
+  后处理 tools/post_art.gd（洋红抠图，道具 48px / UI 24px）。
+  游戏内缺图会自动回退文字/色块，不影响运行。
+
+字体
+- assets/fonts/zpix.ttf   "Zpix" 像素中文字体
+  许可：SIL Open Font License 1.1（可商用、可嵌入、可再分发，需保留许可声明）
+  上游：https://github.com/SolidZORO/zpix-pixel-font
+  用途：开场动画字幕、「内卷即死」黑板叠字，以及全部 UI（UiTheme 统一加载）
+

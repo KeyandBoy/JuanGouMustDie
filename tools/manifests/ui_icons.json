@@ -1,0 +1,138 @@
+[
+  {
+    "name": "icon_coffee",
+    "prompt": "Flat pixel art game inventory icon of a steaming brown coffee cup, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/coffee.png"
+  },
+  {
+    "name": "icon_bread",
+    "prompt": "Flat pixel art game inventory icon of a golden toasted bread loaf slice, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/bread.png"
+  },
+  {
+    "name": "icon_smoke",
+    "prompt": "Flat pixel art game inventory icon of a round grey smoke grenade canister with a small pin, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/smoke.png"
+  },
+  {
+    "name": "icon_chair",
+    "prompt": "Flat pixel art game inventory icon of a small wooden folding chair, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/chair.png"
+  },
+  {
+    "name": "icon_stink",
+    "prompt": "Flat pixel art game inventory icon of a green stink bomb sphere with wavy green gas wisps, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/stink.png"
+  },
+  {
+    "name": "icon_portal",
+    "prompt": "Flat pixel art game inventory icon of a small purple magic door with a swirling vortex inside the doorway, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/portal.png"
+  },
+  {
+    "name": "icon_shovel",
+    "prompt": "Flat pixel art game inventory icon of a metal shovel with wooden handle pointing down, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/shovel.png"
+  },
+  {
+    "name": "icon_lamp",
+    "prompt": "Flat pixel art game inventory icon of a small yellow desk study lamp glowing brightly, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/lamp.png"
+  },
+  {
+    "name": "icon_notes",
+    "prompt": "Flat pixel art game inventory icon of a blue notebook with a pencil on top, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/notes.png"
+  },
+  {
+    "name": "icon_shoes",
+    "prompt": "Flat pixel art game inventory icon of a pair of soft grey slippers, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/shoes.png"
+  },
+  {
+    "name": "icon_stopwatch",
+    "prompt": "Flat pixel art game inventory icon of a silver stopwatch with red button, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/stopwatch.png"
+  },
+  {
+    "name": "icon_intel",
+    "prompt": "Flat pixel art game inventory icon of a folded pink paper map with route markers, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/intel.png"
+  },
+  {
+    "name": "icon_ears",
+    "prompt": "Flat pixel art game inventory icon of a pair of small white earplugs with a string, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 48,
+    "out": "res://art/ui/icons/ears.png"
+  },
+  {
+    "name": "icon_lock",
+    "prompt": "Flat pixel art game UI icon of a closed grey padlock, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 24,
+    "out": "res://art/ui/icons/lock.png"
+  },
+  {
+    "name": "icon_star",
+    "prompt": "Flat pixel art game UI icon of a bright golden five-pointed star, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 24,
+    "out": "res://art/ui/icons/star.png"
+  },
+  {
+    "name": "icon_speaker",
+    "prompt": "Flat pixel art game UI icon of a grey speaker emitting two sound waves, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 24,
+    "out": "res://art/ui/icons/speaker.png"
+  },
+  {
+    "name": "icon_music",
+    "prompt": "Flat pixel art game UI icon of a single blue music note eighth note, 16-bit retro style, thick dark outline, centered single object, no ground shadow, isolated on a solid flat magenta background, no text",
+    "ratio": "1:1",
+    "key": true,
+    "resize_h": 24,
+    "out": "res://art/ui/icons/music.png"
+  }
+]
