@@ -1090,6 +1090,12 @@ func _start_tyrant_intro() -> void:
 		root.add_child(debris)
 	await _wait(0.5)
 
+	player.position = door_pos
+	player.velocity = Vector2.ZERO
+	camera.global_position = player.position
+	camera.reset_smoothing()
+	await _wait(0.6)
+
 	var blood := Label.new()
 	blood.text = "快跑！"
 	blood.add_theme_font_size_override("font_size", 78)
@@ -1112,33 +1118,13 @@ func _start_tyrant_intro() -> void:
 
 	layer.queue_free()
 	get_tree().paused = false
-	player.velocity = Vector2.ZERO
-	await _throw_player_to(door_pos)
-	player.stun(1.2)
-	player.can_move = true
-	camera.global_position = player.global_position
-	camera.reset_smoothing()
 	GameState.cutscene_active = false
 	cutscene_active = false
 	GameState.tyrant_intro_seen = true
+	player.can_move = true
 	SaveManager.save_run()
 	hud.toast("暴君登场！它甩开了你，正在环视——快跑！")
 	AudioManager.kick()
-
-func _throw_player_to(target: Vector2) -> void:
-	var from: Vector2 = player.position
-	var tw := create_tween()
-	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	tw.tween_method(func(v: float) -> void:
-		var p := from.lerp(target, v)
-		p.y -= sin(v * PI) * 46.0
-		player.position = p
-		player.rotation = v * TAU
-	, 0.0, 1.0, 0.45)
-	_shake_camera(9.0, 0.45)
-	await tw.finished
-	player.position = target
-	player.rotation = 0.0
 
 func _on_level_cleared() -> void:
 	if clear_started or end_panel_shown:
