@@ -1,28 +1,28 @@
 class_name UiTheme
 extends Object
 
-## 全局像素风 UI 主题（霓虹像素版）。
-## 深色底 + 高饱和描边 + 硬阴影，按钮/面板统一走这里。
+## 全局像素风 UI 主题（校园怪谈荒诞微恐怖版）。
+## 昏暗灰绿 + 诡异配色 + 病态气氛，老旧校舍感。
 ## 用法：UiTheme.apply(某个 Control 根) —— 该根的全部子节点自动继承。
 ## 不碰任何游戏逻辑；缺字体时回退引擎默认字体。
 
-const COL_BG := Color(0.05, 0.03, 0.10)  # 深夜紫黑
-const COL_PANEL_BG := Color(0.10, 0.07, 0.18, 0.97)  # 深紫面板
-const COL_PANEL_BORDER := Color(0.32, 0.92, 1.0)  # 霓虹青描边
-const COL_BTN_BG := Color(0.14, 0.10, 0.24, 0.98)  # 深紫按钮
-const COL_BTN_HOVER := Color(0.23, 0.16, 0.38)  # 悬停提亮
-const COL_BTN_PRESSED := Color(0.09, 0.06, 0.16)  # 按下压暗
-const COL_INPUT_BG := Color(0.08, 0.06, 0.14)  # 输入框
-const COL_TEXT := Color(0.97, 0.95, 0.90)  # 暖白
-const COL_TEXT_DIM := Color(0.72, 0.70, 0.86)  # 淡紫
-const COL_ACCENT := Color(1.0, 0.30, 0.66)  # 荧光粉
-const COL_CYAN := Color(0.30, 0.95, 1.0)  # 霓虹青
-const COL_GOLD := Color(1.0, 0.84, 0.30)  # 金色
-const COL_RED := Color(1.0, 0.30, 0.34)  # 鲜红
-const COL_GREEN := Color(0.45, 1.0, 0.55)  # 荧光绿
-const COL_BLUE := Color(0.36, 0.66, 1.0)  # 亮蓝
-const COL_PURPLE := Color(0.76, 0.48, 1.0)  # 亮紫
-const COL_ORANGE := Color(1.0, 0.62, 0.16)  # 鲜橙
+const COL_BG := Color(0.12, 0.15, 0.13)  # 昏暗灰绿背景
+const COL_PANEL_BG := Color(0.16, 0.20, 0.18, 0.96)  # 病态灰绿面板
+const COL_PANEL_BORDER := Color(0.38, 0.48, 0.42)  # 诡异灰绿边框
+const COL_BTN_BG := Color(0.22, 0.32, 0.28)  # 暗沉蓝绿按钮
+const COL_BTN_HOVER := Color(0.32, 0.44, 0.38)  # 悬停时灰绿变亮
+const COL_BTN_PRESSED := Color(0.13, 0.19, 0.16)  # 按下时压暗
+const COL_INPUT_BG := Color(0.18, 0.22, 0.20)  # 昏暗输入框
+const COL_TEXT := Color(0.88, 0.88, 0.82)  # 苍白偏黄的文字
+const COL_TEXT_DIM := Color(0.58, 0.60, 0.54)  # 昏暗文字
+const COL_ACCENT := Color(0.60, 0.78, 0.68)  # 诡异灰绿强调
+const COL_CYAN := Color(0.45, 0.70, 0.65)  # 诡异青绿焦点
+const COL_GOLD := Color(0.72, 0.65, 0.42)  # 生锈金属色
+const COL_RED := Color(0.68, 0.28, 0.28)  # 暗红（血迹感）
+const COL_GREEN := Color(0.42, 0.62, 0.48)  # 病态绿
+const COL_BLUE := Color(0.32, 0.52, 0.58)  # 暗冷蓝
+const COL_PURPLE := Color(0.50, 0.40, 0.58)  # 暗紫（诡异感）
+const COL_ORANGE := Color(0.62, 0.42, 0.22)  # 昏黄（坏灯泡）
 
 static var _theme: Theme = null
 

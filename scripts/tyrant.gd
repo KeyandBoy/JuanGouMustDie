@@ -53,8 +53,8 @@ func _ready() -> void:
 	collision_mask = 1
 	smoke_back = smoke_script.new()
 	smoke_back.alpha = 0.5
-	smoke_back.radius = 22.0
-	smoke_back.puff = 9.0
+	smoke_back.radius = 18.0
+	smoke_back.puff = 7.0
 	smoke_back.z_index = 1
 	add_child(smoke_back)
 	sprite = Sprite2D.new()
@@ -64,7 +64,7 @@ func _ready() -> void:
 	if use_generated:
 		sprite.texture = tex_front
 		var th := float(tex_front.get_height())
-		sprite.scale = Vector2(0.68, 0.68)
+		sprite.scale = Vector2(0.24, 0.24)
 		sprite.centered = true
 		sprite.offset = Vector2(0.0, -th * 0.5)
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -80,8 +80,8 @@ func _ready() -> void:
 	add_child(sprite)
 	smoke_front = smoke_script.new()
 	smoke_front.alpha = 0.36
-	smoke_front.radius = 15.0
-	smoke_front.puff = 6.0
+	smoke_front.radius = 12.0
+	smoke_front.puff = 5.0
 	smoke_front.speed = 1.5
 	smoke_front.z_index = 3
 	add_child(smoke_front)

@@ -1964,44 +1964,58 @@ func _build_menu_background(layer: CanvasLayer) -> void:
 	layer.add_child(bg)
 
 	var vs: Vector2 = get_viewport().get_visible_rect().size
-	for i in 9:
+	
+	# 校园怪谈诡异色系：灰绿、暗紫、昏黄
+	var horror_colors = [
+		UiTheme.COL_ACCENT,   # 灰绿
+		UiTheme.COL_PURPLE,   # 暗紫
+		UiTheme.COL_ORANGE,   # 昏黄
+		UiTheme.COL_GREEN,    # 病态绿
+		UiTheme.COL_BLUE,     # 暗冷蓝
+	]
+	
+	# 诡异的漂浮雾气
+	for i in 7:
 		var blob := ColorRect.new()
-		blob.color = Color(UiTheme.get_button_color(i), 0.07)
-		blob.size = Vector2(randf_range(120, 300), randf_range(80, 200))
-		blob.position = Vector2(randf_range(-60, vs.x - 60), randf_range(-60, vs.y - 60))
+		var col = horror_colors[i % horror_colors.size()]
+		blob.color = Color(col, 0.04)  # 非常淡，营造诡异气氛
+		blob.size = Vector2(randf_range(150, 350), randf_range(100, 220))
+		blob.position = Vector2(randf_range(-80, vs.x), randf_range(-80, vs.y))
 		blob.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(blob)
 		var start := blob.position
 		var tw := blob.create_tween().set_loops()
 		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		tw.tween_property(blob, "position", start + Vector2(randf_range(-40, 40), randf_range(-30, 30)), randf_range(4, 8))
-		tw.tween_property(blob, "position", start, randf_range(4, 8))
+		tw.tween_property(blob, "position", start + Vector2(randf_range(-30, 30), randf_range(-20, 20)), randf_range(5, 9))
+		tw.tween_property(blob, "position", start, randf_range(5, 9))
 
-	for i in 30:
+	# 偶发的诡异粒子（像素雪/尘埃）
+	for i in 25:
 		var px := ColorRect.new()
-		var c := UiTheme.get_button_color(i)
-		c.a = randf_range(0.35, 0.9)
-		px.color = c
-		px.size = Vector2.ONE * randf_range(4, 10)
+		var col = horror_colors[i % horror_colors.size()]
+		col.a = randf_range(0.2, 0.6)  # 很淡的粒子
+		px.color = col
+		px.size = Vector2.ONE * randf_range(2, 5)
 		px.position = Vector2(randf_range(0, vs.x), randf_range(0, vs.y))
 		px.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(px)
 		var start := px.position
-		var dur := randf_range(5, 11)
+		var dur := randf_range(6, 14)
 		var tw := px.create_tween().set_loops()
 		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		tw.tween_property(px, "position", start + Vector2(randf_range(-36, 36), -randf_range(90, 240)), dur)
+		tw.tween_property(px, "position", start + Vector2(randf_range(-24, 24), -randf_range(100, 280)), dur)
 		tw.tween_property(px, "position", start, 0.01)
 
+	# 电视雪花效果（诡异感）
 	var y := 0
 	while y < int(vs.y):
 		var line := ColorRect.new()
-		line.color = Color(0.0, 0.0, 0.0, 0.10)
+		line.color = Color(0.0, 0.0, 0.0, 0.08)
 		line.position = Vector2(0, y)
-		line.size = Vector2(vs.x, 2)
+		line.size = Vector2(vs.x, 1)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(line)
-		y += 6
+		y += 8
 
 func _menu_button(label: String, accent: Color, big: bool, on_press: Callable) -> Button:
 	var b := Button.new()
