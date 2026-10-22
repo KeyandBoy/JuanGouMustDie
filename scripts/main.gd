@@ -11,6 +11,9 @@ const L_FADE := 44
 const L_TYRANT_CUT := 48
 const L_INTRO := 60
 
+const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
+const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
+
 var map: Node2D
 var player: CharacterBody2D
 var hud: CanvasLayer
@@ -356,6 +359,40 @@ func _spawn_items() -> void:
 		var def: Dictionary = GameState.get_item_def(id)
 		pickup.setup(id, def.get("color", Color.WHITE))
 		pickup.position = pos + Vector2(randf_range(-18, 18), randf_range(-12, 12))
+		pickup.picked.connect(_on_item_picked)
+		pickup.full.connect(_on_item_full)
+		add_child(pickup)
+
+func _spawn_anti_tyrant_drops() -> void:
+	var pool: Array[int] = []
+	for i in map.rooms.size():
+		var t := String(map.room_types[i])
+		if t != "hall" and t != "stair" and t != "corridor":
+			pool.append(i)
+	pool.shuffle()
+	var spots: Array[Vector2] = []
+	for idx in pool:
+		var p: Vector2 = map._walkable_center(map.rooms[idx])
+		var too_close := false
+		for n in get_tree().get_nodes_in_group("pickups"):
+			if n.position.distance_to(p) < 60.0:
+				too_close = true
+				break
+		if too_close:
+			continue
+		if tyrant != null and is_instance_valid(tyrant) and p.distance_to(tyrant.position) < 120.0:
+			continue
+		spots.append(p)
+		if spots.size() >= 2:
+			break
+	for i in spots.size():
+		var id: String = ANTI_TYRANT_ITEMS[i % ANTI_TYRANT_ITEMS.size()]
+		if i > 0 and randf() > 0.65:
+			id = GENERAL_ITEMS[randi() % GENERAL_ITEMS.size()]
+		var def: Dictionary = GameState.get_item_def(id)
+		var pickup = item_spawn_script.new()
+		pickup.setup(id, def.get("color", Color.WHITE))
+		pickup.position = spots[i] + Vector2(randf_range(-18, 18), randf_range(-12, 12))
 		pickup.picked.connect(_on_item_picked)
 		pickup.full.connect(_on_item_full)
 		add_child(pickup)
@@ -889,6 +926,7 @@ func _spawn_tyrant(idle: float, forced_pos := Vector2.INF) -> Node2D:
 		_shake_camera(5.0, 0.3)
 	if fog.has_method("set_tyrant_active"):
 		fog.set_tyrant_active(true, GameState.level)
+	_spawn_anti_tyrant_drops()
 	return tyrant
 
 func _far_spawn_point(min_dist: float) -> Vector2:
@@ -2016,6 +2054,117 @@ func _build_menu_background(layer: CanvasLayer) -> void:
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(line)
 		y += 8
+	
+	# 随机闪电特效
+	_spawn_random_lightning(layer, vs)
+
+func _spawn_random_lightning(layer: CanvasLayer, viewport_size: Vector2) -> void:
+	var lightning_loop = func() -> void:
+		while is_instance_valid(layer):
+			await get_tree().create_timer(randf_range(4.0, 8.0)).timeout
+			if not is_instance_valid(layer):
+				return
+			_draw_branching_lightning(layer, viewport_size)
+
+	create_tween().tween_callback(lightning_loop)
+
+func _draw_branching_lightning(layer: CanvasLayer, viewport_size: Vector2) -> void:
+	if not is_instance_valid(layer):
+		return
+	var made: Array[Node] = []
+	# 闪电起点（顶部随机）
+	var start_x = randf_range(viewport_size.x * 0.2, viewport_size.x * 0.8)
+	var start_y = -50.0
+	var end_y = randf_range(viewport_size.y * 0.4, viewport_size.y * 0.9)
+	
+	# 全屏白闪
+	var flash := ColorRect.new()
+	flash.color = Color(0.95, 0.98, 1.0, 0.2)
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(flash)
+	made.append(flash)
+	
+	# 绘制主闪电路径（曲折分叉）
+	var segments: Array[Vector2] = []
+	_generate_lightning_path(Vector2(start_x, start_y), Vector2(start_x + randf_range(-40, 40), end_y), segments, 0, 6)
+	
+	# 画主闪电
+	for i in range(segments.size() - 1):
+		var line := Line2D.new()
+		line.add_point(segments[i])
+		line.add_point(segments[i + 1])
+		line.width = 3.0
+		line.default_color = Color(0.7, 0.85, 1.0, 0.9)
+		layer.add_child(line)
+		made.append(line)
+		
+		# 外光晕
+		var glow := Line2D.new()
+		glow.add_point(segments[i])
+		glow.add_point(segments[i + 1])
+		glow.width = 8.0
+		glow.default_color = Color(0.5, 0.7, 1.0, 0.3)
+		layer.add_child(glow)
+		made.append(glow)
+	
+	# 随机分叉（3-5条）
+	var branch_count = randi_range(3, 5)
+	for b in range(branch_count):
+		var branch_start_idx = randi_range(0, segments.size() - 1)
+		var branch_start = segments[branch_start_idx]
+		var branch_angle = randf_range(-0.6, 0.6)
+		var branch_direction = (segments[branch_start_idx + 1] - branch_start).normalized()
+		var rotated = branch_direction.rotated(branch_angle)
+		var branch_end = branch_start + rotated * randf_range(80.0, 180.0)
+		
+		var branch_segments: Array[Vector2] = []
+		_generate_lightning_path(branch_start, branch_end, branch_segments, 0, 4)
+		
+		for i in range(branch_segments.size() - 1):
+			var line := Line2D.new()
+			line.add_point(branch_segments[i])
+			line.add_point(branch_segments[i + 1])
+			line.width = 2.0
+			line.default_color = Color(0.6, 0.8, 1.0, 0.7)
+			layer.add_child(line)
+			made.append(line)
+	
+	var tween := create_tween()
+	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
+	tween.tween_interval(0.04)
+	tween.tween_callback(func(): _flash_alpha(flash, 0.15))
+	tween.tween_interval(0.03)
+	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
+	tween.tween_interval(0.05)
+	tween.tween_callback(func(): _flash_alpha(flash, 0.1))
+	tween.tween_interval(0.02)
+	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
+	tween.tween_interval(0.55)
+	await tween.finished
+	for n in made:
+		if is_instance_valid(n):
+			n.queue_free()
+
+func _flash_alpha(rect: ColorRect, a: float) -> void:
+	if is_instance_valid(rect):
+		rect.modulate.a = a
+
+func _generate_lightning_path(start: Vector2, end: Vector2, segments: Array[Vector2], depth: int, max_depth: int) -> void:
+	if depth > max_depth:
+		segments.append(end)
+		return
+	
+	segments.append(start)
+	
+	# 中点加随机偏移（曲折感）
+	var mid = (start + end) * 0.5
+	var offset_distance = (end - start).length() * 0.15
+	var random_offset = Vector2(randf_range(-offset_distance, offset_distance), randf_range(-offset_distance * 0.5, offset_distance * 0.5))
+	var mid_point = mid + random_offset
+	
+	_generate_lightning_path(start, mid_point, segments, depth + 1, max_depth)
+	_generate_lightning_path(mid_point, end, segments, depth + 1, max_depth)
 
 func _menu_button(label: String, accent: Color, big: bool, on_press: Callable) -> Button:
 	var b := Button.new()

@@ -14,6 +14,9 @@ const GUARD_TEX := [
 
 var map: Node2D
 var player: Node2D
+const CHASE_SPEED_MULT := 0.8
+const ATTACK_RECOVER := 3.0
+
 var level := 4
 var sprite: Sprite2D
 var tex_front: Texture2D
@@ -114,7 +117,7 @@ func setup(p_map: Node2D, p_player: Node2D, p_level: int = 4) -> void:
 	map = p_map
 	player = p_player
 	level = p_level
-	speed = 148.0 if level <= 4 else 158.0
+	speed = (148.0 if level <= 4 else 158.0) * CHASE_SPEED_MULT
 
 func _physics_process(delta: float) -> void:
 	if slow_timer > 0.0:
@@ -177,7 +180,7 @@ func _physics_process(delta: float) -> void:
 
 func _attack() -> void:
 	attack_cd = 3.5
-	recover_timer = 2.0
+	recover_timer = ATTACK_RECOVER
 	slow_timer = 0.0
 	slow_factor = 1.0
 	if player.has_method("stun"):

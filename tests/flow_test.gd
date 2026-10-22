@@ -540,6 +540,12 @@ func _ready() -> void:
 	_check(not inst._modal_open(), "modal: all closed", failures)
 	_check(inst.modal_stack.is_empty(), "modal: stack empty (%d)" % inst.modal_stack.size(), failures)
 
+	var drops_before := get_tree().get_nodes_in_group("pickups").size()
+	inst._spawn_anti_tyrant_drops()
+	await get_tree().process_frame
+	var drops_after := get_tree().get_nodes_in_group("pickups").size()
+	_check(drops_after >= drops_before + 2, "tyrant: spawns 2 anti-tyrant drops (%d -> %d)" % [drops_before, drops_after], failures)
+
 	var intro_script = load("res://scripts/intro.gd")
 	if intro_script != null:
 		var intro = intro_script.new()
@@ -558,6 +564,18 @@ func _ready() -> void:
 		intro.free()
 	else:
 		_check(false, "intro: script loads", failures)
+
+	var tyrant_script = load("res://scripts/tyrant.gd")
+	if tyrant_script != null:
+		var ty_probe = tyrant_script.new()
+		ty_probe.setup(null, null, 4)
+		_check(is_equal_approx(ty_probe.speed, 118.4), "tyrant: level 4 speed is 80%% (%.1f)" % ty_probe.speed, failures)
+		ty_probe.setup(null, null, 5)
+		_check(is_equal_approx(ty_probe.speed, 126.4), "tyrant: level 5 speed is 80%% (%.1f)" % ty_probe.speed, failures)
+		_check(is_equal_approx(float(ty_probe.ATTACK_RECOVER), 3.0), "tyrant: attack recovery +1s", failures)
+		ty_probe.free()
+	else:
+		_check(false, "tyrant: script loads", failures)
 
 	if failures.is_empty():
 		print("FLOW_TEST: ALL PASSED")
