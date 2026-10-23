@@ -2,7 +2,7 @@
 
 一款 Godot 4 制作的像素风校园潜行 + 答题生存游戏：在“内卷违法”的荒诞校园里，避开同学、老师和暴君，找座位刷学习值，答题续命，活到过关。
 
-**在线试玩（Web 版）：<https://juangoumustdie.vercel.app>**
+**在线试玩（Web 版）：<https://juangomustdie1023.whiskhub.top/>**
 
 ![开始菜单](tests/shot_menu.png)
 

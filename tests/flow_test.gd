@@ -1,5 +1,14 @@
 extends Node
 
+var watch_inst = null
+var watch_active := false
+var watch_inside := false
+
+func _process(_delta: float) -> void:
+	if watch_active and not watch_inside and watch_inst != null:
+		if watch_inst._obstacle_ahead(watch_inst.player.position):
+			watch_inside = true
+
 func _ready() -> void:
 	var failures: Array[String] = []
 
@@ -540,11 +549,45 @@ func _ready() -> void:
 	_check(not inst._modal_open(), "modal: all closed", failures)
 	_check(inst.modal_stack.is_empty(), "modal: stack empty (%d)" % inst.modal_stack.size(), failures)
 
+	# --- 字体兜底：网页端没有系统字体回退，所有中文 Label 必须解析到 zpix ---
+	inst._punish_effect(inst.player)
+	await get_tree().process_frame
+	var fx_root: Control = null
+	for c in inst.get_children():
+		if c is CanvasLayer and c.layer == inst.L_FX and c.get_child_count() > 0 and c.get_child(0) is Control:
+			fx_root = c.get_child(0)
+	_check(fx_root != null and fx_root.theme != null, "font: punish fx root has UiTheme", failures)
+	var odd_fonts := PackedStringArray()
+	var label_count := 0
+	for l in _collect_labels(inst, []):
+		label_count += 1
+		if l.get_theme_font("font") != UiTheme.font():
+			odd_fonts.append(String(l.text).substr(0, 8))
+	_check(odd_fonts.is_empty(), "font: %d labels all resolve to zpix (odd: %s)" % [label_count, ", ".join(odd_fonts)], failures)
+
 	var drops_before := get_tree().get_nodes_in_group("pickups").size()
 	inst._spawn_anti_tyrant_drops()
 	await get_tree().process_frame
 	var drops_after := get_tree().get_nodes_in_group("pickups").size()
 	_check(drops_after >= drops_before + 2, "tyrant: spawns 2 anti-tyrant drops (%d -> %d)" % [drops_before, drops_after], failures)
+
+	var no_icon := PackedStringArray()
+	for p in get_tree().get_nodes_in_group("pickups"):
+		if p.get("icon_tex") == null:
+			no_icon.append(String(p.item_id))
+	_check(no_icon.is_empty(), "items: pickups carry icon textures (missing: %s)" % ", ".join(no_icon), failures)
+	var missing_icons := PackedStringArray()
+	for id in GameState.ITEM_DEFS:
+		if UiIcons.item(String(id)) == null:
+			missing_icons.append(String(id))
+	_check(missing_icons.is_empty(), "items: %d item icons exist (missing: %s)" % [GameState.ITEM_DEFS.size(), ", ".join(missing_icons)], failures)
+	_check(inst.item_fx != null, "items: item fx node present", failures)
+	if inst.item_fx != null:
+		var fx_before: int = inst.item_fx._parts.size()
+		inst.item_fx.burst("coffee", inst.player.position)
+		_check(inst.item_fx._parts.size() > fx_before, "items: burst spawns fx parts (%d -> %d)" % [fx_before, inst.item_fx._parts.size()], failures)
+		inst.item_fx.clear()
+		_check(inst.item_fx._parts.is_empty(), "items: clear() empties fx parts", failures)
 
 	var intro_script = load("res://scripts/intro.gd")
 	if intro_script != null:
@@ -577,6 +620,37 @@ func _ready() -> void:
 	else:
 		_check(false, "tyrant: script loads", failures)
 
+	var asc_a := Vector2.ZERO
+	var asc_b := Vector2.ZERO
+	var asc_ok := false
+	for dn in get_tree().get_nodes_in_group("interactables"):
+		if not (dn is Node2D):
+			continue
+		var offs: Array[Vector2] = [Vector2(46.0, 0.0), Vector2(-46.0, 0.0), Vector2(0.0, 46.0), Vector2(0.0, -46.0)]
+		for off in offs:
+			var aa: Vector2 = dn.position + off
+			var bb: Vector2 = dn.position - off
+			if inst.map.is_walkable(aa) and inst.map.is_walkable(bb):
+				if not inst._obstacle_ahead(aa) and not inst._obstacle_ahead(bb):
+					asc_a = aa
+					asc_b = bb
+					asc_ok = true
+					break
+		if asc_ok:
+			break
+	_check(asc_ok, "ascend: forced detour spot found", failures)
+	if asc_ok:
+		_check(inst._obstacle_ahead(asc_a.lerp(asc_b, 0.5)), "ascend: obstacle probe sees desk midpoint", failures)
+		inst.player.position = asc_a
+		watch_inst = inst
+		watch_inside = false
+		watch_active = true
+		await inst._ascend_step_to(asc_b)
+		watch_active = false
+		_check(inst.player.position.distance_to(asc_b) < 6.0, "ascend: walk reaches blocked waypoint (%.1f)" % inst.player.position.distance_to(asc_b), failures)
+		_check(not watch_inside, "ascend: detours around obstacle without entering", failures)
+		watch_inst = null
+
 	if failures.is_empty():
 		print("FLOW_TEST: ALL PASSED")
 	else:
@@ -584,6 +658,13 @@ func _ready() -> void:
 		for f in failures:
 			print("  FAIL: ", f)
 	get_tree().quit(1 if failures.size() > 0 else 0)
+
+func _collect_labels(n: Node, out: Array) -> Array:
+	if n is Label:
+		out.append(n)
+	for c in n.get_children():
+		_collect_labels(c, out)
+	return out
 
 func _check(cond: bool, label: String, failures: Array[String]) -> void:
 	if cond:

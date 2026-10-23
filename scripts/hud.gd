@@ -322,6 +322,7 @@ func _refresh_inventory() -> void:
 				tex_rect.texture = icon
 				tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				row.add_child(tex_rect)
 			else:

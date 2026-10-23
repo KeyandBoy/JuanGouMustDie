@@ -33,3 +33,6 @@ tests/_*.txt
 tests/_*.log
 tests/__*.txt
 .vercel
+
+# Godot import sidecars for web export assets
+export/web/*.import

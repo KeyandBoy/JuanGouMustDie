@@ -58,6 +58,7 @@ var item_spawn_script := load("res://scripts/pickup.gd")
 var tyrant_script := load("res://scripts/tyrant.gd")
 var portal_anchor := Vector2.INF
 var lamp_timer := 0.0
+var item_fx: ItemFx
 var last_run_stars := 0
 var last_star_gain := 0
 var modal_stack: Array[CanvasLayer] = []
@@ -65,6 +66,9 @@ var modal_stack: Array[CanvasLayer] = []
 func _ready() -> void:
 	GameState.get_random_phase()
 	_build_world()
+	item_fx = ItemFx.new()
+	item_fx.player = player
+	add_child(item_fx)
 	if not SaveManager.has_seen_intro() and not _is_test_run():
 		_play_intro()
 	else:
@@ -186,6 +190,8 @@ func _setup_level(p_spawn_random := false) -> void:
 	rustle_timer = 0.0
 	lamp_timer = 0.0
 	portal_anchor = Vector2.INF
+	if item_fx != null:
+		item_fx.clear()
 	tyrant_spawned = false
 	tyrant = null
 	if clear_layer != null and is_instance_valid(clear_layer):
@@ -815,6 +821,19 @@ func _on_room_entered(index: int) -> void:
 func _on_door_slam() -> void:
 	hud.toast("门板砸中了！")
 
+func _fx_flash(col: Color, peak: float, dur: float) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = L_FX
+	add_child(layer)
+	var rect := ColorRect.new()
+	rect.color = Color(col.r, col.g, col.b, 0.0)
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(rect)
+	var t := create_tween()
+	t.tween_property(rect, "color:a", peak, 0.08)
+	t.tween_property(rect, "color:a", 0.0, dur)
+	t.tween_callback(layer.queue_free)
+
 func _punish_effect(by: Node2D) -> void:
 	if player != null:
 		_shake_camera(10.0, 0.45)
@@ -824,6 +843,7 @@ func _punish_effect(by: Node2D) -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(root)
+	UiTheme.apply(root)
 	var flash := ColorRect.new()
 	flash.color = Color(0.55, 0.02, 0.02, 0.0)
 	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -1023,6 +1043,7 @@ func _start_tyrant_intro() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	layer.add_child(root)
+	UiTheme.apply(root)
 	var dim := ColorRect.new()
 	dim.color = Color(0.02, 0.02, 0.03, 0.96)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -1336,13 +1357,7 @@ func _begin_ascend() -> void:
 	if path.is_empty():
 		path = [stair_pos]
 	for point in path:
-		var target: Vector2 = point
-		while player.position.distance_to(target) > 4.0:
-			player.position = player.position.move_toward(target, 7.0)
-			for door in map.door_nodes:
-				if is_instance_valid(door) and player.position.distance_to(door.position) < 30.0:
-					door.set_open(true, true)
-			await get_tree().create_timer(0.016).timeout
+		await _ascend_step_to(point)
 	await get_tree().create_timer(0.25).timeout
 	await _fade_to_black(0.65)
 	GameState.begin_next_level()
@@ -1353,6 +1368,50 @@ func _begin_ascend() -> void:
 	player.can_move = true
 	hud.toast("第 %d 层 · %s · 目标：净答对 %.0f 题" % [GameState.level, GameState.get_phase_label(), GameState.study_goal])
 	SaveManager.save_run()
+
+func _ascend_step_to(target: Vector2) -> void:
+	var detour := 0.0
+	var budget := int(target.distance_to(player.position) / 7.0) * 3 + 240
+	while player.position.distance_to(target) > 4.0:
+		budget -= 1
+		if budget <= 0:
+			player.position = target
+			break
+		var dir := (target - player.position).normalized()
+		if not _obstacle_ahead(player.position + dir * 16.0):
+			detour = 0.0
+			player.position = player.position.move_toward(target, 7.0)
+		else:
+			if detour == 0.0:
+				detour = -1.0 if _obstacle_ahead(player.position + dir.orthogonal() * 16.0) else 1.0
+			var side := dir.orthogonal() * detour
+			if _obstacle_ahead(player.position + side * 16.0):
+				detour = -detour
+				side = dir.orthogonal() * detour
+			if _obstacle_ahead(player.position + side * 16.0):
+				player.position = player.position.move_toward(target, 7.0)
+			else:
+				player.position = player.position + side * 7.0
+		for door in map.door_nodes:
+			if is_instance_valid(door) and player.position.distance_to(door.position) < 30.0:
+				door.set_open(true, true)
+		await get_tree().create_timer(0.016).timeout
+
+func _obstacle_ahead(p: Vector2) -> bool:
+	for n in get_tree().get_nodes_in_group("interactables"):
+		if not (n is Node2D):
+			continue
+		for c in n.get_children():
+			if c is StaticBody2D:
+				for s in c.get_children():
+					if s is CollisionShape2D and s.shape is RectangleShape2D:
+						var gr: Rect2 = s.get_global_transform() * s.shape.get_rect()
+						if gr.has_point(p):
+							return true
+	for r2 in map.box_rects:
+		if r2.has_point(p):
+			return true
+	return map.door_blocks_point(p)
 
 func _leave_clear_to_menu() -> void:
 	if transitioning:
@@ -1465,14 +1524,18 @@ func _use_item(index: int) -> void:
 		return
 	var id: String = GameState.inventory[index]
 	var def: Dictionary = GameState.get_item_def(id)
+	var fx: Vector2 = player.position
 	match id:
 		"coffee":
 			player.apply_speed_buff(1.4, 8.0)
 			GameState.remove_item_at(index)
-			hud.toast("咖啡下肚：移速 +40%，持续 8 秒）")
+			item_fx.burst("coffee", fx)
+			_fx_flash(Color(1.0, 0.62, 0.25), 0.10, 0.35)
+			hud.toast("咖啡下肚：移速 +40%，持续 8 秒")
 		"bread":
 			GameState.restore_emptiness(25.0)
 			GameState.remove_item_at(index)
+			item_fx.burst("bread", fx)
 			hud.toast("面包下肚：空虚值 +25")
 		"smoke":
 			var t_smoke := _nearest_tyrant(420.0)
@@ -1481,6 +1544,7 @@ func _use_item(index: int) -> void:
 				return
 			t_smoke.smoke_slow(5.0)
 			GameState.remove_item_at(index)
+			item_fx.burst("smoke", fx, t_smoke.position)
 			hud.toast("烟雾弹：暴君减速并暂时跟丢")
 		"chair":
 			var t_chair := _nearest_tyrant(100.0)
@@ -1491,7 +1555,10 @@ func _use_item(index: int) -> void:
 			t_chair.stun_tyrant(2.0)
 			t_chair.position += dir * 46.0
 			GameState.remove_item_at(index)
-			hud.toast("折叠椅命中！暴君眩晕 2 秒）")
+			item_fx.burst("chair", fx, t_chair.position)
+			_shake_camera(7.0, 0.28)
+			_fx_flash(Color(1.0, 0.85, 0.3), 0.12, 0.3)
+			hud.toast("折叠椅命中！暴君眩晕 2 秒")
 		"stink":
 			var t_stink := _nearest_tyrant(650.0)
 			if t_stink == null:
@@ -1499,55 +1566,68 @@ func _use_item(index: int) -> void:
 				return
 			t_stink.lure_to(player.position + Vector2(randf_range(-70, 70), randf_range(-50, 50)), 5.0)
 			GameState.remove_item_at(index)
+			item_fx.burst("stink", fx, t_stink.position)
 			hud.toast("臭气弹：暴君被引向错误方向！")
 		"portal":
 			if portal_anchor == Vector2.INF:
 				portal_anchor = player.position
-				hud.toast("任意门已放置。再次使用返回这里）")
+				item_fx.burst("portal", portal_anchor)
+				hud.toast("任意门已放置。再次使用返回这里")
 				return
 			var back := portal_anchor
 			portal_anchor = Vector2.INF
+			var from_pos := player.position
 			player.position = back
 			GameState.remove_item_at(index)
 			camera.reset_smoothing()
 			camera.global_position = player.global_position
-			hud.toast("任意门：传送回标记点）")
+			item_fx.burst("portal", player.position, from_pos)
+			hud.toast("任意门：传送回标记点")
 		"shovel":
+			var from_pos2 := player.position
 			player.position = _random_spawn_position()
 			map.noise_made.emit(player.position, 55.0)
 			GameState.remove_item_at(index)
 			camera.reset_smoothing()
 			camera.global_position = player.global_position
-			hud.toast("土锹：挖出一条捷径，但动静很大）")
+			item_fx.burst("shovel", from_pos2, player.position)
+			hud.toast("土锹：挖出一条捷径，但动静很大")
 		"lamp":
 			lamp_timer = 10.0
 			GameState.remove_item_at(index)
+			item_fx.burst("lamp", fx)
+			_fx_flash(Color(1.0, 0.88, 0.4), 0.14, 0.4)
 			hud.toast("超频台灯：学习效率翻倍 10 秒，但翻书声更大")
 		"notes":
 			GameState.set_ability("notes")
 			GameState.remove_item_at(index)
+			item_fx.burst("notes", fx)
 			hud.toast("学霸笔记：本关学习效率 +10%")
 		"shoes":
 			GameState.set_ability("shoes")
 			player.passive_speed_mult = 1.1
 			player.noise_mult = 0.8
 			GameState.remove_item_at(index)
-			hud.toast("软底鞋：移速 +10%，动静更小）")
+			item_fx.burst("shoes", fx)
+			hud.toast("软底鞋：移速 +10%，动静更小")
 		"stopwatch":
 			GameState.set_ability("stopwatch")
 			player.dash_charge_mult = 1.2
 			GameState.remove_item_at(index)
+			item_fx.burst("stopwatch", fx)
 			hud.toast("秒表：闪避充能速度 +20%")
 		"intel":
 			GameState.intel_reveal_timer = 12.0
 			GameState.remove_item_at(index)
-			hud.toast("巡查情报：2 秒内小地图显示巡查者位置。")
+			item_fx.burst("intel", fx)
+			hud.toast("巡查情报：12 秒内小地图显示巡查者位置")
 		"ears":
 			GameState.set_ability("ears")
 			GameState.remove_item_at(index)
+			item_fx.burst("ears", fx)
 			hud.toast("耳塞：本关翻书声减半（土锹等杂音不受影响）")
 		_:
-			hud.toast("这个道具暂时用不了）")
+			hud.toast("这个道具暂时用不了")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if transitioning or cutscene_active or GameState.cutscene_active:

@@ -186,7 +186,7 @@ func _web_set(text: String) -> bool:
 
 func _web_get() -> String:
 	if not OS.has_feature("web"): return ""
-	var r = JavaScriptBridge.eval("try{return localStorage.getItem('%s')||'';}catch(e){return '';}" % SAVE_KEY)
+	var r = JavaScriptBridge.eval("(function(){try{return localStorage.getItem('%s')||'';}catch(e){return '';}})()" % SAVE_KEY)
 	return String(r)
 
 func _escape_js(s: String) -> String:

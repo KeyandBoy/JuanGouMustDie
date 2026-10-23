@@ -64,6 +64,28 @@ func _ready() -> void:
 	await get_tree().create_timer(0.2).timeout
 	_save(inst, "res://tests/shot_world.png")
 
+	inst._use_item(0)
+	await get_tree().create_timer(0.15).timeout
+	_save(inst, "res://tests/shot_item_vfx.png")
+	await get_tree().create_timer(0.8).timeout
+
+	var pk := get_tree().get_nodes_in_group("pickups")
+	if pk.size() > 0:
+		var near: Vector2 = pk[0].position + Vector2(0, 30)
+		if not inst.map.is_walkable(near):
+			near = pk[0].position + Vector2(30, 0)
+		inst.player.position = near
+		inst.camera.reset_smoothing()
+		inst.camera.global_position = inst.player.position
+		await get_tree().create_timer(0.25).timeout
+		_save(inst, "res://tests/shot_pickup.png")
+		print("PICKUP id=", pk[0].item_id, " icon=", pk[0].icon_tex != null)
+
+	inst._punish_effect(inst.player)
+	await get_tree().create_timer(0.15).timeout
+	_save(inst, "res://tests/shot_punish.png")
+	await get_tree().create_timer(1.2).timeout
+
 	GameState.correct_streak = 9
 	GameState.hot_changed.emit(GameState.hot_level())
 	for i in 4:

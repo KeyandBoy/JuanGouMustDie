@@ -910,7 +910,7 @@ func _draw() -> void:
 		_stair_lines(s)
 	_draw_boxes()
 
-	var font := ThemeDB.fallback_font
+	var font := UiTheme.font()
 	for i in rooms.size():
 		var r: Rect2 = rooms[i]
 		if r.size.x < 90.0:
