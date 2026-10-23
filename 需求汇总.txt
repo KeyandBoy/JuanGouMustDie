@@ -302,3 +302,8 @@
 - scripts/ui_theme.gd、scripts/ui_icons.gd、tools/manifests/ui_icons.json、art/ui/icons/（17 枚）
 - tests/screenshot.gd 增加存档暂存/恢复；shot_world 注入背包用于图标自查
 
+
+【Web 版上线（2026-10-23）】
+- 导出 export/web 并部署 Vercel：https://juangoumustdie.vercel.app
+- vercel.json 使用 outputDirectory=export/web；.vercelignore 仅上传导出目录
+- 构建脚本 tools/build_web.ps1；README 补充玩法/操作/测试/部署说明

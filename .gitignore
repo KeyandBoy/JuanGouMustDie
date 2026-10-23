@@ -32,3 +32,4 @@ tools/_gen/
 tests/_*.txt
 tests/_*.log
 tests/__*.txt
+.vercel

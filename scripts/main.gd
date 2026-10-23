@@ -385,6 +385,20 @@ func _spawn_anti_tyrant_drops() -> void:
 		spots.append(p)
 		if spots.size() >= 2:
 			break
+	# 兜底：候选房间不足（附近已有掉落/暴君占位）时，放宽距离限制补满 2 个
+	if spots.size() < 2:
+		for idx in pool:
+			var p: Vector2 = map._walkable_center(map.rooms[idx])
+			var dup := false
+			for s in spots:
+				if s.distance_to(p) < 24.0:
+					dup = true
+					break
+			if dup:
+				continue
+			spots.append(p)
+			if spots.size() >= 2:
+				break
 	for i in spots.size():
 		var id: String = ANTI_TYRANT_ITEMS[i % ANTI_TYRANT_ITEMS.size()]
 		if i > 0 and randf() > 0.65:
@@ -1778,12 +1792,13 @@ func _show_menu() -> void:
 
 	var title := Label.new()
 	title.text = "卷狗必须死"
-	title.add_theme_font_size_override("font_size", 58)
-	title.add_theme_color_override("font_color", UiTheme.COL_GOLD)
-	title.add_theme_color_override("font_shadow_color", Color(0.85, 0.12, 0.55, 0.9))
-	title.add_theme_constant_override("shadow_offset_x", 5)
-	title.add_theme_constant_override("shadow_offset_y", 5)
-	title.add_theme_constant_override("shadow_outline_size", 2)
+	title.add_theme_font_size_override("font_size", 48)
+	title.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
+	title.add_theme_color_override("font_outline_color", Color(0.36, 0.08, 0.22, 1.0))
+	title.add_theme_constant_override("outline_size", 4)
+	title.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.55))
+	title.add_theme_constant_override("shadow_offset_x", 2)
+	title.add_theme_constant_override("shadow_offset_y", 2)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
@@ -1791,7 +1806,7 @@ func _show_menu() -> void:
 	sub.text = "躺平世界 · 学习违法 · 内卷狗必须死"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
-	sub.add_theme_font_size_override("font_size", 14)
+	sub.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(sub)
 
 	var buttons := VBoxContainer.new()
@@ -1836,7 +1851,7 @@ func _show_menu() -> void:
 	tip.text = "按 F 学习 · 通关后永久解锁下一层"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
-	tip.add_theme_font_size_override("font_size", 13)
+	tip.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(tip)
 
 	# 面板淡入 + 标题弹入 + 按钮错峰出现
@@ -1857,6 +1872,8 @@ func _show_menu() -> void:
 		bt.tween_property(b, "modulate:a", 1.0, 0.18)
 		bt.parallel().tween_property(b, "scale", Vector2.ONE, 0.18)
 
+	_spawn_menu_lightning(menu_layer)
+
 func _show_level_select() -> void:
 	var layer := CanvasLayer.new()
 	_push_modal(layer)
@@ -1876,11 +1893,13 @@ func _show_level_select() -> void:
 
 	var title := Label.new()
 	title.text = "选择楼层"
-	title.add_theme_font_size_override("font_size", 42)
-	title.add_theme_color_override("font_color", UiTheme.COL_GOLD)
-	title.add_theme_color_override("font_shadow_color", Color(0.85, 0.12, 0.55, 0.85))
-	title.add_theme_constant_override("shadow_offset_x", 4)
-	title.add_theme_constant_override("shadow_offset_y", 4)
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
+	title.add_theme_color_override("font_outline_color", Color(0.36, 0.08, 0.22, 1.0))
+	title.add_theme_constant_override("outline_size", 4)
+	title.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.55))
+	title.add_theme_constant_override("shadow_offset_x", 2)
+	title.add_theme_constant_override("shadow_offset_y", 2)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
@@ -1890,7 +1909,7 @@ func _show_level_select() -> void:
 		tip.text += "（开发者版全开）"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
-	tip.add_theme_font_size_override("font_size", 13)
+	tip.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(tip)
 
 	var cards := HBoxContainer.new()
@@ -1931,7 +1950,7 @@ func _show_level_select() -> void:
 
 		var lv_label := Label.new()
 		lv_label.text = "%dF" % lv
-		lv_label.add_theme_font_size_override("font_size", 28)
+		lv_label.add_theme_font_size_override("font_size", 24)
 		lv_label.add_theme_color_override("font_color", accent if unlocked else UiTheme.COL_TEXT_DIM)
 		lv_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lv_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1947,7 +1966,7 @@ func _show_level_select() -> void:
 		else:
 			star_label.text = "★".repeat(best)
 			star_label.add_theme_color_override("font_color", UiTheme.COL_GOLD)
-		star_label.add_theme_font_size_override("font_size", 15)
+		star_label.add_theme_font_size_override("font_size", 12)
 		star_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		star_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card_v.add_child(star_label)
@@ -1988,6 +2007,8 @@ func _show_level_select() -> void:
 		ct.tween_property(c, "modulate:a", 1.0, 0.16)
 		ct.parallel().tween_property(c, "scale", Vector2.ONE, 0.16)
 
+	_spawn_menu_lightning(layer)
+
 func _on_level_card_pressed(lv: int) -> void:
 	AudioManager.kick()
 	_close_all_modals()
@@ -2016,7 +2037,7 @@ func _build_menu_background(layer: CanvasLayer) -> void:
 	for i in 7:
 		var blob := ColorRect.new()
 		var col = horror_colors[i % horror_colors.size()]
-		blob.color = Color(col, 0.04)  # 非常淡，营造诡异气氛
+		blob.color = Color(col, 0.075)  # 淡但可辨，营造诡异气氛
 		blob.size = Vector2(randf_range(150, 350), randf_range(100, 220))
 		blob.position = Vector2(randf_range(-80, vs.x), randf_range(-80, vs.y))
 		blob.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2054,93 +2075,128 @@ func _build_menu_background(layer: CanvasLayer) -> void:
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(line)
 		y += 8
-	
-	# 随机闪电特效
-	_spawn_random_lightning(layer, vs)
 
-func _spawn_random_lightning(layer: CanvasLayer, viewport_size: Vector2) -> void:
+func _spawn_menu_lightning(parent: Node) -> void:
+	var fx := Control.new()
+	fx.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(fx)
+	if parent is Node:
+		parent.set_meta("lightning_fx", fx)
+	_spawn_random_lightning(fx, get_viewport().get_visible_rect().size)
+
+func _spawn_random_lightning(layer: Node, viewport_size: Vector2) -> void:
 	var lightning_loop = func() -> void:
 		while is_instance_valid(layer):
-			await get_tree().create_timer(randf_range(4.0, 8.0)).timeout
+			await get_tree().create_timer(randf_range(1.2, 3.0)).timeout
 			if not is_instance_valid(layer):
 				return
 			_draw_branching_lightning(layer, viewport_size)
 
 	create_tween().tween_callback(lightning_loop)
 
-func _draw_branching_lightning(layer: CanvasLayer, viewport_size: Vector2) -> void:
+func _draw_branching_lightning(layer: Node, viewport_size: Vector2) -> void:
 	if not is_instance_valid(layer):
 		return
 	var made: Array[Node] = []
 	# 闪电起点（顶部随机）
-	var start_x = randf_range(viewport_size.x * 0.2, viewport_size.x * 0.8)
+	var start_x = randf_range(viewport_size.x * 0.15, viewport_size.x * 0.85)
 	var start_y = -50.0
-	var end_y = randf_range(viewport_size.y * 0.4, viewport_size.y * 0.9)
+	var end_y = randf_range(viewport_size.y * 0.45, viewport_size.y * 0.95)
 	
-	# 全屏白闪
+	# 全屏白闪（只做轻微曝光，不洗白 UI）
 	var flash := ColorRect.new()
-	flash.color = Color(0.95, 0.98, 1.0, 0.2)
+	flash.color = Color(0.80, 0.90, 1.0, 0.11)
 	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(flash)
 	made.append(flash)
 	
-	# 绘制主闪电路径（曲折分叉）
+	# 绘制主闪电路径（曲折）
 	var segments: Array[Vector2] = []
-	_generate_lightning_path(Vector2(start_x, start_y), Vector2(start_x + randf_range(-40, 40), end_y), segments, 0, 6)
+	_generate_lightning_path(Vector2(start_x, start_y), Vector2(start_x + randf_range(-70, 70), end_y), segments, 0, 7)
 	
 	# 画主闪电
 	for i in range(segments.size() - 1):
-		var line := Line2D.new()
-		line.add_point(segments[i])
-		line.add_point(segments[i + 1])
-		line.width = 3.0
-		line.default_color = Color(0.7, 0.85, 1.0, 0.9)
-		layer.add_child(line)
-		made.append(line)
-		
 		# 外光晕
 		var glow := Line2D.new()
 		glow.add_point(segments[i])
 		glow.add_point(segments[i + 1])
-		glow.width = 8.0
-		glow.default_color = Color(0.5, 0.7, 1.0, 0.3)
+		glow.width = 14.0
+		glow.default_color = Color(0.42, 0.60, 1.0, 0.16)
 		layer.add_child(glow)
 		made.append(glow)
+
+		var line := Line2D.new()
+		line.add_point(segments[i])
+		line.add_point(segments[i + 1])
+		line.width = 4.5
+		line.default_color = Color(0.78, 0.90, 1.0, 0.96)
+		layer.add_child(line)
+		made.append(line)
+
+		# 纯白内核
+		var core := Line2D.new()
+		core.add_point(segments[i])
+		core.add_point(segments[i + 1])
+		core.width = 2.2
+		core.default_color = Color(1.0, 1.0, 1.0, 1.0)
+		layer.add_child(core)
+		made.append(core)
 	
-	# 随机分叉（3-5条）
-	var branch_count = randi_range(3, 5)
+	# 随机分叉（4-6条，每条再带小分叉）
+	var branch_count = randi_range(4, 6)
 	for b in range(branch_count):
-		var branch_start_idx = randi_range(0, segments.size() - 1)
+		var branch_start_idx = randi_range(0, maxi(0, segments.size() - 2))
 		var branch_start = segments[branch_start_idx]
-		var branch_angle = randf_range(-0.6, 0.6)
+		var branch_angle = randf_range(-0.85, 0.85)
 		var branch_direction = (segments[branch_start_idx + 1] - branch_start).normalized()
 		var rotated = branch_direction.rotated(branch_angle)
-		var branch_end = branch_start + rotated * randf_range(80.0, 180.0)
+		var branch_end = branch_start + rotated * randf_range(60.0, 200.0)
 		
 		var branch_segments: Array[Vector2] = []
-		_generate_lightning_path(branch_start, branch_end, branch_segments, 0, 4)
+		_generate_lightning_path(branch_start, branch_end, branch_segments, 0, 3)
 		
 		for i in range(branch_segments.size() - 1):
 			var line := Line2D.new()
 			line.add_point(branch_segments[i])
 			line.add_point(branch_segments[i + 1])
-			line.width = 2.0
-			line.default_color = Color(0.6, 0.8, 1.0, 0.7)
+			line.width = 2.2
+			line.default_color = Color(0.72, 0.86, 1.0, 0.75)
 			layer.add_child(line)
 			made.append(line)
+
+		# 二级小分叉
+		if randf() < 0.6 and branch_segments.size() > 2:
+			var si = randi_range(0, branch_segments.size() - 2)
+			var s0 = branch_segments[si]
+			var dir = (branch_segments[si + 1] - s0).normalized().rotated(randf_range(-0.9, 0.9))
+			var sub_end = s0 + dir * randf_range(25.0, 70.0)
+			var sub_seg: Array[Vector2] = []
+			_generate_lightning_path(s0, sub_end, sub_seg, 0, 2)
+			for i in range(sub_seg.size() - 1):
+				var sub := Line2D.new()
+				sub.add_point(sub_seg[i])
+				sub.add_point(sub_seg[i + 1])
+				sub.width = 1.4
+				sub.default_color = Color(0.65, 0.8, 1.0, 0.55)
+				layer.add_child(sub)
+				made.append(sub)
 	
+	# 真实闪电式的多次闪烁
+	flash.modulate.a = 1.0
 	var tween := create_tween()
+	tween.tween_interval(0.06)
 	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
 	tween.tween_interval(0.04)
-	tween.tween_callback(func(): _flash_alpha(flash, 0.15))
-	tween.tween_interval(0.03)
-	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
+	tween.tween_callback(func(): _flash_alpha(flash, 0.75))
 	tween.tween_interval(0.05)
-	tween.tween_callback(func(): _flash_alpha(flash, 0.1))
-	tween.tween_interval(0.02)
 	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
-	tween.tween_interval(0.55)
+	tween.tween_interval(0.06)
+	tween.tween_callback(func(): _flash_alpha(flash, 0.45))
+	tween.tween_interval(0.04)
+	tween.tween_callback(func(): _flash_alpha(flash, 0.0))
+	tween.tween_interval(0.5)
 	await tween.finished
 	for n in made:
 		if is_instance_valid(n):
@@ -2159,8 +2215,8 @@ func _generate_lightning_path(start: Vector2, end: Vector2, segments: Array[Vect
 	
 	# 中点加随机偏移（曲折感）
 	var mid = (start + end) * 0.5
-	var offset_distance = (end - start).length() * 0.15
-	var random_offset = Vector2(randf_range(-offset_distance, offset_distance), randf_range(-offset_distance * 0.5, offset_distance * 0.5))
+	var offset_distance = (end - start).length() * 0.22
+	var random_offset = Vector2(randf_range(-offset_distance, offset_distance), randf_range(-offset_distance * 0.45, offset_distance * 0.45))
 	var mid_point = mid + random_offset
 	
 	_generate_lightning_path(start, mid_point, segments, depth + 1, max_depth)
@@ -2170,7 +2226,7 @@ func _menu_button(label: String, accent: Color, big: bool, on_press: Callable) -
 	var b := Button.new()
 	b.text = label
 	b.custom_minimum_size = Vector2(0, 60 if big else 50)
-	b.add_theme_font_size_override("font_size", 20 if big else 16)
+	b.add_theme_font_size_override("font_size", 24)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.add_theme_stylebox_override("normal", UiTheme.accent_button_style(accent))
 	b.add_theme_stylebox_override("hover", UiTheme.accent_button_style(accent, true))
