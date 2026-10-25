@@ -328,6 +328,14 @@ func _ready() -> void:
 
 	inst._start_level(1)
 	await get_tree().process_frame
+	var dlg_ui: Control = inst.show_dialogue(DialogueDb.level_tip(3), false)
+	await get_tree().create_timer(1.0).timeout
+	_save(inst, "res://tests/shot_dialogue.png")
+	print("DIALOGUE shown=", dlg_ui != null)
+	if dlg_ui != null:
+		for i in 8:
+			dlg_ui.advance()
+		await get_tree().process_frame
 	GameState.questions_answered = 10
 	GameState.quiz_correct = 9
 	GameState.caught_count = 0

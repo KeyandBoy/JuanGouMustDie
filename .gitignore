@@ -36,3 +36,4 @@ tests/__*.txt
 
 # Godot import sidecars for web export assets
 export/web/*.import
+tests/shot_dlg_probe.png

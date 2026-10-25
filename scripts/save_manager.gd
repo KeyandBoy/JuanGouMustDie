@@ -1,33 +1,15 @@
 extends Node
 
 const SAVE_PATH := "user://save_juangou.json"
+const SAVE_BAK_PATH := "user://save_juangou.bak.json"
+const SAVE_TMP_PATH := "user://save_juangou.tmp.json"
 const SAVE_KEY := "juangou_save"
 const SETTINGS_PATH := "user://settings.cfg"
+const SAVE_VERSION := 3
 var _intro_seen := false
 
 func save_run() -> bool:
-	var data := {
-		"grade": GameState.grade_id,
-		"subjects": GameState.subjects,
-		"level": GameState.level,
-		"study": GameState.study,
-		"emptiness": GameState.emptiness,
-		"warnings": GameState.warnings,
-		"stars": GameState.stars,
-		"level_stars": GameState.level_stars,
-		"max_cleared_level": GameState.max_cleared_level,
-		"upgrades": GameState.upgrades,
-		"items": GameState.items,
-		"abilities": GameState.abilities,
-		"questions_answered": GameState.questions_answered,
-		"quiz_correct": GameState.quiz_correct,
-		"tyrant_intro_seen": GameState.tyrant_intro_seen,
-		"inventory": GameState.inventory,
-		"game_cleared": GameState.game_cleared,
-		"explored_rooms": GameState.explored_rooms,
-		"intel_found": GameState.intel_found,
-	}
-	return _write(data)
+	return _write(_collect())
 
 func load_run() -> bool:
 	var data = _read()
@@ -86,6 +68,7 @@ func load_json_string(text: String) -> bool:
 
 func _collect() -> Dictionary:
 	return {
+		"version": SAVE_VERSION,
 		"grade": GameState.grade_id,
 		"subjects": GameState.subjects,
 		"level": GameState.level,
@@ -105,9 +88,36 @@ func _collect() -> Dictionary:
 		"game_cleared": GameState.game_cleared,
 		"explored_rooms": GameState.explored_rooms,
 		"intel_found": GameState.intel_found,
+		"story_flags": GameState.story_flags,
+		"play_time": GameState.play_time,
 	}
 
+func _migrate(d: Dictionary) -> Dictionary:
+	var version := int(d.get("version", 1))
+	if version < 2:
+		if not (d.get("story_flags") is Dictionary):
+			d["story_flags"] = {}
+		if not d.has("play_time"):
+			d["play_time"] = 0.0
+	if version < 3:
+		var raw = d.get("inventory", [])
+		var slots: Array = []
+		if raw is Array:
+			for entry in raw:
+				if entry is Dictionary:
+					var eid := String(entry.get("id", ""))
+					if eid != "":
+						slots.append({"id": eid, "count": maxi(1, int(entry.get("count", 1)))})
+				else:
+					var sid := String(entry)
+					if sid != "":
+						slots.append({"id": sid, "count": 1})
+		d["inventory"] = slots
+		d["version"] = 3
+	return d
+
 func _apply(d: Dictionary) -> bool:
+	d = _migrate(d.duplicate(true))
 	GameState.grade_id = d.get("grade", "junior")
 	var typed: Array[String] = []
 	for s in d.get("subjects", ["math"]): typed.append(String(s))
@@ -149,9 +159,23 @@ func _apply(d: Dictionary) -> bool:
 	GameState.explored_rooms = int(d.get("explored_rooms", 0))
 	GameState.intel_found = int(d.get("intel_found", 0))
 	GameState.inventory.clear()
-	for item in d.get("inventory", []):
-		if GameState.ITEM_DEFS.has(String(item)):
-			GameState.inventory.append(String(item))
+	var raw_inv = d.get("inventory", [])
+	if raw_inv is Array:
+		for entry in raw_inv:
+			if entry is Dictionary:
+				var iid := String(entry.get("id", ""))
+				if GameState.ITEM_DEFS.has(iid):
+					GameState.inventory.append({"id": iid, "count": maxi(1, int(entry.get("count", 1)))})
+			else:
+				var sid := String(entry)
+				if GameState.ITEM_DEFS.has(sid):
+					GameState.inventory.append({"id": sid, "count": 1})
+	GameState.story_flags.clear()
+	var raw_flags = d.get("story_flags", {})
+	if raw_flags is Dictionary:
+		for k in raw_flags:
+			GameState.story_flags[String(k)] = raw_flags[k]
+	GameState.play_time = maxf(0.0, float(d.get("play_time", 0.0)))
 	GameState.tyrant_active = false
 	GameState.cutscene_active = false
 	GameState.run_state = GameState.RunState.EXPLORING
@@ -162,31 +186,65 @@ func _write(data: Dictionary) -> bool:
 	var text := JSON.stringify(data)
 	if OS.has_feature("web"):
 		return _web_set(text)
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(SAVE_TMP_PATH, FileAccess.WRITE)
 	if file == null:
 		return false
 	file.store_string(text)
+	file.close()
+	if FileAccess.file_exists(SAVE_PATH) and _read_file(SAVE_PATH) is Dictionary:
+		DirAccess.copy_absolute(SAVE_PATH, SAVE_BAK_PATH)
+	if DirAccess.rename_absolute(SAVE_TMP_PATH, SAVE_PATH) == OK:
+		return true
+	DirAccess.remove_absolute(SAVE_PATH)
+	if DirAccess.rename_absolute(SAVE_TMP_PATH, SAVE_PATH) == OK:
+		return true
+	var fallback := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if fallback == null:
+		return false
+	fallback.store_string(text)
+	fallback.close()
 	return true
+
+func _parse_save_text(text: String):
+	if text.is_empty():
+		return null
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return null
+	if json.data is Dictionary:
+		return json.data
+	return null
+
+func _read_file(path: String):
+	if not FileAccess.file_exists(path):
+		return null
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return null
+	return _parse_save_text(file.get_as_text())
 
 func _read():
 	if OS.has_feature("web"):
-		var text := _web_get()
-		if text.is_empty(): return null
-		return JSON.parse_string(text)
-	if not FileAccess.file_exists(SAVE_PATH):
-		return null
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null: return null
-	return JSON.parse_string(file.get_as_text())
+		var data = _parse_save_text(_web_get())
+		if data is Dictionary:
+			return data
+		return _parse_save_text(_web_get(SAVE_KEY + "_bak"))
+	var data = _read_file(SAVE_PATH)
+	if data is Dictionary and (data.has("level") or data.has("grade")):
+		return data
+	var bak = _read_file(SAVE_BAK_PATH)
+	if bak is Dictionary and (bak.has("level") or bak.has("grade")):
+		return bak
+	return null
 
 func _web_set(text: String) -> bool:
 	if not OS.has_feature("web"): return false
-	JavaScriptBridge.eval("try{localStorage.setItem('%s', '%s');}catch(e){}" % [SAVE_KEY, _escape_js(text)])
+	JavaScriptBridge.eval("try{(function(){var k='%s';var old=localStorage.getItem(k);if(old!==null)localStorage.setItem(k+'_bak',old);localStorage.setItem(k,'%s');})();}catch(e){}" % [SAVE_KEY, _escape_js(text)])
 	return true
 
-func _web_get() -> String:
+func _web_get(key: String = SAVE_KEY) -> String:
 	if not OS.has_feature("web"): return ""
-	var r = JavaScriptBridge.eval("(function(){try{return localStorage.getItem('%s')||'';}catch(e){return '';}})()" % SAVE_KEY)
+	var r = JavaScriptBridge.eval("(function(){try{return localStorage.getItem('%s')||'';}catch(e){return '';}})()" % key)
 	return String(r)
 
 func _escape_js(s: String) -> String:

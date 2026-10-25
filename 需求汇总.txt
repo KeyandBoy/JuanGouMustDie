@@ -307,3 +307,13 @@
 - 导出 export/web 并部署 Vercel：https://juangoumustdie.vercel.app
 - vercel.json 使用 outputDirectory=export/web；.vercelignore 仅上传导出目录
 - 构建脚本 tools/build_web.ps1；README 补充玩法/操作/测试/部署说明
+
+
+【参考 GodotArchive 改造第一批（2026-10-23）】
+- 存档：版本号 + 迁移链、原子写 + .bak 回退；不加密、单槽；新增 story_flags / play_time
+- 地图：地板/墙体改用 TileMapLayer；寻路改 AStarGrid2D（不切角，旧导航图兜底）；line_clear 改格子 DDA
+- 光照：CanvasModulate 环境光 + 玩家随身光 + 走廊吊灯；开发版 F4 可关（正式版常开）
+- 背包：物品改 ItemDef 资源描述；库存改 {id,count} 槽位并提供增删/交换/信号接口；本版不做拖拽 UI
+- 对话：DialogueLine/DialogueData/DialogueDb + 打字机对话框；每层首次进入播提示，story_flags 记录
+- 特效：抖动溶解 / 发光描边着色器与 DissolveFx 接口；现有追击者保持原淡出，不接溶解
+- 参考素材下载位置：tools/_gen/godotarchive/（gitignored），索引见 INDEX.md

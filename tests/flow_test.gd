@@ -192,6 +192,15 @@ func _ready() -> void:
 	GameState.add_item("smoke")
 	_check(not GameState.add_item("shoes"), "inventory caps at 3", failures)
 	_check(GameState.inventory.size() == 3, "inventory holds 3 (%d)" % GameState.inventory.size(), failures)
+	_check(GameState.inventory_item_id(0) == "coffee" and GameState.inventory_item_count(0) == 1, "slot api reads id/count", failures)
+	var slot_hits: Array[int] = []
+	var on_slot := func(i: int): slot_hits.append(i)
+	GameState.inventory_slot_changed.connect(on_slot)
+	_check(GameState.move_inventory_slot(0, 2) and GameState.inventory_item_id(2) == "coffee", "move_inventory_slot swaps", failures)
+	GameState.inventory_slot_changed.disconnect(on_slot)
+	_check(slot_hits.has(0) and slot_hits.has(2), "slot_changed emits both indices (%s)" % str(slot_hits), failures)
+	_check(GameState.item_def("coffee").display_name == "咖啡" and GameState.item_def("coffee").stack_max >= 1, "item_def resource resolves", failures)
+	GameState.move_inventory_slot(2, 0)
 	_check(GameState.remove_item_at(0) == "coffee", "remove_item_at returns id", failures)
 	_check(GameState.ability("notes") == 0, "abilities default to 0", failures)
 	GameState.set_ability("notes")
@@ -231,6 +240,35 @@ func _ready() -> void:
 		_check(rc >= 6 and rc <= 10, "seed %d room count %d in 6..10" % [s, rc], failures)
 		_check(probe.is_connected_plan(), "seed %d plan connected" % s, failures)
 		_check(probe.desks.size() > 0, "seed %d has desks (%d)" % [s, probe.desks.size()], failures)
+		var astar_ok := true
+		for ri in probe.rooms.size():
+			var target: Vector2 = probe._walkable_center(probe.rooms[ri])
+			var p: PackedVector2Array = probe.find_path(probe.exit_pos, target)
+			if p.is_empty() or p[p.size() - 1].distance_to(target) > 40.0:
+				astar_ok = false
+				break
+			var origin: Vector2 = probe.exit_pos
+			for pi in p.size():
+				var steps: int = maxi(1, int(origin.distance_to(p[pi]) / 3.0))
+				for st in range(1, steps + 1):
+					if not probe.is_walkable(origin.lerp(p[pi], float(st) / float(steps))):
+						astar_ok = false
+						break
+				if not astar_ok:
+					break
+				origin = p[pi]
+			if not astar_ok:
+				break
+		_check(astar_ok, "seed %d astar path is walkable and reaches every room" % s, failures)
+		var floor_cells := 0
+		var floor_expected := 0
+		if probe._floor_layer != null:
+			floor_cells = probe._floor_layer.get_used_cells().size()
+		for v in probe.grid:
+			if v == probe.FLOOR:
+				floor_expected += 1
+		_check(probe._floor_layer != null and probe._wall_layer != null, "seed %d tilemap layers exist" % s, failures)
+		_check(floor_cells == floor_expected, "seed %d tilemap covers all floor cells (%d/%d)" % [s, floor_cells, floor_expected], failures)
 
 	probe.generate(7, 0)
 	_check(probe.door_nodes.size() == probe.rooms.size(), "one door per room (%d/%d)" % [probe.door_nodes.size(), probe.rooms.size()], failures)
@@ -295,6 +333,17 @@ func _ready() -> void:
 	_check(students.size() == 7, "7 students spawned (%d)" % students.size(), failures)
 	_check(inst.map.rooms.size() > 0, "map rooms after start (%d)" % inst.map.rooms.size(), failures)
 	_check(inst.map.is_connected_plan(), "start-level plan connected", failures)
+	_check(inst.world_modulate != null and inst.world_modulate.visible, "lighting: canvas modulate active", failures)
+	_check(inst.player_light != null and inst.player_light.get_parent() == inst.player, "lighting: player light on player", failures)
+	_check(inst.level_lights != null and inst.level_lights.get_child_count() >= 1, "lighting: lamps spawned (%d)" % (inst.level_lights.get_child_count() if inst.level_lights else 0), failures)
+	var light_dev := DevMode.lighting
+	DevMode.lighting = false
+	inst._apply_lighting_visibility()
+	_check(not inst.world_modulate.visible and not inst.player_light.visible, "lighting: dev toggle hides lights", failures)
+	DevMode.lighting = true
+	inst._apply_lighting_visibility()
+	_check(inst.world_modulate.visible and inst.player_light.visible, "lighting: dev toggle restores lights", failures)
+	DevMode.lighting = light_dev
 	_check(inst.minimap != null, "minimap spawned", failures)
 
 	var desk_ok := true
@@ -458,6 +507,37 @@ func _ready() -> void:
 	_check(SaveManager.load_run() and GameState.max_cleared_level == 3, "save: max_cleared_level round-trips (%d)" % GameState.max_cleared_level, failures)
 	var legacy_ok: bool = SaveManager.load_json_string(JSON.stringify({"level": 1, "level_stars": {"1": 3, "2": 2}}))
 	_check(legacy_ok and GameState.max_cleared_level == 3, "save: legacy stars derive unlock (%d)" % GameState.max_cleared_level, failures)
+	GameState.story_flags = {"met_librarian": true, "chapter": 2}
+	GameState.play_time = 123.5
+	_check(SaveManager.save_run(), "save: write v2 fields", failures)
+	var raw_save: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SaveManager.SAVE_PATH))
+	_check(int(raw_save.get("version", 0)) == SaveManager.SAVE_VERSION, "save: version stamped (%d)" % int(raw_save.get("version", 0)), failures)
+	GameState.story_flags.clear()
+	GameState.play_time = 0.0
+	_check(SaveManager.load_run(), "save: reload v2 file", failures)
+	_check(bool(GameState.story_flags.get("met_librarian", false)) and int(GameState.story_flags.get("chapter", 0)) == 2, "save: story_flags round-trip", failures)
+	_check(is_equal_approx(GameState.play_time, 123.5), "save: play_time round-trip (%.1f)" % GameState.play_time, failures)
+	var migrated: bool = SaveManager.load_json_string(JSON.stringify({"level": 2, "inventory": []}))
+	_check(migrated and GameState.story_flags.is_empty() and GameState.play_time == 0.0, "save: unversioned file migrates to v2 defaults", failures)
+	GameState.inventory.clear()
+	GameState.add_item("coffee")
+	GameState.add_item("bread")
+	_check(SaveManager.save_run(), "save: writes slot inventory", failures)
+	var raw_inv_save: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SaveManager.SAVE_PATH))
+	var inv_raw = raw_inv_save.get("inventory", [])
+	_check(inv_raw is Array and inv_raw.size() >= 1 and inv_raw[0] is Dictionary and String(inv_raw[0].get("id", "")) == "coffee", "save: inventory stored as slot dicts", failures)
+	GameState.inventory.clear()
+	_check(SaveManager.load_run() and GameState.inventory_item_id(0) == "coffee" and GameState.inventory_item_count(0) == 1, "save: slot inventory round-trips", failures)
+	var legacy_inv_ok: bool = SaveManager.load_json_string(JSON.stringify({"version": 2, "level": 1, "inventory": ["smoke", "notes"]}))
+	_check(legacy_inv_ok and GameState.inventory_item_id(0) == "smoke" and GameState.inventory.size() == 2, "save: v2 string inventory migrates to slots", failures)
+	if not OS.has_feature("web"):
+		var corrupt := FileAccess.open(SaveManager.SAVE_PATH, FileAccess.WRITE)
+		corrupt.store_string("{broken")
+		corrupt.close()
+		_check(SaveManager.load_run(), "save: corrupt main falls back to .bak", failures)
+		_check(SaveManager.save_run() and SaveManager.load_run(), "save: rewrites after recovery", failures)
+	GameState.story_flags.clear()
+	GameState.play_time = 0.0
 	GameState.level_stars.clear()
 	GameState.stars = 0
 	GameState.upgrades.clear()
@@ -564,6 +644,44 @@ func _ready() -> void:
 		if l.get_theme_font("font") != UiTheme.font():
 			odd_fonts.append(String(l.text).substr(0, 8))
 	_check(odd_fonts.is_empty(), "font: %d labels all resolve to zpix (odd: %s)" % [label_count, ", ".join(odd_fonts)], failures)
+
+	var tip2: DialogueData = DialogueDb.level_tip(2)
+	_check(tip2 != null and tip2.lines.size() >= 1 and tip2.lines[0].text.length() > 0, "dialogue: level 2 tip built", failures)
+	_check(DialogueDb.level_tip(6) == null, "dialogue: unknown level has no tip", failures)
+	var dlg_ui: Control = load("res://scripts/dialogue_ui.gd").new()
+	add_child(dlg_ui)
+	var test_dlg: DialogueData = DialogueDb.make("test", [{"speaker": "测试", "text": "你好世界", "flag": "dlg_test"}])
+	dlg_ui.start(test_dlg)
+	_check(dlg_ui.visible and dlg_ui.typing, "dialogue: starts typing", failures)
+	dlg_ui.advance()
+	_check(not dlg_ui.typing and dlg_ui._text_label.text == "你好世界", "dialogue: advance completes line", failures)
+	var dlg_done: Array[bool] = []
+	dlg_ui.finished.connect(func(): dlg_done.append(true))
+	dlg_ui.advance()
+	_check(dlg_done.size() == 1 and bool(GameState.story_flags.get("dlg_test", false)), "dialogue: finishes and sets story flag", failures)
+	dlg_ui.queue_free()
+	var handled_dlg: Control = inst.show_dialogue(DialogueDb.make("t2", [{"speaker": "系统", "text": "自动关闭"}]), false)
+	_check(handled_dlg != null and inst.get_tree().get_nodes_in_group("ui_modal").size() >= 1, "dialogue: main opens as modal", failures)
+	if handled_dlg != null:
+		handled_dlg.advance()
+		handled_dlg.advance()
+		await get_tree().process_frame
+		_check(not is_instance_valid(handled_dlg) or handled_dlg.is_queued_for_deletion(), "dialogue: modal closes on finish", failures)
+
+	var dissolve_shader: Shader = load("res://shaders/dither_dissolve.gdshader")
+	_check(dissolve_shader != null and dissolve_shader.code.contains("progress"), "fx: dissolve shader loads", failures)
+	var outline_shader: Shader = load("res://shaders/outline_glow.gdshader")
+	_check(outline_shader != null and outline_shader.code.contains("outline_width"), "fx: outline shader loads", failures)
+	var fx_node := ColorRect.new()
+	add_child(fx_node)
+	var dissolve_tween: Tween = DissolveFx.play(fx_node, 0.05)
+	_check(fx_node.material is ShaderMaterial and dissolve_tween != null, "fx: dissolve applies material and tween", failures)
+	await get_tree().create_timer(0.15).timeout
+	var progress_value := float(fx_node.material.get_shader_parameter("progress")) if fx_node.material else 0.0
+	_check(progress_value > 0.9, "fx: dissolve progress animates (%.2f)" % progress_value, failures)
+	DissolveFx.restore(fx_node)
+	_check(fx_node.material == null, "fx: dissolve restore clears material", failures)
+	fx_node.queue_free()
 
 	var drops_before := get_tree().get_nodes_in_group("pickups").size()
 	inst._spawn_anti_tyrant_drops()

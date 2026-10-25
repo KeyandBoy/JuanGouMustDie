@@ -18,6 +18,13 @@ var map: Node2D
 var player: CharacterBody2D
 var hud: CanvasLayer
 var _last_hot_level := 0
+var world_modulate: CanvasModulate
+var player_light: PointLight2D
+var level_lights: Node2D
+var _light_tex: Texture2D
+var _light_time := 0.0
+var _lights_on := true
+var _dialogue_prev_paused := false
 var quiz: CanvasLayer
 var camera: Camera2D
 var minimap: Control
@@ -120,6 +127,7 @@ func _build_world() -> void:
 	fog = load("res://scripts/fog.gd").new()
 	add_child(fog)
 	fog.setup(map, player)
+	_setup_lighting()
 
 	hud = load("res://scripts/hud.gd").new()
 	add_child(hud)
@@ -159,6 +167,80 @@ func _build_world() -> void:
 	map.room_entered.connect(_on_room_entered)
 	map.door_slam.connect(_on_door_slam)
 	GameState.hot_changed.connect(_on_hot_changed)
+
+func _light_texture() -> Texture2D:
+	if _light_tex != null:
+		return _light_tex
+	var size := 256
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center := Vector2(size, size) * 0.5
+	var half := size * 0.5
+	for y in size:
+		for x in size:
+			var d := Vector2(float(x) + 0.5, float(y) + 0.5).distance_to(center) / half
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			a = a * a * (3.0 - 2.0 * a)
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	_light_tex = ImageTexture.create_from_image(img)
+	return _light_tex
+
+func _setup_lighting() -> void:
+	if world_modulate == null:
+		world_modulate = CanvasModulate.new()
+		world_modulate.name = "WorldLight"
+		add_child(world_modulate)
+	world_modulate.color = Color(0.68, 0.72, 0.84)
+	if player_light == null:
+		player_light = PointLight2D.new()
+		player_light.name = "PlayerLight"
+		player_light.texture = _light_texture()
+		player_light.color = Color(1.0, 0.93, 0.80)
+		player_light.energy = 0.75
+		player_light.texture_scale = 1.35
+		player_light.position = Vector2(0, -4)
+		player.add_child(player_light)
+	if level_lights != null and is_instance_valid(level_lights):
+		level_lights.queue_free()
+	level_lights = Node2D.new()
+	level_lights.name = "LevelLights"
+	add_child(level_lights)
+	var cr: Rect2 = map.corridor_rect
+	for f in [0.2, 0.5, 0.8]:
+		var p := Vector2(cr.position.x + cr.size.x * float(f), cr.get_center().y)
+		if not map.is_walkable(p):
+			continue
+		var lamp := PointLight2D.new()
+		lamp.texture = _light_texture()
+		lamp.color = Color(1.0, 0.86, 0.66)
+		lamp.energy = 0.42
+		lamp.texture_scale = 0.62
+		lamp.position = p
+		level_lights.add_child(lamp)
+	_apply_lighting_visibility()
+
+func _apply_lighting_visibility() -> void:
+	var on := true
+	if DevMode.enabled and not DevMode.lighting:
+		on = false
+	_lights_on = on
+	if world_modulate != null:
+		world_modulate.visible = on
+	if player_light != null:
+		player_light.visible = on
+	if level_lights != null:
+		level_lights.visible = on
+
+func _update_lights(delta: float) -> void:
+	if DevMode.enabled and DevMode.lighting != _lights_on:
+		_apply_lighting_visibility()
+	if not _lights_on or level_lights == null:
+		return
+	_light_time += delta
+	var i := 0
+	for child in level_lights.get_children():
+		if child is PointLight2D:
+			child.energy = 0.42 + sin(_light_time * 2.1 + float(i) * 1.7) * 0.045
+		i += 1
 
 func _zoom_for_map() -> float:
 	return clampf(1.375 - 0.0625 * float(map.rooms.size()), 0.72, 1.0)
@@ -247,6 +329,7 @@ func _setup_level(p_spawn_random := false) -> void:
 	_spawn_desks()
 	_spawn_high_value_spots()
 	_spawn_items()
+	_setup_lighting()
 	if GameState.run_state == GameState.RunState.CLEARED:
 		GameState.run_state = GameState.RunState.EXPLORING
 
@@ -426,6 +509,7 @@ func _on_item_full(item_id: String) -> void:
 	hud.toast("背包已满，无法拾取 %s" % String(def.get("name", item_id)))
 
 func _process(delta: float) -> void:
+	_update_lights(delta)
 	if transitioning or cutscene_active:
 		return
 	camera.global_position = player.global_position
@@ -444,6 +528,7 @@ func _process(delta: float) -> void:
 		return
 
 	GameState.level_time += delta
+	GameState.play_time += delta
 	if quiz.is_open and not study_paused:
 		GameState.quiz_time += delta
 	if GameState.intel_reveal_timer > 0.0:
@@ -1522,7 +1607,7 @@ func _use_item(index: int) -> void:
 		return
 	if index >= GameState.inventory.size():
 		return
-	var id: String = GameState.inventory[index]
+	var id: String = GameState.inventory_item_id(index)
 	var def: Dictionary = GameState.get_item_def(id)
 	var fx: Vector2 = player.position
 	match id:
@@ -2094,6 +2179,42 @@ func _on_level_card_pressed(lv: int) -> void:
 	_close_all_modals()
 	menu_layer = null
 	_start_level(lv)
+	if not bool(GameState.story_flags.get("dlg_tutorial", false)):
+		GameState.story_flags["dlg_tutorial"] = true
+		var ui := show_dialogue(DialogueDb.tutorial())
+		if ui != null:
+			ui.finished.connect(func(): _maybe_show_level_dialogue(lv), CONNECT_ONE_SHOT)
+			return
+	_maybe_show_level_dialogue(lv)
+
+func show_dialogue(data: DialogueData, pause_game := true) -> Control:
+	if data == null or data.lines.is_empty():
+		return null
+	var layer := CanvasLayer.new()
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_push_modal(layer)
+	var ui: Control = load("res://scripts/dialogue_ui.gd").new()
+	layer.add_child(ui)
+	if pause_game:
+		_dialogue_prev_paused = get_tree().paused
+		get_tree().paused = true
+	ui.finished.connect(func():
+		if pause_game:
+			get_tree().paused = _dialogue_prev_paused
+		_pop_modal(layer)
+	)
+	ui.start(data)
+	return ui
+
+func _maybe_show_level_dialogue(level: int) -> void:
+	var key := "dlg_lv_%d" % level
+	if bool(GameState.story_flags.get(key, false)):
+		return
+	var data := DialogueDb.level_tip(level)
+	if data == null:
+		return
+	GameState.story_flags[key] = true
+	show_dialogue(data)
 
 func _build_menu_background(layer: CanvasLayer) -> void:
 	var bg := ColorRect.new()

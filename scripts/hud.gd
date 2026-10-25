@@ -313,7 +313,7 @@ func _refresh_inventory() -> void:
 				row.add_child(lock_lbl)
 			continue
 		if i < GameState.inventory.size():
-			var item_id: String = GameState.inventory[i]
+			var item_id: String = GameState.inventory_item_id(i)
 			var def: Dictionary = GameState.get_item_def(item_id)
 			var icon := UiIcons.item(item_id)
 			if icon != null:

@@ -6,6 +6,7 @@ signal emptiness_changed(value: float)
 signal warnings_changed(count: int)
 signal dash_changed(value: float)
 signal inventory_changed
+signal inventory_slot_changed(index: int)
 signal stars_changed
 signal level_changed(value: int)
 signal hot_changed(level: int)
@@ -113,7 +114,8 @@ var level_stars: Dictionary = {}
 var upgrades: Dictionary = {}
 var max_cleared_level := 1
 
-var inventory: Array[String] = []
+var inventory: Array[Dictionary] = []
+var _item_def_cache: Dictionary = {}
 var tyrant_intro_seen := false
 var tyrant_active := false
 var cutscene_active := false
@@ -128,6 +130,9 @@ var tyrant_hits := 0
 var items_collected := 0
 var intel_found := 0
 var explored_rooms := 0
+
+var story_flags: Dictionary = {}
+var play_time := 0.0
 
 func _ready() -> void:
 	randomize()
@@ -144,6 +149,8 @@ func set_level(p_level: int) -> void:
 func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"]) -> void:
 	grade_id = p_grade
 	subjects = p_subjects
+	story_flags.clear()
+	play_time = 0.0
 	set_level(1)
 	study = 0.0
 	emptiness = 50.0
@@ -258,10 +265,22 @@ func _sync_hot() -> void:
 func add_item(item_id: String) -> bool:
 	if not ITEM_DEFS.has(item_id):
 		return false
+	var def := item_def(item_id)
+	var max_stack := maxi(1, def.stack_max)
+	if max_stack > 1:
+		for i in inventory.size():
+			var slot: Dictionary = inventory[i]
+			if String(slot.get("id", "")) == item_id and int(slot.get("count", 1)) < max_stack:
+				slot["count"] = int(slot.get("count", 1)) + 1
+				items_collected += 1
+				inventory_slot_changed.emit(i)
+				inventory_changed.emit()
+				return true
 	if inventory.size() >= item_capacity():
 		return false
-	inventory.append(item_id)
+	inventory.append({"id": item_id, "count": 1})
 	items_collected += 1
+	inventory_slot_changed.emit(inventory.size() - 1)
 	inventory_changed.emit()
 	return true
 
@@ -381,10 +400,54 @@ func _recompute_derived() -> void:
 func remove_item_at(index: int) -> String:
 	if index < 0 or index >= inventory.size():
 		return ""
-	var item_id: String = inventory[index]
-	inventory.remove_at(index)
+	var slot: Dictionary = inventory[index]
+	var item_id := String(slot.get("id", ""))
+	var left := int(slot.get("count", 1)) - 1
+	if left > 0:
+		slot["count"] = left
+		inventory_slot_changed.emit(index)
+	else:
+		inventory.remove_at(index)
 	inventory_changed.emit()
 	return item_id
+
+func inventory_item_id(index: int) -> String:
+	if index < 0 or index >= inventory.size():
+		return ""
+	return String(inventory[index].get("id", ""))
+
+func inventory_item_count(index: int) -> int:
+	if index < 0 or index >= inventory.size():
+		return 0
+	return int(inventory[index].get("count", 1))
+
+func inventory_find(item_id: String) -> int:
+	for i in inventory.size():
+		if String(inventory[i].get("id", "")) == item_id:
+			return i
+	return -1
+
+func move_inventory_slot(from_index: int, to_index: int) -> bool:
+	if from_index == to_index:
+		return false
+	if from_index < 0 or to_index < 0:
+		return false
+	if from_index >= inventory.size() or to_index >= inventory.size():
+		return false
+	var tmp: Dictionary = inventory[from_index]
+	inventory[from_index] = inventory[to_index]
+	inventory[to_index] = tmp
+	inventory_slot_changed.emit(from_index)
+	inventory_slot_changed.emit(to_index)
+	inventory_changed.emit()
+	return true
+
+func item_def(item_id: String) -> ItemDef:
+	if _item_def_cache.has(item_id):
+		return _item_def_cache[item_id]
+	var def := ItemDef.from_dict(item_id, ITEM_DEFS.get(item_id, {}))
+	_item_def_cache[item_id] = def
+	return def
 
 func get_item_def(item_id: String) -> Dictionary:
 	return ITEM_DEFS.get(item_id, {})

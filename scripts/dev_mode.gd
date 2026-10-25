@@ -14,6 +14,7 @@ var enabled := false
 var show_vision_cones := false
 var show_paths := false
 var show_room_heat := false
+var lighting := true
 var import_bank := true
 var unlock_all_levels := true
 
@@ -43,6 +44,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		apply_catch_radius()
 		get_viewport().set_input_as_handled()
 		print("[DevMode] catch radius=", CATCH_RADIUS_PRESETS[catch_radius_idx])
+	elif event.keycode == KEY_F4:
+		lighting = not lighting
+		get_viewport().set_input_as_handled()
+		print("[DevMode] lighting=", lighting)
 
 func catch_radius() -> float:
 	return CATCH_RADIUS_PRESETS[catch_radius_idx]
@@ -61,6 +66,8 @@ func status_text() -> String:
 		parts.append("视锥+抓人圈 r=%d" % int(catch_radius()))
 	if show_room_heat:
 		parts.append("房间热度")
+	if not lighting:
+		parts.append("光照关")
 	if parts.is_empty():
 		return "DEV"
 	return "DEV · " + ", ".join(parts)

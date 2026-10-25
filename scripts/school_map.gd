@@ -52,6 +52,21 @@ var nav_points := PackedVector2Array()
 var nav_links: Array = []
 var nav_is_corridor: Array[bool] = []
 
+var _astar := AStarGrid2D.new()
+var _astar_dirty := true
+var _astar_built := false
+var _room_cell := PackedInt32Array()
+var _floor_layer: TileMapLayer
+var _wall_layer: TileMapLayer
+
+class WallShadow:
+	extends Node2D
+	var rects: Array[Rect2] = []
+
+	func _draw() -> void:
+		for r in rects:
+			draw_rect(Rect2(r.position + Vector2(3.0, 4.0), r.size), Color(0.0, 0.0, 0.0, 0.13))
+
 var type_defs: Dictionary = {
 	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.96, 0.86, 0.57), "w_min": 12, "w_max": 16, "eff": 1.0},
 	"office": {"name": "办公室", "weight": 2, "color": Color(0.80, 0.90, 0.74), "w_min": 9, "w_max": 12, "eff": 1.4},
@@ -155,6 +170,8 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 		gh = y_end
 	grid.resize(gw * gh)
 	grid.fill(SOLID)
+	_room_cell.resize(gw * gh)
+	_room_cell.fill(-1)
 	world_rect = Rect2(0, 0, gw * CELL, gh * CELL)
 
 	corridor_rect = Rect2(WALL_EXT * CELL, c_top * CELL, (L - 2 * WALL_EXT) * CELL, cw * CELL)
@@ -194,6 +211,10 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 		room_types.append(t)
 		room_names.append(String(type_defs[t]["name"]))
 		explored.append(false)
+		for yy in range(cr.position.y, cr.end.y):
+			for xx in range(cr.position.x, cr.end.x):
+				if xx >= 0 and yy >= 0 and xx < gw and yy < gh:
+					_room_cell[yy * gw + xx] = i
 
 	for i in cells.size():
 		var cr: Rect2i = cells[i]
@@ -240,7 +261,9 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	_build_collision()
 	_build_nav()
 	_build_doors()
+	_build_tiles()
 	_spawn_furniture()
+	_build_astar()
 	queue_redraw()
 
 func _reset() -> void:
@@ -264,6 +287,11 @@ func _reset() -> void:
 	nav_points = PackedVector2Array()
 	nav_links.clear()
 	nav_is_corridor.clear()
+	_room_cell = PackedInt32Array()
+	_floor_layer = null
+	_wall_layer = null
+	_astar_dirty = true
+	_astar_built = false
 	grid = PackedByteArray()
 	gw = 0
 	gh = 0
@@ -386,6 +414,107 @@ func _build_walls() -> void:
 				for xx in w:
 					used[(y + yy) * gw + x + xx] = 1
 			wall_rects.append(Rect2(x * CELL, y * CELL, w * CELL, h * CELL))
+
+func _build_tiles() -> void:
+	var type_order := ["classroom", "office", "storage", "toilet", "stair", "hall"]
+	var c := int(CELL)
+	var cols := 16
+	var img := Image.create(cols * c, c * 3, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.12, 0.13, 0.16))
+	for row in 2:
+		for i in type_order.size():
+			var base: Color = type_defs[type_order[i]]["color"]
+			var col := base.lightened(0.05) if row == 0 else base.darkened(0.04)
+			img.fill_rect(Rect2i(i * c, row * c, c, c), col)
+		var cc := CORRIDOR_COLOR.lightened(0.05) if row == 0 else CORRIDOR_COLOR.darkened(0.04)
+		img.fill_rect(Rect2i(type_order.size() * c, row * c, c, c), cc)
+	img.fill_rect(Rect2i((type_order.size() + 1) * c, 0, c, c), Color(0.12, 0.13, 0.16))
+	for mask in 16:
+		var ox := mask * c
+		var oy := 2 * c
+		img.fill_rect(Rect2i(ox, oy, c, c), WALL_COLOR)
+		if mask & 1 == 0:
+			img.fill_rect(Rect2i(ox, oy, c, 1), WALL_EDGE_COLOR)
+			img.fill_rect(Rect2i(ox + 1, oy + 1, c - 2, 2), WALL_TOP_COLOR)
+		if mask & 2 == 0:
+			img.fill_rect(Rect2i(ox + c - 1, oy, 1, c), WALL_EDGE_COLOR)
+		if mask & 4 == 0:
+			img.fill_rect(Rect2i(ox, oy + c - 1, c, 1), WALL_EDGE_COLOR)
+		if mask & 8 == 0:
+			img.fill_rect(Rect2i(ox, oy, 1, c), WALL_EDGE_COLOR)
+
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(c, c)
+	var src := TileSetAtlasSource.new()
+	src.texture = ImageTexture.create_from_image(img)
+	src.texture_region_size = Vector2i(c, c)
+	for row in 3:
+		for cx in range(cols):
+			src.create_tile(Vector2i(cx, row))
+	ts.add_source(src, 0)
+
+	var holder := Node2D.new()
+	holder.name = "Tiles"
+	holder.z_index = -1
+	add_child(holder)
+
+	_floor_layer = TileMapLayer.new()
+	_floor_layer.name = "FloorLayer"
+	_floor_layer.tile_set = ts
+	_floor_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_floor_layer.z_index = 1
+	holder.add_child(_floor_layer)
+
+	var shadow := WallShadow.new()
+	shadow.name = "WallShadow"
+	shadow.rects = wall_rects
+	shadow.z_index = 2
+	holder.add_child(shadow)
+	shadow.queue_redraw()
+
+	_wall_layer = TileMapLayer.new()
+	_wall_layer.name = "WallLayer"
+	_wall_layer.tile_set = ts
+	_wall_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_wall_layer.z_index = 3
+	holder.add_child(_wall_layer)
+
+	var type_index := {}
+	for i in type_order.size():
+		type_index[type_order[i]] = i
+	var corridor_col := type_order.size()
+	for y in gh:
+		for x in gw:
+			var i := y * gw + x
+			var cell := Vector2i(x, y)
+			if grid[i] != FLOOR:
+				_wall_layer.set_cell(cell, 0, Vector2i(corridor_col + 1, 0))
+				continue
+			var ri := _room_cell[i]
+			if ri >= 0:
+				var r: Rect2 = rooms[ri]
+				var row := ((x - int(r.position.x / CELL)) / 2 + (y - int(r.position.y / CELL)) / 2) % 2
+				_floor_layer.set_cell(cell, 0, Vector2i(int(type_index[room_types[ri]]), row))
+			else:
+				var origin: Vector2 = corridor_rect.position
+				var p := Vector2((x + 0.5) * CELL, (y + 0.5) * CELL)
+				if tail_corridor_rect.size.y > 0.0 and tail_corridor_rect.has_point(p):
+					origin = tail_corridor_rect.position
+				var row := ((x - int(origin.x / CELL)) / 2 + (y - int(origin.y / CELL)) / 2) % 2
+				_floor_layer.set_cell(cell, 0, Vector2i(corridor_col, row))
+	for r in wall_rects:
+		for y in range(int(r.position.y / CELL), int(r.end.y / CELL)):
+			for x in range(int(r.position.x / CELL), int(r.end.x / CELL)):
+				var mask := 0
+				if y > 0 and grid[(y - 1) * gw + x] != FLOOR:
+					mask |= 1
+				if x < gw - 1 and grid[y * gw + x + 1] != FLOOR:
+					mask |= 2
+				if y < gh - 1 and grid[(y + 1) * gw + x] != FLOOR:
+					mask |= 4
+				if x > 0 and grid[y * gw + x - 1] != FLOOR:
+					mask |= 8
+				_wall_layer.set_cell(Vector2i(x, y), 0, Vector2i(mask, 2))
 
 func _build_collision() -> void:
 	var body := StaticBody2D.new()
@@ -622,6 +751,7 @@ func _cells_free(cx: int, cy: int, w: int, h: int) -> bool:
 	return true
 
 func _mark_furniture(rect: Rect2) -> void:
+	_astar_dirty = true
 	var cx0 := int(round(rect.position.x / CELL))
 	var cy0 := int(round(rect.position.y / CELL))
 	var w := int(round(rect.size.x / CELL))
@@ -693,12 +823,54 @@ func _is_floor_cell(pos: Vector2) -> bool:
 		return false
 	return grid[cy * gw + cx] == FLOOR
 
+func _cell_walkable(cx: int, cy: int) -> bool:
+	if cx < 0 or cy < 0 or cx >= gw or cy >= gh:
+		return false
+	var i := cy * gw + cx
+	if grid[i] != FLOOR:
+		return false
+	return furniture.is_empty() or furniture[i] == 0
+
 func line_clear(a: Vector2, b: Vector2) -> bool:
-	var d := a.distance_to(b)
-	var steps := int(d / (CELL * 0.35)) + 1
-	for i in range(1, steps):
-		var p := a.lerp(b, float(i) / float(steps))
-		if not is_walkable(p):
+	if not _cell_walkable(int(a.x / CELL), int(a.y / CELL)):
+		return false
+	if not _cell_walkable(int(b.x / CELL), int(b.y / CELL)):
+		return false
+	var cx := int(a.x / CELL)
+	var cy := int(a.y / CELL)
+	var cx1 := int(b.x / CELL)
+	var cy1 := int(b.y / CELL)
+	var dx := b.x - a.x
+	var dy := b.y - a.y
+	var step_x := 1 if dx > 0.0 else -1
+	var step_y := 1 if dy > 0.0 else -1
+	var t_max_x := INF
+	var t_max_y := INF
+	var t_delta_x := INF
+	var t_delta_y := INF
+	if not is_zero_approx(dx):
+		var next_x := float(cx + (1 if dx > 0.0 else 0)) * CELL
+		t_max_x = absf(next_x - a.x) / absf(dx)
+		t_delta_x = CELL / absf(dx)
+	if not is_zero_approx(dy):
+		var next_y := float(cy + (1 if dy > 0.0 else 0)) * CELL
+		t_max_y = absf(next_y - a.y) / absf(dy)
+		t_delta_y = CELL / absf(dy)
+	var guard := 0
+	while (cx != cx1 or cy != cy1) and guard < 512:
+		guard += 1
+		if t_max_x < t_max_y:
+			cx += step_x
+			t_max_x += t_delta_x
+		elif t_max_y < t_max_x:
+			cy += step_y
+			t_max_y += t_delta_y
+		else:
+			cx += step_x
+			cy += step_y
+			t_max_x += t_delta_x
+			t_max_y += t_delta_y
+		if not _cell_walkable(cx, cy):
 			return false
 	return true
 
@@ -770,11 +942,98 @@ func find_path(from: Vector2, to: Vector2) -> PackedVector2Array:
 	if line_clear(from, to):
 		out.append(to)
 		return out
+	var pts := _astar_path(from, to)
+	if pts.is_empty():
+		return _find_path_nav(from, to)
+	out.append(from)
+	var origin := from
+	var i := 0
+	while i < pts.size():
+		var j := pts.size() - 1
+		while j > i and not line_clear(origin, pts[j]):
+			j -= 1
+		origin = pts[j]
+		out.append(origin)
+		i = j + 1
+	if out[out.size() - 1].distance_to(to) > 1.0:
+		out.append(to)
+	return out
+
+func _astar_path(from: Vector2, to: Vector2) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	if gw <= 0 or gh <= 0:
+		return out
+	if _astar_dirty or not _astar_built:
+		_build_astar()
+	var a := _nearest_open_cell(_to_cell(from))
+	var b := _nearest_open_cell(_to_cell(to))
+	if a.x < 0 or b.x < 0:
+		return out
+	var ids := _astar.get_id_path(a, b)
+	if ids.size() < 2:
+		return out
+	for id in ids:
+		out.append(Vector2((id.x + 0.5) * CELL, (id.y + 0.5) * CELL))
+	return out
+
+func _to_cell(p: Vector2) -> Vector2i:
+	return Vector2i(clampi(int(p.x / CELL), 0, gw - 1), clampi(int(p.y / CELL), 0, gh - 1))
+
+func _nearest_open_cell(c: Vector2i) -> Vector2i:
+	if c.x < 0 or c.y < 0:
+		return Vector2i(-1, -1)
+	if not _astar.is_point_solid(c):
+		return c
+	for r in range(1, 7):
+		var best := Vector2i(-1, -1)
+		var bd := INF
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if maxi(absi(dx), absi(dy)) != r:
+					continue
+				var n := c + Vector2i(dx, dy)
+				if n.x < 0 or n.y < 0 or n.x >= gw or n.y >= gh:
+					continue
+				if _astar.is_point_solid(n):
+					continue
+				var d := Vector2(dx, dy).length_squared()
+				if d < bd:
+					bd = d
+					best = n
+		if best.x >= 0:
+			return best
+	return Vector2i(-1, -1)
+
+func _build_astar() -> void:
+	_astar.region = Rect2i(0, 0, gw, gh)
+	_astar.cell_size = Vector2(CELL, CELL)
+	_astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	_astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
+	_astar.default_estimate_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
+	_astar.jumping_enabled = false
+	_astar.update()
+	_astar.fill_solid_region(_astar.region, false)
+	for y in range(gh):
+		for x in range(gw):
+			var i := y * gw + x
+			var solid := grid[i] != FLOOR
+			if not solid and not furniture.is_empty() and furniture[i] != 0:
+				solid = true
+			if solid:
+				_astar.set_point_solid(Vector2i(x, y), true)
+	_astar_dirty = false
+	_astar_built = true
+
+func rebuild_astar() -> void:
+	if gw > 0 and gh > 0:
+		_build_astar()
+
+func _find_path_nav(from: Vector2, to: Vector2) -> PackedVector2Array:
+	var out := PackedVector2Array()
 	var start := _nearest_visible(from)
 	var goal := _nearest_visible(to)
 	if start < 0 or goal < 0:
 		return out
-
 	var prev := PackedInt32Array()
 	prev.resize(nav_points.size())
 	prev.fill(-2)
@@ -888,21 +1147,8 @@ func room_index_at(pos: Vector2) -> int:
 func _draw() -> void:
 	if gw <= 0:
 		return
-	draw_rect(Rect2(0, 0, gw * CELL, gh * CELL), Color(0.12, 0.13, 0.16))
 	for i in rooms.size():
-		var col: Color = type_defs[room_types[i]]["color"]
-		_floor_tiles(rooms[i], col)
 		_room_decor(i)
-	_floor_tiles(corridor_rect, CORRIDOR_COLOR)
-	if is_l_shape and tail_corridor_rect.size.y > 0.0:
-		_floor_tiles(tail_corridor_rect, CORRIDOR_COLOR)
-
-	for r in wall_rects:
-		draw_rect(Rect2(r.position + Vector2(3.0, 4.0), r.size), Color(0.0, 0.0, 0.0, 0.13))
-	for r in wall_rects:
-		draw_rect(r, WALL_COLOR)
-		draw_rect(r, WALL_EDGE_COLOR, false, 2.0)
-		draw_line(r.position + Vector2(1.0, 1.0), Vector2(r.end.x - 1.0, r.position.y + 1.0), WALL_TOP_COLOR, 2.0)
 
 	for w in windows:
 		_window(w)
@@ -921,23 +1167,6 @@ func _draw() -> void:
 	var cp := corridor_rect.position + Vector2(10.0, 24.0)
 	draw_string_outline(font, cp, "走廊", HORIZONTAL_ALIGNMENT_LEFT, corridor_rect.size.x - 20.0, 14, 4, Color(1.0, 1.0, 1.0, 0.65))
 	draw_string(font, cp, "走廊", HORIZONTAL_ALIGNMENT_LEFT, corridor_rect.size.x - 20.0, 14, Color(0.33, 0.35, 0.32, 0.85))
-
-func _floor_tiles(r: Rect2, base: Color) -> void:
-	var step := CELL * 2.0
-	var y := r.position.y
-	var row := 0
-	while y < r.end.y - 0.5:
-		var x := r.position.x
-		var column := 0
-		while x < r.end.x - 0.5:
-			var w := minf(step, r.end.x - x)
-			var h := minf(step, r.end.y - y)
-			var c := base.lightened(0.05) if (row + column) % 2 == 0 else base.darkened(0.04)
-			draw_rect(Rect2(x, y, w, h), c)
-			x += step
-			column += 1
-		y += step
-		row += 1
 
 func _room_decor(i: int) -> void:
 	var r: Rect2 = rooms[i]
