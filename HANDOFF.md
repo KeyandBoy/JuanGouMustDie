@@ -6,6 +6,15 @@
 - 当前 HEAD：运行 `git rev-parse --short HEAD` 查看（写本文件时 0d01e4c，交接制度已推送）
 - 工作区：干净（素材/ 与 SESSION.lock 已忽略）
 
+## 最简用法（推荐）
+
+- **用 DSH**：双击 `tools\start_dsh.bat` → 打开 DSH，`Ctrl+V` 粘贴一次 → 开始开发；收工双击 `tools\end_session.bat`。
+  - `start_dsh.bat` 会自动加锁、把「开场提示 + 当前进度」放进剪贴板。
+  - `end_session.bat` 解锁；收工前仍要按 AGENTS 跑测试、更新 HANDOFF、commit + push。
+- **用 opencode**：直接打开即可，不需要手动跑加锁/摘要命令。
+- `git pull` 只在换电脑、或另一个工具刚推送过时执行。
+- 如果加锁提示 `LOCK BUSY`：说明上一个会话没正常结束，双击 `tools\end_session.bat` 解锁即可。
+
 ## 当前目标
 
 维护《卷狗必须死》并继续素材替换评估：先由用户从候选图中确认道具图标/角色模型是否替换，再进入实现。

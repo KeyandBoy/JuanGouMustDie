@@ -33,7 +33,7 @@ if ($Start.Length -gt 0) {
   $json = $obj | ConvertTo-Json
   [IO.File]::WriteAllText($lockPath, $json, (New-Object Text.UTF8Encoding($false)))
   Write-Host ("LOCKED by {0}" -f $Start)
-  exit 0
+  if (-not $Clipboard) { exit 0 }
 }
 
 if ($End) {
@@ -120,6 +120,13 @@ if (Test-Path -LiteralPath $devPath) {
 
 $text = $sb.ToString()
 if ($Clipboard) {
+  if ($Start.Length -gt 0) {
+    $promptPath = Join-Path $root "tools\DSH_PROMPT.txt"
+    if (Test-Path -LiteralPath $promptPath) {
+      $prompt = Get-Content -LiteralPath $promptPath -Raw -Encoding UTF8
+      $text = $prompt.TrimEnd() + "`r`n`r`n" + $text
+    }
+  }
   Set-Clipboard -Value $text
   Write-Host "Copied handoff brief to clipboard."
 }

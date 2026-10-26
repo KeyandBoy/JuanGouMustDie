@@ -2,8 +2,8 @@
 
 1. 动手前先读 `开发记录.md`（架构、约定、坑、路线图）和 `需求汇总.txt`（需求来源）。
 2. **双工具交接（opencode / DeepSeek Harness）**：
-   - 同一时间只开一个 AI；开工运行 `powershell -ExecutionPolicy Bypass -File tools\handoff.ps1 -Start <tool> -Intent "..."`，
-     收工运行 `-End`（`SESSION.lock` 会阻止第二个工具同时开工）。
+   - 同一时间只开一个 AI；最简是双击 `tools\start_dsh.bat`（DSH，自动加锁+复制开场提示）或运行 `powershell -ExecutionPolicy Bypass -File tools\handoff.ps1 -Start <tool> -Intent "..."`，
+     收工双击 `tools\end_session.bat` 或运行 `-End`（`SESSION.lock` 会阻止第二个工具同时开工）。
    - 开工顺序：`git pull` → 读 `HANDOFF.md` → `tools\handoff.ps1`（或 `-Clipboard` 复制摘要）→ 读 `开发记录.md` 顶部 3 条 → `git status`。
    - 收工顺序：跑四套测试（必要时截图）→ 更新 `HANDOFF.md`（下一步用 `<!-- NEXT_STEPS_START -->` / `<!-- NEXT_STEPS_END -->` 包裹）→ 追加 `开发记录.md` → `commit + push` → 把 HEAD 写回 HANDOFF。
    - DSH 不会自动读本文件，每次开场粘贴：

@@ -1,0 +1,2 @@
+先读 AGENTS.md 和 HANDOFF.md，运行 git status，复述「当前目标 / 下一步 / 测试命令」，确认后再改。
+收工按 AGENTS.md 更新 HANDOFF.md、追加 开发记录.md，并 commit + push；最后运行 tools\handoff.ps1 -End 解锁。
