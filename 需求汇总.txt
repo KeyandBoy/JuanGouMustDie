@@ -342,3 +342,10 @@
 - 追击者补碰撞体，不再与玩家重叠/贴脸吸附
 - 新手关广播与任务条文案改为「广播者发现你并催你离开」的口语版（用户定稿）
 - 新手关出发广播加入环境杂噪音效（`assets/sfx/broadcast_noise.mp3`，对话期间播放、结束淡出）
+
+
+【双工具交接（opencode / DeepSeek Harness，2026-10-26）】
+- 同一时间只开一个 AI；用 `SESSION.lock` 防止并行开工
+- 开工：git pull → HANDOFF.md → tools/handoff.ps1 → 开发记录顶部 → git status
+- 收工：四套测试 → 更新 HANDOFF.md → 追加开发记录 → commit + push → HEAD 写回 HANDOFF
+- DSH 不自动读 AGENTS.md，开场手动粘贴固定提示；`素材/` 与 `SESSION.lock` 不入库
