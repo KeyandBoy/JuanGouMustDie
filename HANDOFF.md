@@ -8,12 +8,12 @@
 
 ## 最简用法（推荐）
 
-- **用 DSH**：双击 `tools\start_dsh.bat` → 打开 DSH，`Ctrl+V` 粘贴一次 → 开始开发；收工双击 `tools\end_session.bat`。
-  - `start_dsh.bat` 会自动加锁、把「开场提示 + 当前进度」放进剪贴板。
-  - `end_session.bat` 解锁；收工前仍要按 AGENTS 跑测试、更新 HANDOFF、commit + push。
+- **用 DSH**：双击项目根目录的 `开始DSH.bat` → 打开 DSH，`Ctrl+V` 粘贴一次 → 开始开发；收工双击根目录 `结束会话.bat`。
+  - `开始DSH.bat` 会自动加锁、把「开场提示 + 当前进度」放进剪贴板（`tools\start_dsh.bat` 是同一功能的副本）。
+  - `结束会话.bat` 解锁；收工前仍要按 AGENTS 跑测试、更新 HANDOFF、commit + push。
 - **用 opencode**：直接打开即可，不需要手动跑加锁/摘要命令。
 - `git pull` 只在换电脑、或另一个工具刚推送过时执行。
-- 如果加锁提示 `LOCK BUSY`：说明上一个会话没正常结束，双击 `tools\end_session.bat` 解锁即可。
+- 如果加锁提示 `LOCK BUSY`：说明上一个会话没正常结束，双击根目录 `结束会话.bat` 解锁即可。
 
 ## 当前目标
 
@@ -35,9 +35,9 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. 让用户看 `素材/_preview/items_final_candidates.png`：目前可用候选为 bread=b3_13、notes=b3_18、shovel=b3_21、portal=b12_0、lamp=b3_19（左半 24px）、stink=b13_17（上半裁剪），其余（咖啡/烟雾/椅子/鞋/秒表/情报/耳塞）素材库无合适同名图标 → 建议保留现有图标。
-2. 让用户看 `素材/_preview/characters_candidates.png`：包内角色（Ghost/Slime/Skeleton/Priest/骑士/FarmLife）分辨率与风格均弱于现有 64–192px 素材 → 建议不替换；若要升级追击者，改用 `tools/gen_art.ps1` 生图管线出一张 124×192 透明底新立绘。
-3. 用户批准后：把选中的图标复制到 `art/ui/icons/<id>.png`（保持 48px 内透明、NEAREST），重新导入并跑四套测试 + screenshot；角色替换同理。
+1. 道具图标比对已完成（`素材/_preview/items_final_candidates.png`）：干净候选只有 bread=b3_13、stink=b13_17（绿罐）、notes=b3_18（红书）、lamp=b3_19（左半油灯）；shovel=b3_21 是镐、portal=b12_0 是球不是门。这些是 16–24px 幻想风，低于现有 48px 图标 → 建议保留现有；若用户坚持，只替换 bread/stink/notes/lamp。
+2. 角色/追击者比对已完成（`素材/_preview/characters_candidates.png`）：现有玩家 64×64、追击者 124×192 明显优于包内 Ghost/Slime/Skeleton/Priest/骑士/FarmLife（16–44px、风格偏卡通/地牢）→ 结论：不替换；若要升级追击者，改用 `tools/gen_art.ps1` 生图管线出 124×192 透明底新立绘。
+3. 等用户明确批准替换项后再动 `art/ui/icons/` 与 `art/sprites/`；改完必须重新导入、跑四套测试 + screenshot。
 4. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
