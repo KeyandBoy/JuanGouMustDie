@@ -345,8 +345,74 @@ func _ready() -> void:
 	await get_tree().create_timer(1.6).timeout
 	_save(inst, "res://tests/shot_clear_panel.png")
 
+	inst._setup_level(false)
+	var corner := Vector2.INF
+	for gy in range(1, 12):
+		for gx in range(1, 12):
+			var p := Vector2((gx + 0.5) * inst.map.CELL, (gy + 0.5) * inst.map.CELL)
+			if inst.map.is_walkable(p) and inst._spawn_point_clear(p):
+				corner = p
+				break
+		if corner != Vector2.INF:
+			break
+	if corner != Vector2.INF:
+		inst.player.position = corner
+		inst.camera.reset_smoothing()
+		inst.camera.global_position = corner
+		await get_tree().create_timer(0.6).timeout
+		_save(inst, "res://tests/shot_hud_corner.png")
+		print("HUD_SIDE=", inst.hud.panel_side, " corner=", corner)
+
+	inst._start_tutorial()
+	await get_tree().create_timer(0.5).timeout
+	_save(inst, "res://tests/shot_tutorial.png")
+	await _dismiss_dialogues(inst)
+	await get_tree().create_timer(0.3).timeout
+	_save(inst, "res://tests/shot_tutorial_step1.png")
+	if inst.tutorial != null and is_instance_valid(inst.tutorial):
+		inst.tutorial.step = 5
+		inst.tutorial._enter_step()
+		await get_tree().create_timer(0.4).timeout
+		await _dismiss_dialogues(inst)
+		await get_tree().create_timer(0.6).timeout
+		_save(inst, "res://tests/shot_tutorial_tyrant.png")
+	var intro_script := load("res://scripts/intro.gd")
+	if intro_script != null:
+		var outro: Node = intro_script.new()
+		inst.add_child(outro)
+		outro.play_outro()
+		await get_tree().create_timer(2.2).timeout
+		_save(inst, "res://tests/shot_outro.png")
+		outro._skip = true
+		await get_tree().create_timer(0.2).timeout
+
 	_restore_save()
 	get_tree().quit()
+
+func _find_dialogue(n: Node) -> Control:
+	for c in n.get_children():
+		var s = c.get_script()
+		if s != null and String(s.resource_path).ends_with("dialogue_ui.gd"):
+			return c
+		var r := _find_dialogue(c)
+		if r != null:
+			return r
+	return null
+
+func _dismiss_dialogues(_inst) -> void:
+	var guard := 0
+	while guard < 40:
+		guard += 1
+		var ui: Control = null
+		for m in get_tree().get_nodes_in_group("ui_modal"):
+			ui = _find_dialogue(m)
+			if ui != null:
+				break
+		if ui == null:
+			break
+		ui.advance()
+		await get_tree().create_timer(0.05).timeout
+	await get_tree().process_frame
 
 func _stash_save() -> void:
 	var path := ProjectSettings.globalize_path(SAVE_USER_PATH)

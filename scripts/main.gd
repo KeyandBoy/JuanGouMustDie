@@ -13,13 +13,19 @@ const L_INTRO := 60
 
 const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
+const MINIMAP_ENABLED := false
+
+const TUTORIAL_QUESTIONS: Array = [
+	{"grade": "junior", "subject": "math", "type": "choice", "prompt": "1 + 1 = ?", "options": ["1", "2", "3", "4"], "answer": "2", "explain": "送分题"},
+	{"grade": "junior", "subject": "math", "type": "choice", "prompt": "3 × 2 = ?", "options": ["5", "6", "7", "8"], "answer": "6", "explain": "送分题"},
+	{"grade": "junior", "subject": "chinese", "type": "choice", "prompt": "在本作里，「内卷」指的是什么？", "options": ["学习", "睡觉", "吃饭", "打游戏"], "answer": "学习", "explain": "送分题"},
+]
 
 var map: Node2D
 var player: CharacterBody2D
 var hud: CanvasLayer
 var _last_hot_level := 0
 var world_modulate: CanvasModulate
-var player_light: PointLight2D
 var level_lights: Node2D
 var _light_tex: Texture2D
 var _light_time := 0.0
@@ -64,11 +70,17 @@ var visited_rooms := {}
 var item_spawn_script := load("res://scripts/pickup.gd")
 var tyrant_script := load("res://scripts/tyrant.gd")
 var portal_anchor := Vector2.INF
+var stink_cloud := Vector2.INF
+var stink_cloud_timer := 0.0
+var smoke_cloud := Vector2.INF
+var smoke_cloud_timer := 0.0
 var lamp_timer := 0.0
 var item_fx: ItemFx
 var last_run_stars := 0
 var last_star_gain := 0
 var modal_stack: Array[CanvasLayer] = []
+var tutorial: Node2D
+var tutorial_questions: Array = []
 
 func _ready() -> void:
 	GameState.get_random_phase()
@@ -77,7 +89,7 @@ func _ready() -> void:
 	item_fx.player = player
 	add_child(item_fx)
 	if not SaveManager.has_seen_intro() and not _is_test_run():
-		_play_intro()
+		_play_intro(true)
 	else:
 		_show_menu()
 
@@ -87,18 +99,74 @@ func _is_test_run() -> bool:
 			return true
 	return false
 
-func _play_intro() -> void:
+func _play_intro(continue_to_tutorial := false) -> void:
 	var intro_script := load("res://scripts/intro.gd")
 	if intro_script == null:
-		_show_menu()
+		if continue_to_tutorial:
+			_start_tutorial()
+		else:
+			_show_menu()
 		return
 	var intro: Node = intro_script.new()
 	intro.finished.connect(func() -> void:
 		SaveManager.mark_intro_seen()
 		intro.queue_free()
-		_show_menu())
+		if continue_to_tutorial:
+			_start_tutorial()
+		else:
+			_show_menu())
 	add_child(intro)
 	intro.play()
+
+func _start_tutorial() -> void:
+	GameState.start_run("junior", ["math"])
+	GameState.tutorial_active = true
+	GameState.tyrant_intro_seen = false
+	tutorial_questions.clear()
+	_setup_level(false)
+	if hud != null:
+		hud.set_tutorial_mode(true)
+		hud.set_task("任务 1/7 · 用 WASD 走到黄色标记")
+	if tutorial != null and is_instance_valid(tutorial):
+		tutorial.queue_free()
+	tutorial = load("res://scripts/tutorial.gd").new()
+	add_child(tutorial)
+	tutorial.finished.connect(_finish_tutorial)
+	tutorial.setup(self)
+
+func _finish_tutorial(_skipped := false) -> void:
+	if tutorial != null and is_instance_valid(tutorial):
+		tutorial.queue_free()
+	tutorial = null
+	GameState.tutorial_active = false
+	GameState.story_flags["tutorial_done"] = true
+	if hud != null:
+		hud.set_tutorial_mode(false)
+	_play_outro()
+
+func _play_outro() -> void:
+	var intro_script := load("res://scripts/intro.gd")
+	if intro_script == null:
+		_show_menu()
+		return
+	var outro: Node = intro_script.new()
+	outro.finished.connect(func() -> void:
+		outro.queue_free()
+		_show_menu())
+	add_child(outro)
+	outro.play_outro()
+
+func _on_skip_tutorial() -> void:
+	if tutorial != null and is_instance_valid(tutorial):
+		tutorial.skip()
+
+func _abort_tutorial() -> void:
+	if tutorial != null and is_instance_valid(tutorial):
+		tutorial.queue_free()
+	tutorial = null
+	GameState.tutorial_active = false
+	if hud != null:
+		hud.set_tutorial_mode(false)
 
 func _build_world() -> void:
 	map = map_script.new()
@@ -112,6 +180,7 @@ func _build_world() -> void:
 	circle.radius = 12.0
 	shape.shape = circle
 	player.add_child(shape)
+	player.collision_mask = 5
 	add_child(player)
 	player.position = map.exit_pos
 
@@ -131,18 +200,11 @@ func _build_world() -> void:
 
 	hud = load("res://scripts/hud.gd").new()
 	add_child(hud)
+	hud.skip_pressed.connect(_on_skip_tutorial)
 	quiz = load("res://scripts/quiz_ui.gd").new()
 	add_child(quiz)
 
-	minimap = minimap_script.new()
-	hud.add_child(minimap)
-	minimap.setup(map, player)
-	minimap.anchor_left = 1.0
-	minimap.anchor_right = 1.0
-	minimap.offset_left = -212.0
-	minimap.offset_right = -12.0
-	minimap.offset_top = 8.0
-	minimap.offset_bottom = 148.0
+	_setup_minimap()
 
 	fade_layer = CanvasLayer.new()
 	fade_layer.layer = L_FADE
@@ -189,16 +251,7 @@ func _setup_lighting() -> void:
 		world_modulate = CanvasModulate.new()
 		world_modulate.name = "WorldLight"
 		add_child(world_modulate)
-	world_modulate.color = Color(0.68, 0.72, 0.84)
-	if player_light == null:
-		player_light = PointLight2D.new()
-		player_light.name = "PlayerLight"
-		player_light.texture = _light_texture()
-		player_light.color = Color(1.0, 0.93, 0.80)
-		player_light.energy = 0.75
-		player_light.texture_scale = 1.35
-		player_light.position = Vector2(0, -4)
-		player.add_child(player_light)
+	world_modulate.color = Color(0.95, 0.97, 1.0) if GameState.tutorial_active else Color(0.78, 0.82, 0.92)
 	if level_lights != null and is_instance_valid(level_lights):
 		level_lights.queue_free()
 	level_lights = Node2D.new()
@@ -225,8 +278,6 @@ func _apply_lighting_visibility() -> void:
 	_lights_on = on
 	if world_modulate != null:
 		world_modulate.visible = on
-	if player_light != null:
-		player_light.visible = on
 	if level_lights != null:
 		level_lights.visible = on
 
@@ -242,7 +293,23 @@ func _update_lights(delta: float) -> void:
 			child.energy = 0.42 + sin(_light_time * 2.1 + float(i) * 1.7) * 0.045
 		i += 1
 
+func _setup_minimap() -> void:
+	if not MINIMAP_ENABLED:
+		return
+	minimap = minimap_script.new()
+	hud.add_child(minimap)
+	minimap.setup(map, player)
+	minimap.anchor_left = 1.0
+	minimap.anchor_right = 1.0
+	minimap.offset_left = -212.0
+	minimap.offset_right = -12.0
+	minimap.offset_top = 8.0
+	minimap.offset_bottom = 148.0
+	hud.reserve_top_right = true
+
 func _zoom_for_map() -> float:
+	if GameState.tutorial_active:
+		return 1.45
 	return clampf(1.375 - 0.0625 * float(map.rooms.size()), 0.72, 1.0)
 
 func _apply_camera_limits() -> void:
@@ -283,16 +350,27 @@ func _setup_level(p_spawn_random := false) -> void:
 		quiz.close()
 	for n in get_tree().get_nodes_in_group("tyrants"):
 		n.queue_free()
+	for n in get_tree().get_nodes_in_group("students"):
+		n.queue_free()
 	for n in get_tree().get_nodes_in_group("pickups"):
 		n.queue_free()
-	map.generate(GameState.seed_value + GameState.level * 7919, 0)
+	if GameState.tutorial_active:
+		map.generate_tutorial()
+	else:
+		map.generate(GameState.seed_value + GameState.level * 7919, 0)
 	stair_pos = map.exit_pos
 	if not map.stair_rects.is_empty():
 		stair_pos = map._walkable_center(map.stair_rects[0])
 	fog.reset_forget()
+	fog.tutorial_mode = GameState.tutorial_active
+	if GameState.tutorial_active:
+		if fog.halo != null:
+			fog.halo.visible = false
+		if fog.ambient != null:
+			fog.ambient.visible = false
 	if fog.has_method("set_tyrant_active"):
 		fog.set_tyrant_active(false, GameState.level)
-	player.position = _random_spawn_position() if p_spawn_random else map.exit_pos
+	player.position = _tutorial_spawn() if GameState.tutorial_active else (_random_spawn_position() if p_spawn_random else map.exit_pos)
 	player.velocity = Vector2.ZERO
 	player.stun_timer = 0.0
 	player.can_move = true
@@ -325,10 +403,17 @@ func _setup_level(p_spawn_random := false) -> void:
 		room_heat.append(0.0)
 		room_heat_cd.append(0.0)
 		room_heat_tier.append(0)
-	_spawn_students()
-	_spawn_desks()
-	_spawn_high_value_spots()
-	_spawn_items()
+	if GameState.tutorial_active:
+		_spawn_desks()
+	else:
+		_spawn_students()
+		_spawn_desks()
+		_spawn_high_value_spots()
+		_spawn_items()
+	player.position = _tutorial_spawn() if GameState.tutorial_active else (_random_spawn_position() if p_spawn_random else map.exit_pos)
+	player.velocity = Vector2.ZERO
+	camera.reset_smoothing()
+	camera.global_position = player.global_position
 	_setup_lighting()
 	if GameState.run_state == GameState.RunState.CLEARED:
 		GameState.run_state = GameState.RunState.EXPLORING
@@ -337,7 +422,7 @@ func _start_level(p_level: int = 1) -> void:
 	GameState.start_run(GameState.grade_id, GameState.subjects)
 	GameState.set_level(p_level)
 	GameState.get_random_phase()
-	_setup_level(false)
+	_setup_level(true)
 	hud.toast("第 %d 层 · %s · 目标：净答对 %.0f 题" % [GameState.level, GameState.get_phase_label(), GameState.study_goal])
 
 func _random_spawn_position() -> Vector2:
@@ -350,8 +435,45 @@ func _random_spawn_position() -> Vector2:
 			candidates.append(i)
 	if candidates.is_empty():
 		return map.exit_pos
-	var idx: int = candidates[randi_range(0, candidates.size() - 1)]
-	return map._walkable_center(map.rooms[idx])
+	candidates.shuffle()
+	var offsets: Array[Vector2] = [
+		Vector2.ZERO, Vector2(36, 0), Vector2(-36, 0), Vector2(0, 32), Vector2(0, -32),
+		Vector2(36, 32), Vector2(-36, 32), Vector2(36, -32), Vector2(-36, -32),
+	]
+	for idx in candidates:
+		var center: Vector2 = map._walkable_center(map.rooms[idx])
+		for off in offsets:
+			var p: Vector2 = center + off
+			if _spawn_point_clear(p):
+				return p
+	return map.exit_pos
+
+func _tutorial_spawn() -> Vector2:
+	if map.rooms.is_empty():
+		return map.exit_pos
+	var center: Vector2 = map._walkable_center(map.rooms[0])
+	for off in [Vector2(-80, 0), Vector2(80, 0), Vector2(0, 60), Vector2(0, -60), Vector2(-120, 0)]:
+		var p: Vector2 = center + off
+		if map.is_walkable(p) and _spawn_point_clear(p):
+			return p
+	return center
+
+func _spawn_point_clear(p: Vector2) -> bool:
+	if map == null or not map.is_walkable(p) or map.door_blocks_point(p):
+		return false
+	for n in get_tree().get_nodes_in_group("interactables"):
+		if not (n is Node2D):
+			continue
+		for c in n.get_children():
+			if c is StaticBody2D:
+				for s in c.get_children():
+					if s is CollisionShape2D and s.shape is RectangleShape2D:
+						if (s.get_global_transform() * s.shape.get_rect()).grow(14.0).has_point(p):
+							return false
+	for r in map.box_rects:
+		if r.grow(14.0).has_point(p):
+			return false
+	return true
 
 func _spawn_students() -> void:
 	for s in get_tree().get_nodes_in_group("students"):
@@ -510,6 +632,7 @@ func _on_item_full(item_id: String) -> void:
 
 func _process(delta: float) -> void:
 	_update_lights(delta)
+	_update_lingering_items(delta)
 	if transitioning or cutscene_active:
 		return
 	camera.global_position = player.global_position
@@ -549,7 +672,7 @@ func _process(delta: float) -> void:
 			sprint_noise_timer = 0.0
 		if active_study:
 			_study_noise_tick(delta)
-		else:
+		elif not GameState.tutorial_active:
 			emptiness_timer += delta
 			if emptiness_timer >= 1.0:
 				emptiness_timer = 0.0
@@ -761,7 +884,7 @@ func _toggle_study() -> void:
 		var q: Dictionary = held_question
 		held_question = {}
 		if q.is_empty():
-			q = QuestionBank.pick_tiered(GameState.questions_answered, GameState.hot_level())
+			q = _next_question()
 		if q.is_empty():
 			_stop_study()
 			hud.toast("题库为空！请检查题库配置！")
@@ -779,7 +902,7 @@ func _toggle_study() -> void:
 	study_hunt_timer = 0.0
 	emptiness_timer = 0.0
 	rustle_timer = 0.0
-	var question := QuestionBank.pick_tiered(GameState.questions_answered, GameState.hot_level())
+	var question := _next_question()
 	if question.is_empty():
 		active_desk = {}
 		hud.toast("题库为空！请检查题库配置！")
@@ -857,11 +980,18 @@ func _on_answered(correct: bool) -> void:
 	elif GameState.run_state == GameState.RunState.GAMEOVER:
 		_on_game_over()
 	elif studying:
-		var question := QuestionBank.pick_tiered(GameState.questions_answered, GameState.hot_level())
+		var question := _next_question()
 		if not question.is_empty():
 			quiz.open(question)
 		else:
 			studying = false
+
+func _next_question() -> Dictionary:
+	if GameState.tutorial_active:
+		if tutorial_questions.is_empty():
+			tutorial_questions = TUTORIAL_QUESTIONS.duplicate(true)
+		return tutorial_questions.pop_front()
+	return QuestionBank.pick_tiered(GameState.questions_answered, GameState.hot_level())
 
 func _on_quiz_opened() -> void:
 	hud.set_prompt("学习中…（F 暂停 · ESC 起身）")
@@ -1600,12 +1730,49 @@ func _nearest_tyrant(max_dist: float) -> Node2D:
 		return null
 	return tyrant
 
+func _nearest_tyrant_to(pos: Vector2, max_dist: float) -> Node2D:
+	for n in get_tree().get_nodes_in_group("tyrants"):
+		if not (n is Node2D):
+			continue
+		if pos.distance_to(n.position) <= max_dist:
+			return n
+	return null
+
+func _spawn_cloud_visual(pos: Vector2, color: Color, duration: float) -> void:
+	var cloud := Sprite2D.new()
+	cloud.texture = _light_texture()
+	cloud.modulate = color
+	cloud.position = pos
+	cloud.scale = Vector2(1.4, 1.4)
+	cloud.z_index = 1
+	add_child(cloud)
+	var tw := create_tween()
+	tw.tween_property(cloud, "modulate:a", 0.0, maxf(0.2, duration))
+	tw.tween_callback(cloud.queue_free)
+
+func _update_lingering_items(delta: float) -> void:
+	if stink_cloud_timer > 0.0:
+		stink_cloud_timer = maxf(0.0, stink_cloud_timer - delta)
+		var ty := _nearest_tyrant_to(stink_cloud, 650.0)
+		if ty != null and ty.lure_timer <= 0.0:
+			ty.lure_to(stink_cloud, maxf(0.5, stink_cloud_timer))
+		if stink_cloud_timer <= 0.0:
+			stink_cloud = Vector2.INF
+	if smoke_cloud_timer > 0.0:
+		smoke_cloud_timer = maxf(0.0, smoke_cloud_timer - delta)
+		var ty2 := _nearest_tyrant_to(smoke_cloud, 240.0)
+		if ty2 != null:
+			ty2.smoke_slow(1.5)
+		if smoke_cloud_timer <= 0.0:
+			smoke_cloud = Vector2.INF
+
 func _use_item(index: int) -> void:
 	if GameState.run_state != GameState.RunState.EXPLORING or _modal_open():
 		return
 	if index < 0:
 		return
 	if index >= GameState.inventory.size():
+		hud.toast("这一格没有道具")
 		return
 	var id: String = GameState.inventory_item_id(index)
 	var def: Dictionary = GameState.get_item_def(id)
@@ -1623,14 +1790,15 @@ func _use_item(index: int) -> void:
 			item_fx.burst("bread", fx)
 			hud.toast("面包下肚：空虚值 +25")
 		"smoke":
-			var t_smoke := _nearest_tyrant(420.0)
-			if t_smoke == null:
-				hud.toast("附近没有暴君，烟雾弹先留着")
-				return
-			t_smoke.smoke_slow(5.0)
+			smoke_cloud = player.position
+			smoke_cloud_timer = 6.0
+			var s_ty := _nearest_tyrant_to(smoke_cloud, 260.0)
+			if s_ty != null:
+				s_ty.smoke_slow(3.0)
 			GameState.remove_item_at(index)
-			item_fx.burst("smoke", fx, t_smoke.position)
-			hud.toast("烟雾弹：暴君减速并暂时跟丢")
+			item_fx.burst("smoke", fx, smoke_cloud)
+			_spawn_cloud_visual(smoke_cloud, Color(0.75, 0.78, 0.84, 0.55), 6.0)
+			hud.toast("烟雾弹已放下：追击者进入会变慢")
 		"chair":
 			var t_chair := _nearest_tyrant(100.0)
 			if t_chair == null:
@@ -1645,14 +1813,15 @@ func _use_item(index: int) -> void:
 			_fx_flash(Color(1.0, 0.85, 0.3), 0.12, 0.3)
 			hud.toast("折叠椅命中！暴君眩晕 2 秒")
 		"stink":
-			var t_stink := _nearest_tyrant(650.0)
-			if t_stink == null:
-				hud.toast("附近没有暴君，臭气弹先留着")
-				return
-			t_stink.lure_to(player.position + Vector2(randf_range(-70, 70), randf_range(-50, 50)), 5.0)
+			stink_cloud = player.position
+			stink_cloud_timer = 6.0
+			var t_stink := _nearest_tyrant_to(stink_cloud, 650.0)
+			if t_stink != null:
+				t_stink.lure_to(stink_cloud, 6.0)
 			GameState.remove_item_at(index)
-			item_fx.burst("stink", fx, t_stink.position)
-			hud.toast("臭气弹：暴君被引向错误方向！")
+			item_fx.burst("stink", fx, stink_cloud)
+			_spawn_cloud_visual(stink_cloud, Color(0.55, 0.72, 0.35, 0.55), 6.0)
+			hud.toast("臭气弹已放下：追击者会被气味吸引")
 		"portal":
 			if portal_anchor == Vector2.INF:
 				portal_anchor = player.position
@@ -1746,8 +1915,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_pause_menu()
 
 func _show_pause_menu() -> void:
+	var prev_paused := get_tree().paused
+	get_tree().paused = true
 	var layer := CanvasLayer.new()
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	_push_modal(layer)
+	var close_pause := func() -> void:
+		get_tree().paused = prev_paused
+		_pop_modal(layer)
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.5)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -1769,21 +1944,21 @@ func _show_pause_menu() -> void:
 	vbox.add_child(title)
 	vbox.add_child(_volume_settings_box())
 	for item in [
-		["继续", func(): _pop_modal(layer)],
+		["继续", func(): close_pause.call()],
 		["保存进度", func():
 			var ok := SaveManager.save_run()
 			hud.toast("保存成功" if ok else "保存失败")
-			_pop_modal(layer)],
+			close_pause.call()],
 		["读取进度", func():
 			if SaveManager.load_run():
 				_setup_level()
 				hud.toast("读取成功")
 			else:
 				hud.toast("没有存档")
-			_pop_modal(layer)],
-		["导入题库（开发）", func(): _pop_modal(layer); _import_bank()] if DevMode.enabled and DevMode.import_bank else [],
+			close_pause.call()],
+		["导入题库（开发）", func(): close_pause.call(); _import_bank()] if DevMode.enabled and DevMode.import_bank else [],
 		["主菜单", func():
-			_pop_modal(layer)
+			close_pause.call()
 			GameState.run_state = GameState.RunState.MENU
 			_show_menu()],
 	]:
@@ -1937,6 +2112,8 @@ func _import_bank() -> void:
 	dialog.popup_centered()
 
 func _show_menu() -> void:
+	if GameState.tutorial_active:
+		_abort_tutorial()
 	if menu_layer != null and is_instance_valid(menu_layer):
 		_pop_modal(menu_layer)
 	menu_layer = CanvasLayer.new()
@@ -1993,10 +2170,10 @@ func _show_menu() -> void:
 		buttons.add_child(load_btn)
 		menu_buttons.append(load_btn)
 
-	var intro_btn := _menu_button("重看开场动画", UiTheme.COL_CYAN, false, func():
+	var intro_btn := _menu_button("重历开场", UiTheme.COL_CYAN, false, func():
 		_pop_modal(menu_layer)
 		menu_layer = null
-		_play_intro())
+		_play_intro(true))
 	buttons.add_child(intro_btn)
 	menu_buttons.append(intro_btn)
 

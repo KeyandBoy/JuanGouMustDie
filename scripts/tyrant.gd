@@ -32,6 +32,7 @@ var stun_timer := 0.0
 var aura_radius := 200.0
 var facing := Vector2.DOWN
 var bob_time := 0.0
+var tutorial_driven := false
 var path := PackedVector2Array()
 var path_index := 0
 var repath_timer := 0.0
@@ -54,6 +55,11 @@ func _ready() -> void:
 	add_to_group("tyrants")
 	collision_layer = 2
 	collision_mask = 1
+	var ty_shape := CollisionShape2D.new()
+	var ty_circle := CircleShape2D.new()
+	ty_circle.radius = 16.0
+	ty_shape.shape = ty_circle
+	add_child(ty_shape)
 	smoke_back = smoke_script.new()
 	smoke_back.alpha = 0.5
 	smoke_back.radius = 18.0
@@ -120,6 +126,10 @@ func setup(p_map: Node2D, p_player: Node2D, p_level: int = 4) -> void:
 	speed = (148.0 if level <= 4 else 158.0) * CHASE_SPEED_MULT
 
 func _physics_process(delta: float) -> void:
+	if tutorial_driven:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	if slow_timer > 0.0:
 		slow_timer -= delta
 		if slow_timer <= 0.0:

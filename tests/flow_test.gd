@@ -333,18 +333,46 @@ func _ready() -> void:
 	_check(students.size() == 7, "7 students spawned (%d)" % students.size(), failures)
 	_check(inst.map.rooms.size() > 0, "map rooms after start (%d)" % inst.map.rooms.size(), failures)
 	_check(inst.map.is_connected_plan(), "start-level plan connected", failures)
+	_check(inst.player.position.distance_to(inst.map.exit_pos) > 1.0, "spawn: random room, not hall", failures)
+	_check(inst._spawn_point_clear(inst.player.position), "spawn: clear of desks and boxes", failures)
+	inst.hud._set_panel_side("left", false)
+	_check(inst.hud._side_for_point(Vector2(20, 20)) == "right", "hud: top-left corner flips panel right", failures)
+	_check(inst.hud._side_for_point(Vector2(640, 360)) == "left", "hud: screen center keeps panel left", failures)
+	inst.hud._set_panel_side("right", false)
+	var right_rect: Rect2 = inst.hud._panel_rect()
+	_check(inst.hud.panel_side == "right" and right_rect.position.y < 40.0, "hud: panel parks at top-right", failures)
+	_check(inst.hud._side_for_point(right_rect.get_center()) == "left", "hud: player under right panel flips it back", failures)
+	inst.hud._set_panel_side("left", false)
+	var t_before := GameState.play_time
+	inst._show_pause_menu()
+	_check(get_tree().paused, "pause: tree paused", failures)
+	await get_tree().create_timer(0.25, true).timeout
+	_check(is_equal_approx(GameState.play_time, t_before), "pause: play_time frozen (%.3f)" % (GameState.play_time - t_before), failures)
+	var resume_btn: Button = null
+	for m in get_tree().get_nodes_in_group("ui_modal"):
+		for btn in m.find_children("*", "Button", true, false):
+			if (btn as Button).text == "继续":
+				resume_btn = btn
+	if resume_btn != null:
+		resume_btn.emit_signal("pressed")
+	await get_tree().process_frame
+	_check(not get_tree().paused, "pause: resume unpauses", failures)
 	_check(inst.world_modulate != null and inst.world_modulate.visible, "lighting: canvas modulate active", failures)
-	_check(inst.player_light != null and inst.player_light.get_parent() == inst.player, "lighting: player light on player", failures)
+	var player_light := false
+	for c in inst.player.get_children():
+		if c is PointLight2D:
+			player_light = true
+	_check(not player_light, "lighting: player highlight removed", failures)
 	_check(inst.level_lights != null and inst.level_lights.get_child_count() >= 1, "lighting: lamps spawned (%d)" % (inst.level_lights.get_child_count() if inst.level_lights else 0), failures)
 	var light_dev := DevMode.lighting
 	DevMode.lighting = false
 	inst._apply_lighting_visibility()
-	_check(not inst.world_modulate.visible and not inst.player_light.visible, "lighting: dev toggle hides lights", failures)
+	_check(not inst.world_modulate.visible, "lighting: dev toggle hides lights", failures)
 	DevMode.lighting = true
 	inst._apply_lighting_visibility()
-	_check(inst.world_modulate.visible and inst.player_light.visible, "lighting: dev toggle restores lights", failures)
+	_check(inst.world_modulate.visible, "lighting: dev toggle restores lights", failures)
 	DevMode.lighting = light_dev
-	_check(inst.minimap != null, "minimap spawned", failures)
+	_check(inst.minimap == null and inst.minimap_script != null and inst.has_method("_setup_minimap"), "minimap: ui disabled, interface kept", failures)
 
 	var desk_ok := true
 	for d in inst.map.desks:
@@ -646,6 +674,7 @@ func _ready() -> void:
 	_check(odd_fonts.is_empty(), "font: %d labels all resolve to zpix (odd: %s)" % [label_count, ", ".join(odd_fonts)], failures)
 
 	var tip2: DialogueData = DialogueDb.level_tip(2)
+	_check(DialogueDb.level_tip(1) == null, "dialogue: level 1 tip removed", failures)
 	_check(tip2 != null and tip2.lines.size() >= 1 and tip2.lines[0].text.length() > 0, "dialogue: level 2 tip built", failures)
 	_check(DialogueDb.level_tip(6) == null, "dialogue: unknown level has no tip", failures)
 	var dlg_ui: Control = load("res://scripts/dialogue_ui.gd").new()
@@ -706,6 +735,24 @@ func _ready() -> void:
 		_check(inst.item_fx._parts.size() > fx_before, "items: burst spawns fx parts (%d -> %d)" % [fx_before, inst.item_fx._parts.size()], failures)
 		inst.item_fx.clear()
 		_check(inst.item_fx._parts.is_empty(), "items: clear() empties fx parts", failures)
+
+	GameState.run_state = GameState.RunState.EXPLORING
+	GameState.inventory.clear()
+	GameState.add_item("stink")
+	inst._use_item(0)
+	_check(GameState.inventory.is_empty() and inst.stink_cloud_timer > 0.0, "items: stink usable without a tyrant nearby", failures)
+	GameState.inventory.clear()
+	GameState.add_item("smoke")
+	inst._use_item(0)
+	_check(GameState.inventory.is_empty() and inst.smoke_cloud_timer > 0.0, "items: smoke usable without a tyrant nearby", failures)
+	GameState.inventory.clear()
+	inst._use_item(0)
+	_check(inst.hud.prompt_label.text == "这一格没有道具", "items: empty slot gives feedback", failures)
+	GameState.correct_streak = 0
+	GameState.study = 0.0
+	GameState.emptiness = 40.0
+	GameState.on_correct_answer(1.0)
+	_check(is_equal_approx(GameState.emptiness, 45.0), "emptiness rises per correct answer (%.1f)" % GameState.emptiness, failures)
 
 	var intro_script = load("res://scripts/intro.gd")
 	if intro_script != null:

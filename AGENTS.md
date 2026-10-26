@@ -2,7 +2,7 @@
 
 1. 动手前先读 `开发记录.md`（架构、约定、坑、路线图）和 `需求汇总.txt`（需求来源）。
 2. 每次改动必须：
-   - 跑三套测试：`flow_test` / `_stalkerprobe` / `student_test`（命令见 `开发记录.md` 第 2 节）；
+   - 跑四套测试：`flow_test` / `_stalkerprobe` / `student_test` / `tutorial_test`（命令见 `开发记录.md` 第 2 节）；
    - 涉及画面时跑 `tests/screenshot.tscn` 并目视检查 `tests/shot_*.png`；
    - 在 `开发记录.md` 的「变更日志」顶部追加：日期、改了什么、为什么、怎么验证；
    - 需求有增减时同步 `需求汇总.txt`。

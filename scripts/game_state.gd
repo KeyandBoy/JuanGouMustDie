@@ -133,6 +133,7 @@ var explored_rooms := 0
 
 var story_flags: Dictionary = {}
 var play_time := 0.0
+var tutorial_active := false
 
 func _ready() -> void:
 	randomize()
@@ -149,7 +150,9 @@ func set_level(p_level: int) -> void:
 func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"]) -> void:
 	grade_id = p_grade
 	subjects = p_subjects
-	story_flags.clear()
+	for k in story_flags.keys():
+		if String(k).begins_with("dlg_lv_"):
+			story_flags.erase(k)
 	play_time = 0.0
 	set_level(1)
 	study = 0.0
@@ -209,11 +212,13 @@ func add_study(amount: float) -> void:
 	if run_state == RunState.CLEARED or run_state == RunState.GAMEOVER:
 		return
 	study += amount
-	if study >= study_goal:
+	if study >= study_goal and not tutorial_active:
 		run_state = RunState.CLEARED
 
 func damage_emptiness(amount: float) -> void:
 	emptiness -= amount
+	if tutorial_active:
+		emptiness = maxf(emptiness, 10.0)
 	if emptiness <= 0.0:
 		run_state = RunState.GAMEOVER
 
@@ -222,6 +227,9 @@ func restore_emptiness(amount: float) -> void:
 
 func add_warning(count: int = 1) -> void:
 	warnings += count
+	if tutorial_active:
+		warnings = mini(warnings, max_warnings)
+		return
 	if warnings >= max_warnings:
 		run_state = RunState.GAMEOVER
 
@@ -234,6 +242,7 @@ func on_correct_answer(efficiency: float = -1.0) -> void:
 	correct_streak += 1
 	var gain := answer_efficiency if efficiency < 0.0 else efficiency
 	add_study(maxf(0.1, gain * hot_multiplier()))
+	restore_emptiness(5.0)
 	if correct_streak % 3 == 0:
 		restore_emptiness(10.0)
 	_sync_hot()

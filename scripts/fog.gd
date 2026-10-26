@@ -33,6 +33,7 @@ var ambient_density := 0.0
 var ambient_target := 0.0
 var flicker: ColorRect
 var flicker_timer := 0.0
+var tutorial_mode := false
 
 func _ready() -> void:
 	z_index = 50
@@ -97,6 +98,12 @@ func set_tyrant_active(active: bool, level: int) -> void:
 		ambient.visible = active or ambient_density > 0.01
 
 func _process(delta: float) -> void:
+	if tutorial_mode:
+		if halo != null:
+			halo.visible = false
+		if ambient != null:
+			ambient.visible = false
+		return
 	_update_forget(delta)
 	_apply_halo()
 	_update_ambient(delta)

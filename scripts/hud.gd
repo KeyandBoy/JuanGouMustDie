@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+signal skip_pressed
+
 var study_bar: ProgressBar
 var study_label: Label
 var emptiness_bar: ProgressBar
@@ -12,8 +14,18 @@ var prompt_chip: PanelContainer
 var hot_chip: PanelContainer
 var hot_label: Label
 var inventory_box: HBoxContainer
+var task_panel: PanelContainer
+var task_label: Label
+var skip_button: Button
+var tutorial_mode := false
+var tutorial_stars := 0
 var dev_label: Label
+var status_panel: PanelContainer
+var panel_side := "left"
+var reserve_top_right := false
 var toast_timer := 0.0
+var _panel_tween: Tween
+var _panel_cooldown := 0.0
 var _warning_pips: Array[Panel] = []
 var _hot_pips: Array[Panel] = []
 
@@ -47,6 +59,7 @@ func _ready() -> void:
 	panel.custom_minimum_size = Vector2(262, 0)
 	panel.self_modulate = Color(1, 1, 1, 0.94)
 	root.add_child(panel)
+	status_panel = panel
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
@@ -155,6 +168,37 @@ func _ready() -> void:
 	prompt_chip.add_child(prompt_label)
 	prompt_chip.visible = false
 
+	task_panel = PanelContainer.new()
+	task_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	task_panel.offset_left = -280.0
+	task_panel.offset_right = 280.0
+	task_panel.offset_top = -206.0
+	task_panel.offset_bottom = -170.0
+	task_panel.add_theme_stylebox_override("normal", UiTheme.panel_style(UiTheme.COL_GOLD, UiTheme.COL_PANEL_BG, 2))
+	task_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	task_panel.visible = false
+	root.add_child(task_panel)
+	task_label = Label.new()
+	task_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	task_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	task_label.add_theme_font_size_override("font_size", 15)
+	task_label.add_theme_color_override("font_color", UiTheme.COL_GOLD)
+	task_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	task_panel.add_child(task_label)
+
+	skip_button = Button.new()
+	skip_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	skip_button.offset_left = -132.0
+	skip_button.offset_top = -56.0
+	skip_button.offset_right = -12.0
+	skip_button.offset_bottom = -20.0
+	skip_button.text = "跳过教学"
+	skip_button.focus_mode = Control.FOCUS_NONE
+	skip_button.add_theme_font_size_override("font_size", 13)
+	skip_button.visible = false
+	skip_button.pressed.connect(func(): skip_pressed.emit())
+	root.add_child(skip_button)
+
 	_refresh_study()
 	_refresh_floor()
 	_refresh_inventory()
@@ -176,6 +220,7 @@ func _ready() -> void:
 	GameState.inventory_changed.connect(_refresh_inventory)
 	GameState.stars_changed.connect(_refresh_stars)
 	GameState.hot_changed.connect(_refresh_hot)
+	get_viewport().size_changed.connect(func(): _set_panel_side(panel_side, false))
 
 func _chip(parent: Control) -> Label:
 	var wrap := PanelContainer.new()
@@ -258,10 +303,24 @@ func _refresh_study() -> void:
 	study_label.text = "净答对 %.1f/%.0f" % [GameState.study, GameState.study_goal]
 
 func _refresh_floor() -> void:
-	floor_label.text = "%dF" % GameState.level
+	floor_label.text = "教学" if tutorial_mode else "%dF" % GameState.level
 
 func _refresh_stars() -> void:
-	stars_label.text = "★ %d" % GameState.stars
+	stars_label.text = "★ %d" % (tutorial_stars if tutorial_mode else GameState.stars)
+
+func set_tutorial_mode(on: bool) -> void:
+	tutorial_mode = on
+	tutorial_stars = 3 if on else 0
+	if task_panel != null:
+		task_panel.visible = on
+	if skip_button != null:
+		skip_button.visible = on
+	_refresh_floor()
+	_refresh_stars()
+
+func set_task(text: String) -> void:
+	if task_label != null:
+		task_label.text = text
 
 func _refresh_inventory() -> void:
 	for c in inventory_box.get_children():
@@ -362,8 +421,52 @@ func _process(delta: float) -> void:
 	if dev_label != null:
 		dev_label.text = DevMode.status_text()
 		dev_label.visible = DevMode.enabled
+	_update_panel_side(delta)
 	if toast_timer > 0:
 		toast_timer -= delta
 		if toast_timer <= 0:
 			prompt_label.text = ""
 			prompt_chip.visible = false
+
+func _panel_rect() -> Rect2:
+	if status_panel == null or not is_instance_valid(status_panel):
+		return Rect2()
+	return Rect2(status_panel.position, status_panel.size)
+
+func _side_for_point(p: Vector2) -> String:
+	var r := _panel_rect().grow(26.0)
+	if r.has_point(p):
+		return "right" if panel_side == "left" else "left"
+	return panel_side
+
+func _set_panel_side(side: String, animate := true) -> void:
+	if status_panel == null or not is_instance_valid(status_panel):
+		return
+	panel_side = side
+	var size := status_panel.size
+	if size.x < 10.0:
+		size = Vector2(262.0, 150.0)
+	var vw := get_viewport().get_visible_rect().size.x
+	var target := Vector2(8.0, 8.0)
+	if side == "right":
+		target = Vector2(vw - size.x - 12.0, 156.0 if reserve_top_right else 8.0)
+	if _panel_tween != null and _panel_tween.is_valid():
+		_panel_tween.kill()
+	if not animate:
+		status_panel.position = target
+		return
+	_panel_tween = create_tween()
+	_panel_tween.tween_property(status_panel, "position", target, 0.16)
+
+func _update_panel_side(delta: float) -> void:
+	_panel_cooldown = maxf(0.0, _panel_cooldown - delta)
+	var pl := get_tree().get_first_node_in_group("player")
+	if not (pl is Node2D) or status_panel == null or not is_instance_valid(status_panel):
+		return
+	var p: Vector2 = (pl as Node2D).get_global_transform_with_canvas().origin
+	if _panel_cooldown > 0.0:
+		return
+	var want := _side_for_point(p)
+	if want != panel_side:
+		_set_panel_side(want)
+		_panel_cooldown = 0.4

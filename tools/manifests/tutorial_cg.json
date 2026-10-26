@@ -1,0 +1,20 @@
+[
+  {
+    "name": "tutorial_outro_1",
+    "prompt": "Pixel art game cutscene background, a quiet Chinese high school classroom at dawn after class, empty wooden desks in rows, soft cold morning light through windows, dust motes, melancholic horror atmosphere, muted green and warm gray palette, wide cinematic composition, no text, no characters",
+    "ratio": "16:9",
+    "out": "res://art/cutscene/tutorial_outro_1.png"
+  },
+  {
+    "name": "tutorial_outro_2",
+    "prompt": "Pixel art horror game cutscene, dim Chinese school corridor at night, a tall shadowy humanoid figure standing far away at the end of the hallway, flickering ceiling lamps, faint red emergency light, ominous atmosphere, wide cinematic composition, no text",
+    "ratio": "16:9",
+    "out": "res://art/cutscene/tutorial_outro_2.png"
+  },
+  {
+    "name": "tutorial_outro_3",
+    "prompt": "Pixel art game cutscene background, looking up a dim Chinese school stairwell toward a bright doorway at the top, dust floating in the light beam, quiet unsettling mood, muted green palette, wide cinematic composition, no text, no characters",
+    "ratio": "16:9",
+    "out": "res://art/cutscene/tutorial_outro_3.png"
+  }
+]

@@ -34,7 +34,30 @@ const SCENES := [
 const TITLE_TEXT := "卷狗必须死"
 const SUB_TEXT := "不学习，就死。"
 
+const OUTRO_SCENES := [
+	{
+		"bg": "res://art/cutscene/tutorial_outro_1.png",
+		"text": "训练结束。走廊重新安静下来。",
+		"dur": 2.0,
+		"danger": false,
+	},
+	{
+		"bg": "res://art/cutscene/tutorial_outro_2.png",
+		"text": "但你听见了——\n楼上，有什么东西在翻书。",
+		"dur": 2.4,
+		"danger": true,
+	},
+	{
+		"bg": "res://art/cutscene/tutorial_outro_3.png",
+		"text": "往上走。别停。",
+		"dur": 2.0,
+		"danger": false,
+	},
+]
+
 var _skip := false
+var _scenes: Array = []
+var _show_title := true
 var _advance := false
 var _done := false
 var _bg: TextureRect
@@ -67,7 +90,9 @@ func _font_or_default() -> Font:
 		return _font
 	return ThemeDB.fallback_font
 
-func play() -> void:
+func play(scenes_override: Array = []) -> void:
+	_scenes = scenes_override if not scenes_override.is_empty() else SCENES
+	_show_title = scenes_override.is_empty()
 	# 不透明遮底：开场动画期间底下还挂着主场景（地图/玩家/HUD），
 	# 没有这层的话换图或首帧会直接露出第一关的游戏画面。
 	_backdrop = ColorRect.new()
@@ -120,12 +145,15 @@ func play() -> void:
 	root.add_child(hint)
 	await _hold(0.25)
 	await _run_scenes()
-	if not _skip:
+	if not _skip and _show_title:
 		await _title_card()
 	_finish()
 
+func play_outro() -> void:
+	play(OUTRO_SCENES)
+
 func _run_scenes() -> void:
-	for scene in SCENES:
+	for scene in _scenes:
 		if _skip:
 			return
 		_clear_chalk()

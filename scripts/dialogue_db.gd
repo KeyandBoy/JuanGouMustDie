@@ -25,11 +25,7 @@ static func make(id: String, entries: Array) -> DialogueData:
 static func level_tip(level: int) -> DialogueData:
 	match level:
 		1:
-			return make("level_1_tip", [
-				{"speaker": "广播", "text": "欢迎来到躺平学校。在这里，学习是违规的。"},
-				{"speaker": "广播", "text": "靠近课桌按 F 坐下答题；答对才有净增长，答错会掉空虚值。"},
-				{"speaker": "广播", "text": "被盯上就往楼梯间跑——下一层永远比这一层安全。"},
-			])
+			return null
 		2:
 			return make("level_2_tip", [
 				{"speaker": "同桌", "text": "巡查开始记巡逻路线了，别在一个房间待太久。"},

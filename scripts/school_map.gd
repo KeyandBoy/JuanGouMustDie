@@ -266,6 +266,72 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	_build_astar()
 	queue_redraw()
 
+func generate_tutorial() -> void:
+	_reset()
+	level_seed = 20261025
+	rng.seed = level_seed
+	is_l_shape = false
+	gw = 42
+	gh = 21
+	grid.resize(gw * gh)
+	grid.fill(SOLID)
+	_room_cell.resize(gw * gh)
+	_room_cell.fill(-1)
+	world_rect = Rect2(0, 0, gw * CELL, gh * CELL)
+	corridor_rect = Rect2(1 * CELL, 9 * CELL, 40 * CELL, 3 * CELL)
+	tail_corridor_rect = Rect2()
+	_carve_rect(1, 9, 41, 12)
+	var defs := [
+		[2, 16, 2, 8, "classroom"],
+		[18, 27, 2, 8, "office"],
+		[29, 40, 2, 8, "stair"],
+		[2, 12, 13, 19, "toilet"],
+		[14, 27, 13, 19, "storage"],
+	]
+	for d in defs:
+		var x0: int = d[0]
+		var x1: int = d[1]
+		var y0: int = d[2]
+		var y1: int = d[3]
+		var t: String = d[4]
+		_carve_rect(x0, y0, x1, y1)
+		rooms.append(Rect2(x0 * CELL, y0 * CELL, (x1 - x0) * CELL, (y1 - y0) * CELL))
+		room_types.append(t)
+		room_names.append(String(type_defs[t]["name"]))
+		explored.append(true)
+		for y in range(y0, y1):
+			for x in range(x0, x1):
+				_room_cell[y * gw + x] = rooms.size() - 1
+	for i in rooms.size():
+		var r: Rect2 = rooms[i]
+		var cx0 := int(r.position.x / CELL)
+		var cx1 := int(r.end.x / CELL)
+		var dx := cx0 + maxi(2, int((cx1 - cx0) * 0.5) - 1)
+		if r.position.y < corridor_rect.position.y:
+			_carve_rect(dx, 8, dx + DOOR_W, 9)
+			doors.append({
+				"pos": Vector2((dx + DOOR_W * 0.5) * CELL, 8.5 * CELL),
+				"axis": "h", "dir": -1.0, "width": DOOR_W * CELL,
+			})
+			windows.append({"rect": Rect2(r.position.x + 3 * CELL, CELL + 2.0, r.size.x - 6 * CELL, 16.0), "axis": "h"})
+		else:
+			_carve_rect(dx, 12, dx + DOOR_W, 13)
+			doors.append({
+				"pos": Vector2((dx + DOOR_W * 0.5) * CELL, 12.5 * CELL),
+				"axis": "h", "dir": 1.0, "width": DOOR_W * CELL,
+			})
+			windows.append({"rect": Rect2(r.position.x + 3 * CELL, (gh - 2) * CELL + 2.0, r.size.x - 6 * CELL, 16.0), "axis": "h"})
+	stair_rects.append(rooms[2])
+	exit_pos = _walkable_center(rooms[0])
+	_build_walls()
+	_build_collision()
+	_build_nav()
+	_build_doors()
+	_build_tiles()
+	_spawn_furniture()
+	_build_astar()
+	queue_redraw()
+
 func _reset() -> void:
 	for c in get_children():
 		remove_child(c)
@@ -455,20 +521,20 @@ func _build_tiles() -> void:
 
 	var holder := Node2D.new()
 	holder.name = "Tiles"
-	holder.z_index = -1
+	holder.z_index = -8
 	add_child(holder)
 
 	_floor_layer = TileMapLayer.new()
 	_floor_layer.name = "FloorLayer"
 	_floor_layer.tile_set = ts
 	_floor_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_floor_layer.z_index = 1
+	_floor_layer.z_index = 0
 	holder.add_child(_floor_layer)
 
 	var shadow := WallShadow.new()
 	shadow.name = "WallShadow"
 	shadow.rects = wall_rects
-	shadow.z_index = 2
+	shadow.z_index = 1
 	holder.add_child(shadow)
 	shadow.queue_redraw()
 
@@ -476,7 +542,7 @@ func _build_tiles() -> void:
 	_wall_layer.name = "WallLayer"
 	_wall_layer.tile_set = ts
 	_wall_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_wall_layer.z_index = 3
+	_wall_layer.z_index = 2
 	holder.add_child(_wall_layer)
 
 	var type_index := {}
