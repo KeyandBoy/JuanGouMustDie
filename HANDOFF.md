@@ -3,7 +3,7 @@
 - 更新时间：2026-10-26
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：0e0e75e（已推送）
+- 当前 HEAD：运行 `git rev-parse --short HEAD` 查看（写本文件时 0d01e4c，交接制度已推送）
 - 工作区：干净（素材/ 与 SESSION.lock 已忽略）
 
 ## 当前目标
@@ -11,6 +11,8 @@
 维护《卷狗必须死》并继续素材替换评估：先由用户从候选图中确认道具图标/角色模型是否替换，再进入实现。
 
 ## 本轮已完成
+
+- 双工具交接制度：`HANDOFF.md` + `tools/handoff.ps1`（`-Start/-End/-Force/-Clipboard`）+ `SESSION.lock`；AGENTS.md 已加入开工/收工协议与 DSH 开场提示。
 
 - 新手关：固定教学地图、7 步引导、广播/任务文案定稿、出发广播杂噪音效、新过场 CG（3 张 AI 图）、首次启动「CG → 新手关 → 新 CG → 主菜单」。
 - 第 1 关广播提示删除；主菜单「重看开场动画」改名「重历开场」并重播全流程。
@@ -63,4 +65,4 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 - 素材包：`E:\computerProgram2\JuanGouMustDie\素材\PixelSRPG-Forge-main`（本地，不入库）
 - 参考库：`tools/_gen/godotarchive`（本地，不入库）
 - 构建：`powershell -ExecutionPolicy Bypass -File tools\build_web.ps1`（需 `$env:GODOT`）
-- 交接工具：`powershell -ExecutionPolicy Bypass -File tools\handoff.ps1`（可 `-Clipboard` 复制摘要）
+- 交接工具：`powershell -ExecutionPolicy Bypass -File tools\handoff.ps1`（`-Clipboard` 复制摘要；`-Start <tool> -Intent "..."` 加锁，`-End` 解锁）
