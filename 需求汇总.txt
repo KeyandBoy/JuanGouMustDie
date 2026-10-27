@@ -349,3 +349,5 @@
 - 开工：git pull → HANDOFF.md → tools/handoff.ps1 → 开发记录顶部 → git status
 - 收工：四套测试 → 更新 HANDOFF.md → 追加开发记录 → commit + push → HEAD 写回 HANDOFF
 - DSH 不自动读 AGENTS.md，开场手动粘贴固定提示；`素材/` 与 `SESSION.lock` 不入库
+- 面包、学霸笔记图标改用素材库版本；其余道具图标保留
+- 怪物/角色/建筑素材已分类存到 素材/_extracted（本地，不入库），索引 INDEX.md

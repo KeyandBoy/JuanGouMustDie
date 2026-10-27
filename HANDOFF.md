@@ -27,6 +27,8 @@
 - 第 1 关广播提示删除；主菜单「重看开场动画」改名「重历开场」并重播全流程。
 - 修复：暂停真正暂停场景树；追击者补碰撞体（不再贴脸）；烟雾/臭气弹无目标也可放下；空虚值每答对 +5；HUD 挡视野时换右上；门上瓦片层级；玩家高光移除；右上小地图下线（接口保留）。
 - 素材包 `PixelSRPG-Forge-main` 已调研并按 409 个图标切片到 `素材/_preview/sliced/icons`（本地，不入库）；`素材/` 已加入 .gitignore 与 Web 导出排除。
+- 已替换 `bread`（面包）与 `notes`（学霸笔记）图标为素材库版本（2x NEAREST，44x48 / 34x48），四套测试与截图通过。
+- 已把后续可能用到的素材分类提取到 `素材/_extracted/`（本地）：`monsters/`、`characters/four_dir`（151 张四方向人）、`characters/platformer`、`buildings/{sandstone,clean_city,basement,dungeon_pack,interior}`、`ui/platformer_ui`、`props/misc`；索引见 `素材/_extracted/INDEX.md`，速览 `characters_four_dir_contact.png`、`buildings_contact.png`、`monsters_contact.png`。
 
 ## 未提交改动
 
@@ -35,8 +37,8 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. 道具图标比对已完成（`素材/_preview/items_final_candidates.png`）：干净候选只有 bread=b3_13、stink=b13_17（绿罐）、notes=b3_18（红书）、lamp=b3_19（左半油灯）；shovel=b3_21 是镐、portal=b12_0 是球不是门。这些是 16–24px 幻想风，低于现有 48px 图标 → 建议保留现有；若用户坚持，只替换 bread/stink/notes/lamp。
-2. 角色/追击者比对已完成（`素材/_preview/characters_candidates.png`）：现有玩家 64×64、追击者 124×192 明显优于包内 Ghost/Slime/Skeleton/Priest/骑士/FarmLife（16–44px、风格偏卡通/地牢）→ 结论：不替换；若要升级追击者，改用 `tools/gen_art.ps1` 生图管线出 124×192 透明底新立绘。
+1. 道具图标：bread（面包）与 notes（学霸笔记）已按用户决定替换；其余保留（stink/lamp 可换但用户未选，shovel/portal 不匹配）。后续如需替换 stink/lamp，直接复制 `素材/_preview/final_cands/` 内对应图并 2x NEAREST。
+2. 角色/追击者：结论保持现有。素材已分类存入 `素材/_extracted/characters/`（four_dir 151 张、platformer、farmlife、dungeon、sandstone）；若要升级追击者，改用 `tools/gen_art.ps1` 出 124×192 透明底新立绘。
 3. 等用户明确批准替换项后再动 `art/ui/icons/` 与 `art/sprites/`；改完必须重新导入、跑四套测试 + screenshot。
 4. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
