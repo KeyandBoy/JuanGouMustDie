@@ -6,6 +6,21 @@ const TEX_FRONT := preload("res://art/sprites/64/01_player_front.png")
 const TEX_BACK := preload("res://art/sprites/64/02_player_back.png")
 const TEX_LEFT := preload("res://art/sprites/64/03_player_left.png")
 const TEX_RIGHT := preload("res://art/sprites/64/04_player_right.png")
+
+# 走路 / 冲刺（跑）循环：每个方向一条横向条带，64x64 x N 帧
+const WALK_FRAMES := 8
+const RUN_FRAMES := 4
+const TEX_WALK_FRONT := preload("res://art/sprites/64/anim/player_walk_front.png")
+const TEX_WALK_BACK := preload("res://art/sprites/64/anim/player_walk_back.png")
+const TEX_WALK_LEFT := preload("res://art/sprites/64/anim/player_walk_left.png")
+const TEX_WALK_RIGHT := preload("res://art/sprites/64/anim/player_walk_right.png")
+const TEX_RUN_FRONT := preload("res://art/sprites/64/anim/player_run_front.png")
+const TEX_RUN_BACK := preload("res://art/sprites/64/anim/player_run_back.png")
+const TEX_RUN_LEFT := preload("res://art/sprites/64/anim/player_run_left.png")
+const TEX_RUN_RIGHT := preload("res://art/sprites/64/anim/player_run_right.png")
+
+const WALK_FPS := 11.0
+const RUN_FPS := 16.0
 const VISUAL_SCALE := 0.7
 
 var speed_walk := 160.0
@@ -15,6 +30,7 @@ var can_move := true
 var stun_timer := 0.0
 var face_dir := Vector2.DOWN
 var bob_time := 0.0
+var anim_time := 0.0
 var sprite: Sprite2D
 var dashing := false
 var speed_buff_timer := 0.0
@@ -30,7 +46,9 @@ const DASH_DRAIN_RATE := 100.0 / 3.0
 func _ready() -> void:
 	add_to_group("player")
 	sprite = Sprite2D.new()
-	sprite.texture = TEX_FRONT
+	sprite.texture = TEX_WALK_FRONT
+	sprite.hframes = WALK_FRAMES
+	sprite.frame = 0
 	sprite.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = 1
@@ -114,6 +132,8 @@ func _process(delta: float) -> void:
 		sprite.modulate = Color(0.65, 0.65, 0.75)
 		sprite.rotation = sin(Time.get_ticks_msec() * 0.02) * 0.12
 		sprite.position.y = 0.0
+		anim_time = 0.0
+		_apply_frame(false)
 		return
 	sprite.rotation = 0.0
 	sprite.modulate = Color.WHITE
@@ -122,11 +142,40 @@ func _process(delta: float) -> void:
 	var moving := velocity.length() > 5.0
 	if moving:
 		face_dir = _dominant_dir(velocity)
-		bob_time += delta * (16.0 if dashing else 9.0)
+		anim_time += delta * (RUN_FPS if dashing else WALK_FPS)
 	else:
-		bob_time = 0.0
-	sprite.texture = _texture_for(face_dir)
-	sprite.position.y = -absf(sin(bob_time)) * 1.5
+		anim_time = 0.0
+	_apply_frame(moving and dashing)
+	sprite.position.y = 0.0
+
+# 按当前朝向与状态贴帧：静止 = 走路循环第 1 帧；移动 = 走路循环；冲刺 = 跑步循环
+func _apply_frame(running: bool) -> void:
+	var tex: Texture2D
+	var frames: int
+	if running:
+		frames = RUN_FRAMES
+		tex = _run_texture_for(face_dir)
+	else:
+		frames = WALK_FRAMES
+		tex = _walk_texture_for(face_dir)
+	if sprite.texture != tex:
+		sprite.texture = tex
+		sprite.hframes = frames
+		sprite.vframes = 1
+	var f := int(anim_time) % frames
+	if f < 0:
+		f = 0
+	sprite.frame = f
+
+func _walk_texture_for(dir: Vector2) -> Texture2D:
+	if absf(dir.x) >= absf(dir.y):
+		return TEX_WALK_RIGHT if dir.x > 0.0 else TEX_WALK_LEFT
+	return TEX_WALK_FRONT if dir.y > 0.0 else TEX_WALK_BACK
+
+func _run_texture_for(dir: Vector2) -> Texture2D:
+	if absf(dir.x) >= absf(dir.y):
+		return TEX_RUN_RIGHT if dir.x > 0.0 else TEX_RUN_LEFT
+	return TEX_RUN_FRONT if dir.y > 0.0 else TEX_RUN_BACK
 
 func _dominant_dir(v: Vector2) -> Vector2:
 	if absf(v.x) >= absf(v.y):

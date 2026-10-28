@@ -21,6 +21,13 @@ var level := 4
 var sprite: Sprite2D
 var tex_front: Texture2D
 var tex_chase: Texture2D
+var tex_idle: Texture2D
+var tex_roar: Texture2D
+var tex_attack: Texture2D
+var tex_break: Texture2D
+var tex_stun: Texture2D
+var action_tex: Texture2D = null
+var action_timer := 0.0
 var use_generated := false
 var speed := 148.0
 var idle_timer := 8.0
@@ -69,6 +76,11 @@ func _ready() -> void:
 	sprite = Sprite2D.new()
 	tex_front = _load_art("res://art/sprites/tyrant/tyrant_front.png")
 	tex_chase = _load_art("res://art/sprites/tyrant/tyrant_chase.png")
+	tex_idle = _load_art("res://art/sprites/tyrant/tyrant_idle.png")
+	tex_roar = _load_art("res://art/sprites/tyrant/tyrant_roar.png")
+	tex_attack = _load_art("res://art/sprites/tyrant/tyrant_attack.png")
+	tex_break = _load_art("res://art/sprites/tyrant/tyrant_break.png")
+	tex_stun = _load_art("res://art/sprites/tyrant/tyrant_stun.png")
 	use_generated = tex_front != null and tex_chase != null
 	if use_generated:
 		sprite.texture = tex_front
@@ -193,6 +205,7 @@ func _attack() -> void:
 	recover_timer = ATTACK_RECOVER
 	slow_timer = 0.0
 	slow_factor = 1.0
+	_kick_action(tex_attack, 1.1)
 	if player.has_method("stun"):
 		player.stun(1.5)
 	player.velocity = Vector2.ZERO
@@ -256,6 +269,7 @@ func _open_pending_door() -> void:
 		pending_door = null
 		return
 	pending_door.set_open(true, true, position)
+	_kick_action(tex_break, 0.5)
 	pending_door = null
 
 func _update_footsteps(delta: float) -> void:
@@ -286,18 +300,30 @@ func _process(delta: float) -> void:
 	if sprite == null or fading:
 		return
 	var moving := velocity.length() > 5.0
+	if action_timer > 0.0:
+		action_timer = maxf(0.0, action_timer - delta)
+		if action_timer <= 0.0:
+			action_tex = null
 	if use_generated:
 		if stun_timer > 0.0:
-			sprite.texture = tex_front
+			sprite.texture = tex_stun if tex_stun != null else tex_front
 			sprite.modulate = Color(0.62, 0.55, 0.55, 0.85)
+		elif action_tex != null:
+			sprite.texture = action_tex
+			sprite.modulate = Color(1, 1, 1, 1)
 		elif moving:
 			bob_time += delta * 7.0
 			sprite.texture = tex_chase
 			sprite.modulate = Color(1, 1, 1, 1)
 		else:
-			sprite.texture = tex_front
+			bob_time += delta * 2.2
+			sprite.texture = tex_idle if tex_idle != null else tex_front
 			sprite.modulate = Color(1, 1, 1, 1)
 		sprite.flip_h = velocity.x < -1.0
+		var breathe := 0.0
+		if not moving and action_tex == null and stun_timer <= 0.0:
+			breathe = 0.025 * sin(bob_time * 1.7)
+		sprite.scale = Vector2(0.24 * (1.0 + breathe), 0.24 * (1.0 + breathe))
 		sprite.position.y = -absf(sin(bob_time)) * 3.0
 		return
 	var _moving := velocity.length() > 5.0
@@ -323,6 +349,7 @@ func on_barricade() -> void:
 	slow_timer = 3.0
 	slow_factor = 0.6
 	recover_timer = maxf(recover_timer, 0.3)
+	_kick_action(tex_break, 0.8)
 
 func smoke_slow(dur: float = 3.5) -> void:
 	slow_timer = maxf(slow_timer, dur)
@@ -340,8 +367,16 @@ func lure_to(pos: Vector2, dur: float = 5.0) -> void:
 	path_index = 0
 
 func roar() -> void:
+	_kick_action(tex_roar, 1.6)
 	if roar_player != null and roar_player.stream != null:
 		roar_player.play()
+
+# 播放一次性动作立绘（攻击 / 咆哮 / 破门），到期自动回到待机或追击帧
+func _kick_action(tex: Texture2D, dur: float) -> void:
+	if tex == null:
+		return
+	action_tex = tex
+	action_timer = dur
 
 func _load_art(path: String) -> Texture2D:
 	if not ResourceLoader.exists(path):

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "tyrant_idle",
+    "prompt": "Full body game sprite of a huge muscular humanoid monster inspired by classic survival-horror tyrant villains: bald scarred head, pale grey necrotic skin, one enormous mutated arm, tattered dark suit shreds, wrapped in swirling black smoke, standing upright facing the viewer, heavy breathing pose with shoulders hunched and huge arm hanging loose, dark moody rim light, high contrast, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/tyrant_idle.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "tyrant_roar",
+    "prompt": "Full body game sprite of the same huge muscular humanoid tyrant monster with pale grey scarred skin and one enormous mutated arm: roaring with head thrown back and mouth wide open, both arms spread out, tattered dark suit shreds, swirling black smoke bursting around him, facing the viewer, dark moody rim light, high contrast, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/tyrant_roar.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "tyrant_attack",
+    "prompt": "Full body game sprite of the same huge muscular humanoid tyrant monster with pale grey scarred skin and one enormous mutated arm: lunging forward in a claw swipe, giant arm swung across the body toward the viewer, body twisted, black smoke trailing, dark tattered clothes, dark moody rim light, high contrast, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/tyrant_attack.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "tyrant_break",
+    "prompt": "Full body game sprite of the same huge muscular humanoid tyrant monster with pale grey scarred skin and one enormous mutated arm: charging shoulder first through a wall, shoulder lowered, dust and debris flying, black smoke trailing, dark tattered clothes, dark moody rim light, high contrast, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/tyrant_break.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "tyrant_stun",
+    "prompt": "Full body game sprite of the same huge muscular humanoid tyrant monster with pale grey scarred skin and one enormous mutated arm: staggered and dazed, bent forward, one knee buckling, giant arm limp, head hanging, black smoke thinning out, dark tattered clothes, dark moody rim light, high contrast, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/tyrant_stun.png",
+    "key": true,
+    "resize_h": 192
+  }
+]

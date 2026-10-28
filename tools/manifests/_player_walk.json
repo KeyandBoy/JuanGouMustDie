@@ -1,0 +1,26 @@
+[
+  {
+    "name": "player_walk_front",
+    "prompt": "Pixel art sprite sheet on a flat solid magenta background, no ground shadow, no text: the SAME small cartoon schoolboy shown four times in a row, front view facing the viewer, walking cycle frames, dark navy hair with bangs, black eyes, pale skin, white hoodie, bright red scarf, dark navy shorts, white sneakers with grey soles, chunky retro pixel art with dark outlines, crisp hard edges, limited palette, each of the four frames identical character design with legs in different walk positions",
+    "ratio": "4:3",
+    "out": "",
+    "key": false,
+    "resize_h": 96
+  },
+  {
+    "name": "player_walk_back",
+    "prompt": "Pixel art sprite sheet on a flat solid magenta background, no ground shadow, no text: the SAME small cartoon schoolboy shown four times in a row, back view seen from behind, walking cycle frames, dark navy hair with bangs, white hoodie, bright red scarf trailing on the left side, black backpack, dark navy shorts, white sneakers with grey soles, chunky retro pixel art with dark outlines, crisp hard edges, limited palette, each of the four frames identical character design with legs in different walk positions",
+    "ratio": "4:3",
+    "out": "",
+    "key": false,
+    "resize_h": 96
+  },
+  {
+    "name": "player_walk_side",
+    "prompt": "Pixel art sprite sheet on a flat solid magenta background, no ground shadow, no text: the SAME small cartoon schoolboy shown four times in a row, full side profile view facing right, walking cycle frames, dark navy hair with bangs, black eyes, pale skin, white hoodie, bright red scarf, dark navy shorts, white sneakers with grey soles, chunky retro pixel art with dark outlines, crisp hard edges, limited palette, each of the four frames identical character design with legs in different walk positions",
+    "ratio": "4:3",
+    "out": "",
+    "key": false,
+    "resize_h": 96
+  }
+]
