@@ -1,9 +1,9 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-10-26
+- 更新时间：2026-10-28
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：运行 `git rev-parse --short HEAD` 查看（写本文件时 0d01e4c，交接制度已推送）
+- 当前 HEAD：运行 `git rev-parse --short HEAD` 查看（写本文件时 f3e6a90，主角走路帧 + 暴君 5 套动作立绘）
 - 工作区：干净（素材/ 与 SESSION.lock 已忽略）
 
 ## 最简用法（推荐）
@@ -17,7 +17,7 @@
 
 ## 当前目标
 
-维护《卷狗必须死》并继续素材替换评估：先由用户从候选图中确认道具图标/角色模型是否替换，再进入实现。
+角色动作扩充：主角已有 4 方向走路/冲刺循环，暴君已有 7 套立绘（原 front/chase + 新 idle/roar/attack/break/stun）。下一步等用户在实际游玩里看动作手感，再决定要不要补攻击/受击帧或换素材库怪物。
 
 ## 本轮已完成
 
@@ -28,7 +28,10 @@
 - 修复：暂停真正暂停场景树；追击者补碰撞体（不再贴脸）；烟雾/臭气弹无目标也可放下；空虚值每答对 +5；HUD 挡视野时换右上；门上瓦片层级；玩家高光移除；右上小地图下线（接口保留）。
 - 素材包 `PixelSRPG-Forge-main` 已调研并按 409 个图标切片到 `素材/_preview/图标切片/icons`（本地，不入库）；`素材/` 已加入 .gitignore 与 Web 导出排除。
 - 已替换 `bread`（面包）与 `notes`（学霸笔记）图标为素材库版本（2x NEAREST，44x48 / 34x48），四套测试与截图通过。
-- 已把后续可能用到的素材分类提取到 `素材/_extracted/`（本地，中文分类）：`怪物/`、`角色/四方向像素人`（151 张）、`角色/平台跳跃角色`、`建筑/{中世纪地牢,现代城市,地下室,16px地牢,室内家具}`、`界面/平台UI`、`杂物`；索引见 `素材/_extracted/索引.md`，速览 `四方向像素人_速览.png`、`建筑风格_速览.png`、`怪物_速览.png`。
+- 已把后续可能用到的素材分类提取到 `素材/_extracted/`（本地，中文分类）：`怪物/`、`角色/四方向像素人`（151 张）、`角色/平台跳跃角色`、`建筑/{中世纪地牢,现代城市,地下室,16px地牢,室内家具}`、`界面/平台UI`、`杂物`；索引见 `素材/_extracted/索引.md`。
+- 11 张四方向像素人切帧入库 `art/sprites/reserve/<中文名>/`（281 帧，用户改的中文目录名已一并提交）。
+- 主角动作：`art/sprites/64/anim/player_{walk,run}_{front,back,left,right}.png`（走路 8 帧 / 冲刺 4 帧，从现有立绘派生），`player.gd` 用 hframes+frame 播放。
+- 暴君动作：`art/sprites/tyrant/tyrant_{idle,roar,attack,break,stun}.png`（AI 生成，洋红抠图），`tyrant.gd` 按状态切换。
 
 ## 未提交改动
 
@@ -37,10 +40,11 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. 道具图标：bread（面包）与 notes（学霸笔记）已按用户决定替换；其余保留（stink/lamp 可换但用户未选，shovel/portal 不匹配）。后续如需替换 stink/lamp，直接复制 `素材/_preview/道具候选/` 内对应图并 2x NEAREST。
-2. 角色/追击者：结论保持现有。素材已分类存入 `素材/_extracted/角色/`、`农场小人/`、`地牢角色/`、`中世纪角色/`；若要升级追击者，改用 `tools/gen_art.ps1` 出 124×192 透明底新立绘。
-3. 等用户明确批准替换项后再动 `art/ui/icons/` 与 `art/sprites/`；改完必须重新导入、跑四套测试 + screenshot。
-4. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+1. 动作手感回归：进游戏走/冲刺看主角 8 帧循环是否顺；打折叠椅、放烟雾、让暴君撞门，看 attack / break / stun 帧是否对得上。
+2. 若主角动作幅度不够：调 `player.gd` 的 `WALK_FPS/RUN_FPS`，或重跑派生脚本（`-14%/+14%` 剪切幅度在 `build_strips` 里）。若要真正换皮，需重新生成 4 方向立绘。
+3. 追击者换素材仍可随时做：候选 6 个在 `素材/_extracted/怪物/怪物动画/`（犀牛/骷髅/愤怒猪/岩石/幽灵/史莱姆，都有 Idle/Run/Hit）。
+4. 暴君若还要加动作，例如「倒地」「抓人特写」，继续用 `tools/manifests/_tyrant_actions.json` 加条目 + `gen_art.ps1 -Manifest … -Post`。
+5. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -59,7 +63,7 @@
 
 ## 测试状态
 
-2026-10-26 全绿：
+2026-10-28 全绿（主角/暴君动作改动后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
