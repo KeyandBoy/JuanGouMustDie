@@ -1,9 +1,9 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-10-28
+- 更新时间：2026-10-29
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：运行 `git rev-parse --short HEAD` 查看（写本文件时 f3e6a90，主角走路帧 + 暴君 5 套动作立绘）
+- 当前 HEAD：运行 `git rev-parse --short HEAD` 查看（写本文件时见下方「本轮已完成」提交）
 - 工作区：干净（素材/ 与 SESSION.lock 已忽略）
 
 ## 最简用法（推荐）
@@ -17,7 +17,7 @@
 
 ## 当前目标
 
-角色动作扩充：主角已有 4 方向走路/冲刺循环，暴君已有 7 套立绘（原 front/chase + 新 idle/roar/attack/break/stun）。下一步等用户在实际游玩里看动作手感，再决定要不要补攻击/受击帧或换素材库怪物。
+角色动作扩充（第二轮）：主角与暴君的四方向走路都已改成 **AI 逐帧生成的 4×8 条带**，结构正确（无三条腿）。下一步等用户在实际游玩里看动作手感与风格，再决定要不要继续补攻击/受击帧、或在正式美术阶段统一重做模型。
 
 ## 本轮已完成
 
@@ -30,7 +30,8 @@
 - 已替换 `bread`（面包）与 `notes`（学霸笔记）图标为素材库版本（2x NEAREST，44x48 / 34x48），四套测试与截图通过。
 - 已把后续可能用到的素材分类提取到 `素材/_extracted/`（本地，中文分类）：`怪物/`、`角色/四方向像素人`（151 张）、`角色/平台跳跃角色`、`建筑/{中世纪地牢,现代城市,地下室,16px地牢,室内家具}`、`界面/平台UI`、`杂物`；索引见 `素材/_extracted/索引.md`。
 - 11 张四方向像素人切帧入库 `art/sprites/reserve/<中文名>/`（281 帧，用户改的中文目录名已一并提交）。
-- 主角动作：`art/sprites/64/anim/player_{walk,run}_{front,back,left,right}.png`（走路 8 帧 / 冲刺 4 帧，从现有立绘派生），`player.gd` 用 hframes+frame 播放。
+- **主角走路帧改 AI 逐帧生成**：`art/sprites/64/anim/player_walk_{front,back,left,right}.png`（64×64×8），作废旧「剪切派生」走路/冲刺帧（三条腿根源）；冲刺复用走路帧加速（11fps → 18fps）。
+- **暴君像素走路**：`art/sprites/tyrant/walk_{front,back,left,right}.png`（64×64×8），`tyrant.gd` 常态播像素条带、动作特写仍用立绘，按 54px 屏幕目标高度统一缩放，互换不跳大小。
 - 暴君动作：`art/sprites/tyrant/tyrant_{idle,roar,attack,break,stun}.png`（AI 生成，洋红抠图），`tyrant.gd` 按状态切换。
 
 ## 未提交改动
@@ -40,11 +41,12 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. 动作手感回归：进游戏走/冲刺看主角 8 帧循环是否顺；打折叠椅、放烟雾、让暴君撞门，看 attack / break / stun 帧是否对得上。
-2. 若主角动作幅度不够：调 `player.gd` 的 `WALK_FPS/RUN_FPS`，或重跑派生脚本（`-14%/+14%` 剪切幅度在 `build_strips` 里）。若要真正换皮，需重新生成 4 方向立绘。
-3. 追击者换素材仍可随时做：候选 6 个在 `素材/_extracted/怪物/怪物动画/`（犀牛/骷髅/愤怒猪/岩石/幽灵/史莱姆，都有 Idle/Run/Hit）。
-4. 暴君若还要加动作，例如「倒地」「抓人特写」，继续用 `tools/manifests/_tyrant_actions.json` 加条目 + `gen_art.ps1 -Manifest … -Post`。
-5. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+1. 动作手感回归：进游戏走/冲刺看主角 8 帧循环是否顺；再看暴君追击时的像素走路是否跟得上速度（`tyrant.gd` 的 `WALK_FPS=9`），太慢就调这个值，不要改帧数。
+2. 暴君屏幕高度由 `tyrant.gd` 的 `TARGET_SCREEN_H=54` 控制；主角由 `player.gd` 的 `VISUAL_SCALE=0.7` 控制。
+3. 如果个别帧的围巾颜色/明暗仍有漂移：跑围巾统一修色（临时脚本 `fix_scarf_any.ps1 -dirKey <front|back|left|right>`），只改颜色不动形状。
+4. 若要补攻击/受击/倒地等动作帧，继续用 `tools/manifests/_tyrant_walk_ai.json` 的写法加条目 + `gen_art.ps1`，去底仍按「1024 原图泛洪 → 删洋红系 → 删地面阴影/地面线 → 裁边 → 缩 192 → alpha 二值化」。
+5. 正式美术阶段：重新出模型/统一画风，替换 `player_walk_*` 与 `tyrant/walk_*` 即可，代码不用改。
+6. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -63,7 +65,7 @@
 
 ## 测试状态
 
-2026-10-28 全绿（主角/暴君动作改动后）：
+2026-10-29 全绿（主角/暴君四方向 AI 走路帧接入后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -73,6 +75,8 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --headless --path . --quit-after 8000 res://tests/student_test.tscn     # BAD_FRAMES=0
 & $G --path . res://tests/screenshot.tscn                                    # exit 0
 ```
+
+> 注：Godot 测试进程有时会脱离控制台，管道里拿不到输出；最稳的读法是看 `%APPDATA%\Godot\app_userdata\卷狗必须死\logs\godot.log`。
 
 ## 环境
 

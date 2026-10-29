@@ -7,20 +7,16 @@ const TEX_BACK := preload("res://art/sprites/64/02_player_back.png")
 const TEX_LEFT := preload("res://art/sprites/64/03_player_left.png")
 const TEX_RIGHT := preload("res://art/sprites/64/04_player_right.png")
 
-# 走路 / 冲刺（跑）循环：每个方向一条横向条带，64x64 x N 帧
+# 走路循环：每个方向一条横向条带，64x64 x 8 帧（AI 逐帧生成，解剖结构正确）
+# 冲刺直接复用走路帧、提高播放速度；不再使用旧版剪切派生的 4 帧跑条带（会撕裂出第三条腿）。
 const WALK_FRAMES := 8
-const RUN_FRAMES := 4
 const TEX_WALK_FRONT := preload("res://art/sprites/64/anim/player_walk_front.png")
 const TEX_WALK_BACK := preload("res://art/sprites/64/anim/player_walk_back.png")
 const TEX_WALK_LEFT := preload("res://art/sprites/64/anim/player_walk_left.png")
 const TEX_WALK_RIGHT := preload("res://art/sprites/64/anim/player_walk_right.png")
-const TEX_RUN_FRONT := preload("res://art/sprites/64/anim/player_run_front.png")
-const TEX_RUN_BACK := preload("res://art/sprites/64/anim/player_run_back.png")
-const TEX_RUN_LEFT := preload("res://art/sprites/64/anim/player_run_left.png")
-const TEX_RUN_RIGHT := preload("res://art/sprites/64/anim/player_run_right.png")
 
 const WALK_FPS := 11.0
-const RUN_FPS := 16.0
+const RUN_FPS := 18.0
 const VISUAL_SCALE := 0.7
 
 var speed_walk := 160.0
@@ -148,21 +144,14 @@ func _process(delta: float) -> void:
 	_apply_frame(moving and dashing)
 	sprite.position.y = 0.0
 
-# 按当前朝向与状态贴帧：静止 = 走路循环第 1 帧；移动 = 走路循环；冲刺 = 跑步循环
-func _apply_frame(running: bool) -> void:
-	var tex: Texture2D
-	var frames: int
-	if running:
-		frames = RUN_FRAMES
-		tex = _run_texture_for(face_dir)
-	else:
-		frames = WALK_FRAMES
-		tex = _walk_texture_for(face_dir)
+# 按当前朝向贴帧：所有状态共用走路循环（冲刺只是播放更快）
+func _apply_frame(_running: bool) -> void:
+	var tex: Texture2D = _walk_texture_for(face_dir)
 	if sprite.texture != tex:
 		sprite.texture = tex
-		sprite.hframes = frames
+		sprite.hframes = WALK_FRAMES
 		sprite.vframes = 1
-	var f := int(anim_time) % frames
+	var f := int(anim_time) % WALK_FRAMES
 	if f < 0:
 		f = 0
 	sprite.frame = f
@@ -171,11 +160,6 @@ func _walk_texture_for(dir: Vector2) -> Texture2D:
 	if absf(dir.x) >= absf(dir.y):
 		return TEX_WALK_RIGHT if dir.x > 0.0 else TEX_WALK_LEFT
 	return TEX_WALK_FRONT if dir.y > 0.0 else TEX_WALK_BACK
-
-func _run_texture_for(dir: Vector2) -> Texture2D:
-	if absf(dir.x) >= absf(dir.y):
-		return TEX_RUN_RIGHT if dir.x > 0.0 else TEX_RUN_LEFT
-	return TEX_RUN_FRONT if dir.y > 0.0 else TEX_RUN_BACK
 
 func _dominant_dir(v: Vector2) -> Vector2:
 	if absf(v.x) >= absf(v.y):

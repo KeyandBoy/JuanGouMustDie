@@ -17,6 +17,18 @@ var player: Node2D
 const CHASE_SPEED_MULT := 0.8
 const ATTACK_RECOVER := 3.0
 
+# 像素走路条带（AI 逐帧生成，4 方向 x 8 帧，64x64 单元）
+const WALK_PATHS := [
+	"res://art/sprites/tyrant/walk_front.png",
+	"res://art/sprites/tyrant/walk_back.png",
+	"res://art/sprites/tyrant/walk_left.png",
+	"res://art/sprites/tyrant/walk_right.png",
+]
+const WALK_FRAMES := 8
+const WALK_FPS := 9.0
+# 暴君在屏幕上的目标高度（比主角的 42px 高，保持压迫感）
+const TARGET_SCREEN_H := 54.0
+
 var level := 4
 var sprite: Sprite2D
 var tex_front: Texture2D
@@ -57,6 +69,10 @@ var smoke_back: Node2D
 var smoke_front: Node2D
 var smoke_script := preload("res://scripts/smoke_aura.gd")
 var _sprite_base := Color(0.14, 0.05, 0.06, 1.0)
+var walk_tex: Array[Texture2D] = []
+var use_pixel_walk := false
+var walk_time := 0.0
+var _cur_scale := 0.24
 
 func _ready() -> void:
 	add_to_group("tyrants")
@@ -82,13 +98,23 @@ func _ready() -> void:
 	tex_break = _load_art("res://art/sprites/tyrant/tyrant_break.png")
 	tex_stun = _load_art("res://art/sprites/tyrant/tyrant_stun.png")
 	use_generated = tex_front != null and tex_chase != null
+	walk_tex.clear()
+	for p in WALK_PATHS:
+		walk_tex.append(_load_art(p))
+	use_pixel_walk = use_generated and walk_tex.size() == WALK_PATHS.size()
+	for t in walk_tex:
+		if t == null:
+			use_pixel_walk = false
+			break
 	if use_generated:
-		sprite.texture = tex_front
-		var th := float(tex_front.get_height())
-		sprite.scale = Vector2(0.24, 0.24)
 		sprite.centered = true
-		sprite.offset = Vector2(0.0, -th * 0.5)
-		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		if use_pixel_walk:
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_set_sprite_tex(walk_tex[0], WALK_FRAMES)
+			sprite.frame = 0
+		else:
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			_set_sprite_tex(tex_front, 1)
 		sprite.modulate = Color(1, 1, 1, 1)
 		sprite.position = Vector2(0.0, 0.0)
 	else:
@@ -306,24 +332,29 @@ func _process(delta: float) -> void:
 			action_tex = null
 	if use_generated:
 		if stun_timer > 0.0:
-			sprite.texture = tex_stun if tex_stun != null else tex_front
+			_set_sprite_tex(tex_stun if tex_stun != null else tex_front, 1)
 			sprite.modulate = Color(0.62, 0.55, 0.55, 0.85)
 		elif action_tex != null:
-			sprite.texture = action_tex
+			_set_sprite_tex(action_tex, 1)
+			sprite.modulate = Color(1, 1, 1, 1)
+		elif use_pixel_walk:
+			_apply_walk_frame(moving, delta)
 			sprite.modulate = Color(1, 1, 1, 1)
 		elif moving:
 			bob_time += delta * 7.0
-			sprite.texture = tex_chase
+			_set_sprite_tex(tex_chase, 1)
 			sprite.modulate = Color(1, 1, 1, 1)
 		else:
 			bob_time += delta * 2.2
-			sprite.texture = tex_idle if tex_idle != null else tex_front
+			_set_sprite_tex(tex_idle if tex_idle != null else tex_front, 1)
 			sprite.modulate = Color(1, 1, 1, 1)
-		sprite.flip_h = velocity.x < -1.0
+		if not use_pixel_walk:
+			sprite.flip_h = velocity.x < -1.0
 		var breathe := 0.0
 		if not moving and action_tex == null and stun_timer <= 0.0:
 			breathe = 0.025 * sin(bob_time * 1.7)
-		sprite.scale = Vector2(0.24 * (1.0 + breathe), 0.24 * (1.0 + breathe))
+		var s := _cur_scale * (1.0 + breathe)
+		sprite.scale = Vector2(s, s)
 		sprite.position.y = -absf(sin(bob_time)) * 3.0
 		return
 	var _moving := velocity.length() > 5.0
@@ -383,6 +414,38 @@ func _load_art(path: String) -> Texture2D:
 		return null
 	var t = load(path)
 	return t if t is Texture2D else null
+
+# 切换贴图并按“屏幕目标高度”统一缩放，避免立绘与像素条带切换时大小跳变
+func _set_sprite_tex(tex: Texture2D, frames: int) -> void:
+	if tex == null:
+		return
+	if sprite.texture != tex or sprite.hframes != frames:
+		sprite.texture = tex
+		sprite.hframes = frames
+		sprite.vframes = 1
+		sprite.frame = 0
+		sprite.offset = Vector2(0.0, -tex.get_height() * 0.5)
+		_cur_scale = TARGET_SCREEN_H / float(tex.get_height())
+
+# 像素走路：按朝向选条带（front/back/left/right），按时间推帧
+func _apply_walk_frame(moving: bool, delta: float) -> void:
+	var idx := 0
+	if absf(facing.x) >= absf(facing.y):
+		idx = 3 if facing.x > 0.0 else 2
+	else:
+		idx = 0 if facing.y >= 0.0 else 1
+	if idx >= walk_tex.size() or walk_tex[idx] == null:
+		return
+	_set_sprite_tex(walk_tex[idx], WALK_FRAMES)
+	if moving:
+		walk_time += delta * WALK_FPS
+	else:
+		walk_time = 0.0
+	var f := int(walk_time) % WALK_FRAMES
+	if f < 0:
+		f = 0
+	sprite.frame = f
+	sprite.flip_h = false
 
 func fade_out() -> void:
 	fading = true

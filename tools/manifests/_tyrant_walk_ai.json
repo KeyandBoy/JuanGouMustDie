@@ -1,0 +1,258 @@
+[
+    {
+        "name":  "tw_front_01",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, forward foot flat on the ground and rear foot far behind with heel lifted, facing the viewer directly, walking animation frame 1 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_01.png"
+    },
+    {
+        "name":  "tw_front_02",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, front knee bent taking the weight, rear foot lifting off the ground, facing the viewer directly, walking animation frame 2 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_02.png"
+    },
+    {
+        "name":  "tw_front_03",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, rear leg swinging forward beside the straight support leg, body at highest point, facing the viewer directly, walking animation frame 3 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_03.png"
+    },
+    {
+        "name":  "tw_front_04",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, rear leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, facing the viewer directly, walking animation frame 4 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_04.png"
+    },
+    {
+        "name":  "tw_front_05",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, rear foot flat on the ground and forward foot far behind with heel lifted, facing the viewer directly, walking animation frame 5 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_05.png"
+    },
+    {
+        "name":  "tw_front_06",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, rear knee bent taking the weight, forward foot lifting off the ground, facing the viewer directly, walking animation frame 6 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_06.png"
+    },
+    {
+        "name":  "tw_front_07",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, front leg swinging forward beside the straight support leg, body at highest point, facing the viewer directly, walking animation frame 7 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_07.png"
+    },
+    {
+        "name":  "tw_front_08",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, front leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, facing the viewer directly, walking animation frame 8 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_front_08.png"
+    },
+    {
+        "name":  "tw_back_01",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, forward foot flat on the ground and rear foot far behind with heel lifted, seen from behind, walking animation frame 1 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_01.png"
+    },
+    {
+        "name":  "tw_back_02",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, front knee bent taking the weight, rear foot lifting off the ground, seen from behind, walking animation frame 2 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_02.png"
+    },
+    {
+        "name":  "tw_back_03",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, rear leg swinging forward beside the straight support leg, body at highest point, seen from behind, walking animation frame 3 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_03.png"
+    },
+    {
+        "name":  "tw_back_04",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, rear leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, seen from behind, walking animation frame 4 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_04.png"
+    },
+    {
+        "name":  "tw_back_05",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, rear foot flat on the ground and forward foot far behind with heel lifted, seen from behind, walking animation frame 5 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_05.png"
+    },
+    {
+        "name":  "tw_back_06",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, rear knee bent taking the weight, forward foot lifting off the ground, seen from behind, walking animation frame 6 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_06.png"
+    },
+    {
+        "name":  "tw_back_07",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, front leg swinging forward beside the straight support leg, body at highest point, seen from behind, walking animation frame 7 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_07.png"
+    },
+    {
+        "name":  "tw_back_08",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, front leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, seen from behind, walking animation frame 8 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_back_08.png"
+    },
+    {
+        "name":  "tw_left_01",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, forward foot flat on the ground and rear foot far behind with heel lifted, side view facing left, walking animation frame 1 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_01.png"
+    },
+    {
+        "name":  "tw_left_02",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, front knee bent taking the weight, rear foot lifting off the ground, side view facing left, walking animation frame 2 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_02.png"
+    },
+    {
+        "name":  "tw_left_03",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, rear leg swinging forward beside the straight support leg, body at highest point, side view facing left, walking animation frame 3 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_03.png"
+    },
+    {
+        "name":  "tw_left_04",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, rear leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, side view facing left, walking animation frame 4 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_04.png"
+    },
+    {
+        "name":  "tw_left_05",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, rear foot flat on the ground and forward foot far behind with heel lifted, side view facing left, walking animation frame 5 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_05.png"
+    },
+    {
+        "name":  "tw_left_06",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, rear knee bent taking the weight, forward foot lifting off the ground, side view facing left, walking animation frame 6 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_06.png"
+    },
+    {
+        "name":  "tw_left_07",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, front leg swinging forward beside the straight support leg, body at highest point, side view facing left, walking animation frame 7 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_07.png"
+    },
+    {
+        "name":  "tw_left_08",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, front leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, side view facing left, walking animation frame 8 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_left_08.png"
+    },
+    {
+        "name":  "tw_right_01",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, forward foot flat on the ground and rear foot far behind with heel lifted, side view facing right, walking animation frame 1 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_01.png"
+    },
+    {
+        "name":  "tw_right_02",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, front knee bent taking the weight, rear foot lifting off the ground, side view facing right, walking animation frame 2 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_02.png"
+    },
+    {
+        "name":  "tw_right_03",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, rear leg swinging forward beside the straight support leg, body at highest point, side view facing right, walking animation frame 3 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_03.png"
+    },
+    {
+        "name":  "tw_right_04",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, rear leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, side view facing right, walking animation frame 4 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_04.png"
+    },
+    {
+        "name":  "tw_right_05",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking with a heavy wide stride, rear foot flat on the ground and forward foot far behind with heel lifted, side view facing right, walking animation frame 5 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_05.png"
+    },
+    {
+        "name":  "tw_right_06",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, body slightly lower, rear knee bent taking the weight, forward foot lifting off the ground, side view facing right, walking animation frame 6 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_06.png"
+    },
+    {
+        "name":  "tw_right_07",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, legs passing close together, front leg swinging forward beside the straight support leg, body at highest point, side view facing right, walking animation frame 7 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_07.png"
+    },
+    {
+        "name":  "tw_right_08",
+        "prompt":  "Full body chunky retro pixel art game sprite of a huge muscular humanoid monster with pale grey skin, a bald scarred head, one enormous mutated arm, tattered dark suit shreds, thick dark outline, limited flat color palette, crisp pixel clusters, walking, front leg reaching forward about to touch the ground, front leg straight and supporting, body slightly higher, side view facing right, walking animation frame 8 of 8, isolated on a solid flat magenta background, no ground shadow, no text",
+        "ratio":  "1:1",
+        "key":  true,
+        "resize_h":  192,
+        "out":  "res://art/sprites/tyrant/ai/tw_right_08.png"
+    }
+]
