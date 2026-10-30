@@ -4,6 +4,7 @@ var banks: Dictionary = {}
 var tiers: Dictionary = {}
 var imported_ids: Dictionary = {}
 var recent_ids: Array[String] = []
+var math_gen = preload("res://scripts/math_gen.gd").new()
 
 const GRADE_LABELS: Dictionary = {
 	"primary": "小学", "junior": "初中", "senior": "高中", "college": "大学",
@@ -23,6 +24,8 @@ const TIER_GRADE: Dictionary = {
 const TIER_WEIGHTS: Array[int] = [31, 23, 16, 13, 8, 6, 3]
 const WARMUP_COUNT := 3
 const RECENT_MAX := 12
+## 随机数学题混入比例：约 1/3。改这一个值即可调整。
+const MATH_GEN_CHANCE := 0.33
 
 func _ready() -> void:
 	_load_builtin()
@@ -78,6 +81,11 @@ func pick_tiered(answered_in_level: int = 0, tier_shift: int = 0) -> Dictionary:
 	if answered_in_level < WARMUP_COUNT:
 		allowed = [1, 2]
 	var picked_tier := _roll_tier(weights, allowed)
+	if randf() < MATH_GEN_CHANCE:
+		var generated: Dictionary = math_gen.make(picked_tier)
+		if not generated.is_empty():
+			_note_recent(String(generated.get("id", "")))
+			return generated
 	var q := _take_from_tier(picked_tier)
 	if q.is_empty():
 		for t in _tier_order(weights, allowed):
@@ -92,6 +100,7 @@ func pick_tiered(answered_in_level: int = 0, tier_shift: int = 0) -> Dictionary:
 
 func reset_recent() -> void:
 	recent_ids.clear()
+	math_gen.reset()
 
 func import_text(text: String, filename: String = "") -> Dictionary:
 	var lower := filename.to_lower()
@@ -410,6 +419,7 @@ func _load_builtin() -> void:
 	tiers = {}
 	imported_ids = {}
 	recent_ids.clear()
+	math_gen.reset()
 	if data.has("tiers") and data["tiers"] is Dictionary:
 		_load_tiers(data["tiers"])
 	elif data.has("grades") and data["grades"] is Dictionary:

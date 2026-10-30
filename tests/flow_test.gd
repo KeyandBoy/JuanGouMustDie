@@ -120,6 +120,95 @@ func _ready() -> void:
 		seen_ids.append(rid)
 	_check(not repeat, "recent questions are not repeated", failures)
 
+	# --- 程序化随机数学题（scripts/math_gen.gd）---
+	QuestionBank.reset_recent()
+	var gen = QuestionBank.math_gen
+	var gen_empty := 0
+	var gen_bad := 0
+	var gen_terms_bad := 0
+	var gen_eval_bad := 0
+	var gen_opt_bad := 0
+	for t in range(1, 8):
+		var spec: Dictionary = gen.spec_for(t)
+		var want_terms := int(spec["terms"])
+		var cap := int(spec["max"])
+		for i in 200:
+			var gq: Dictionary = gen.make(t)
+			if gq.is_empty():
+				gen_empty += 1
+				continue
+			var ans := String(gq.get("answer", ""))
+			var opts: Array = gq.get("options", [])
+			if not ans.is_valid_int() or int(ans) < 1 or int(ans) > cap:
+				gen_bad += 1
+			var prompt := String(gq.get("prompt", ""))
+			if not prompt.ends_with(" = ?"):
+				gen_bad += 1
+			if opts.size() != 4:
+				gen_opt_bad += 1
+				continue
+			var uniq := {}
+			var opt_range_bad := false
+			for o in opts:
+				var os := String(o)
+				uniq[os] = true
+				if not os.is_valid_int() or int(os) < 0 or int(os) > cap:
+					opt_range_bad = true
+			if uniq.size() != 4 or not opts.has(ans) or opt_range_bad:
+				gen_opt_bad += 1
+			var body := prompt.trim_suffix(" = ?")
+			var parts := body.split(" ", false)
+			var terms: Array = []
+			var ops: Array = []
+			for pi in parts.size():
+				if pi % 2 == 0:
+					terms.append(int(parts[pi]))
+				else:
+					ops.append(String(parts[pi]))
+			if terms.size() != want_terms or ops.size() != want_terms - 1:
+				gen_terms_bad += 1
+				continue
+			var ev := gen.evaluate(terms, ops, cap)
+			if not bool(ev.get("ok", false)) or int(ev.get("value", -1)) != int(ans):
+				gen_eval_bad += 1
+	_check(gen_empty == 0, "generated math: all 7 tiers generate (%d empty out of 1400)" % gen_empty, failures)
+	_check(gen_bad == 0, "generated math: positive int answers within cap (%d bad)" % gen_bad, failures)
+	_check(gen_terms_bad == 0, "generated math: term count matches tier spec (%d bad)" % gen_terms_bad, failures)
+	_check(gen_eval_bad == 0, "generated math: eval ok, exact division, mid values within cap (%d bad)" % gen_eval_bad, failures)
+	_check(gen_opt_bad == 0, "generated math: 4 unique in-range options incl. answer (%d bad)" % gen_opt_bad, failures)
+
+	QuestionBank.reset_recent()
+	var gen_hits := 0
+	for i in 300:
+		var sq: Dictionary = QuestionBank.pick_tiered(10)
+		if bool(sq.get("generated", false)):
+			gen_hits += 1
+	var gen_ratio := float(gen_hits) / 300.0
+	_check(gen_hits > 0 and gen_ratio >= 0.22 and gen_ratio <= 0.45, "generated math ratio ~1/3 (%d/300 = %.0f%%)" % [gen_hits, gen_ratio * 100.0], failures)
+	_check(gen_hits < 300, "fixed questions still appear alongside generated (%d/300 generated)" % gen_hits, failures)
+
+	QuestionBank.reset_recent()
+	var warm_bad := 0
+	for i in 120:
+		var wq2: Dictionary = QuestionBank.pick_tiered(0)
+		if bool(wq2.get("generated", false)):
+			var wt := int(wq2.get("tier", 0))
+			var wb := String(wq2.get("prompt", "")).trim_suffix(" = ?")
+			if int(gen.spec_for(wt)["terms"]) != 2 or wb.split(" ", false).size() != 3:
+				warm_bad += 1
+	_check(warm_bad == 0, "warmup generated questions stay 2-term (%d bad)" % warm_bad, failures)
+
+	QuestionBank.reset_recent()
+	var gen_ids := {}
+	var dup_gen := 0
+	for i in 100:
+		var dq: Dictionary = gen.make(5)
+		var did := String(dq.get("id", ""))
+		if did.is_empty() or gen_ids.has(did):
+			dup_gen += 1
+		gen_ids[did] = true
+	_check(dup_gen == 0, "generated math: 100 consecutive draws are unique (%d dup)" % dup_gen, failures)
+
 	GameState.start_run("junior", ["math"])
 	_check(GameState.run_state == GameState.RunState.EXPLORING, "start_run -> EXPLORING", failures)
 	_check(is_equal_approx(GameState.emptiness, 50.0), "emptiness starts at 50", failures)
