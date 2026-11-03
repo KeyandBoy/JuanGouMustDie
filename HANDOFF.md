@@ -60,6 +60,7 @@
 
 ## 已知问题 / 风险
 
+- **git push 被代理阻塞的解法**：本机 `git config` 里存了 `http.proxy/https.proxy = http://127.0.0.1:7897`，代理没启动时会报 `Failed to connect to github.com port 443 via 127.0.0.1`。绕过：`git -c http.proxy= -c https.proxy= push`（2026-11-03 实测可用）。
 - `horror_rebuild/ai`、`ai_norm` 是本地中间帧（已忽略）；换机器后想再看逐帧需要重跑生成管线。
 - 免费出图通道（imagefree / pollinations）偶发 503、连接失败、返回 JPEG 却存成 `.png`（Godot 报 `Error 16`）；用 PIL 转真 PNG 再单独跑 `--script res://tools/post_art.gd`。
 - 立绘姿势区分度有限：`chase`/`idle`/`stun` 差别偏小，靠游戏内动作时序区分。
