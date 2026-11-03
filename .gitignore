@@ -28,6 +28,10 @@ mono_crash.*.json
 .opencode/
 tools/_gen/
 
+# Tyrant horror rebuild: per-frame intermediates (regenerable, large)
+art/sprites/tyrant/horror_rebuild/ai/
+art/sprites/tyrant/horror_rebuild/ai_norm/
+
 # Test output logs
 tests/_*.txt
 tests/_*.log

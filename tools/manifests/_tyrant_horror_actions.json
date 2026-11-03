@@ -1,0 +1,58 @@
+[
+  {
+    "name": "th_action_front",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, standing upright facing the viewer in a heavy idle stance, shoulders hunched, both clawed hands hanging loose, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_front.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "th_action_chase",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, running forward toward the viewer, body leaning in, one enormous mutated arm reaching out with clawed fingers spread, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_chase.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "th_action_idle",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, standing upright facing the viewer, heavy breathing pose, shoulders hunched and chest heaving, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_idle.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "th_action_roar",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, roaring with head thrown back and split jaw wide open, both arms spread out to the sides, facing the viewer, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_roar.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "th_action_attack",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, lunging forward in a claw swipe, giant mutated arm swung across the body toward the viewer, torso twisted, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_attack.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "th_action_break",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, charging shoulder first, shoulder lowered, body angled forward as if smashing through a wall, facing the viewer, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_break.png",
+    "key": true,
+    "resize_h": 192
+  },
+  {
+    "name": "th_action_stun",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, staggered and dazed, bent forward, one knee buckling, giant arm limp, head hanging, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/tyrant_stun.png",
+    "key": true,
+    "resize_h": 192
+  }
+]

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "h1_flayed",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: flayed upper body with exposed raw red muscle fibres and rib cage, patches of pale grey skin hanging loose, mouth torn wide open with dark blood dripping, one enormous mutated arm with split claws, tattered black suit shreds around the waist, standing upright facing the viewer, dark crimson rim light, high contrast, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_samples/h1_flayed.png",
+    "key": true,
+    "resize_h": 300
+  },
+  {
+    "name": "h2_corpse",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: bloated pale corpse skin with dark veins and rough stitches across the chest and face, autopsy scars, sunken milky eyes, mouth sewn at the corners, dried blood stains down the chin and hands, one huge swollen mutated arm, tattered dark trousers, standing upright facing the viewer, cold sickly green rim light, high contrast, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_samples/h2_corpse.png",
+    "key": true,
+    "resize_h": 300
+  },
+  {
+    "name": "h3_abomination",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: asymmetric mutated abomination with a second twisted face growing from one shoulder, three glowing red eyes, bone spikes breaking through the back and forearms, split jaw full of uneven teeth, exposed sinew at the joints, dark blood smeared across the torso, tattered black suit shreds, standing upright facing the viewer, harsh red rim light, high contrast, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_samples/h3_abomination.png",
+    "key": true,
+    "resize_h": 300
+  },
+  {
+    "name": "h4_charred",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: charred blackened skin cracked open with glowing ember-red flesh underneath, burning blood mist and thick black smoke pouring from the shoulders, eyes burning like hot coals, one enormous mutated arm wrapped in smouldering bandages, tattered burnt suit, standing upright facing the viewer, orange-red rim light, extreme contrast, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_samples/h4_charred.png",
+    "key": true,
+    "resize_h": 300
+  }
+]

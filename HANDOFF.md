@@ -1,10 +1,10 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-10-30
+- 更新时间：2026-11-03
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`f5b4830`（程序化随机数学题库）
-- 工作区：干净（素材/ 与 SESSION.lock 已忽略）
+- 当前 HEAD：`（见 git log -1，本次提交为「暴君恐怖化重做」）`
+- 工作区：见「未提交改动」（`horror_rebuild/ai`、`ai_norm` 已忽略）
 
 ## 最简用法（推荐）
 
@@ -17,44 +17,42 @@
 
 ## 当前目标
 
-程序化随机题库（第一批：小学数学）已接入：每次出题按 33% 概率现场生成 1 道 100 以内多项四则题，固定题库照常保留。下一步请用户实际玩几局看随机题难度、干扰项是否合理，再决定是否把比例调高/调低、或给英语/语文照同一接口加生成器。
+暴君恐怖化重做已完成并替换进游戏：新立绘（7 套动作）+ 新 4 方向像素走路条带（32 帧、归一化调色）。
+下一步请**实际玩一局第 5 关/新手关**看暴君在真实光照下的效果，重点看：暗处是否太暗、血是否看得清、走路 9fps 是否顺、动作立绘与走路切换是否跳大小/跳色。
 
 ## 本轮已完成
 
-- **程序化随机数学题库**：新增 `scripts/math_gen.gd`（按需生成、不预生成池、不落盘），`question_bank.gd` 用 `MATH_GEN_CHANCE = 0.33` 混入固定题库。
-  - 档位：1-2 档 2 项/≤20；3-4 档 3 项/≤50；5-7 档 3 项/≤100；不打括号、先乘除后加减、除法整除、中间值不越界、不出 ×1/÷1。
-  - 干扰项：忽略优先级 → 交换运算符 → 抄错数字 → ±1/±2/±5/±10 兜底；4 选项洗牌。
-  - 同局去重（300 条 FIFO），`reset_recent()` 清空；生成失败自动回退固定题。
-- 双工具交接制度：`HANDOFF.md` + `tools/handoff.ps1`（`-Start/-End/-Force/-Clipboard`）+ `SESSION.lock`；AGENTS.md 已加入开工/收工协议与 DSH 开场提示。
-
-- 新手关：固定教学地图、7 步引导、广播/任务文案定稿、出发广播杂噪音效、新过场 CG（3 张 AI 图）、首次启动「CG → 新手关 → 新 CG → 主菜单」。
-- 第 1 关广播提示删除；主菜单「重看开场动画」改名「重历开场」并重播全流程。
-- 修复：暂停真正暂停场景树；追击者补碰撞体（不再贴脸）；烟雾/臭气弹无目标也可放下；空虚值每答对 +5；HUD 挡视野时换右上；门上瓦片层级；玩家高光移除；右上小地图下线（接口保留）。
-- 素材包 `PixelSRPG-Forge-main` 已调研并按 409 个图标切片到 `素材/_preview/图标切片/icons`（本地，不入库）；`素材/` 已加入 .gitignore 与 Web 导出排除。
-- 已替换 `bread`（面包）与 `notes`（学霸笔记）图标为素材库版本（2x NEAREST，44x48 / 34x48），四套测试与截图通过。
-- 已把后续可能用到的素材分类提取到 `素材/_extracted/`（本地，中文分类）：`怪物/`、`角色/四方向像素人`（151 张）、`角色/平台跳跃角色`、`建筑/{中世纪地牢,现代城市,地下室,16px地牢,室内家具}`、`界面/平台UI`、`杂物`；索引见 `素材/_extracted/索引.md`。
-- 11 张四方向像素人切帧入库 `art/sprites/reserve/<中文名>/`（281 帧，用户改的中文目录名已一并提交）。
-- **主角走路帧改 AI 逐帧生成**：`art/sprites/64/anim/player_walk_{front,back,left,right}.png`（64×64×8），作废旧「剪切派生」走路/冲刺帧（三条腿根源）；冲刺复用走路帧加速（11fps → 18fps）。
-- **暴君像素走路**：`art/sprites/tyrant/walk_{front,back,left,right}.png`（64×64×8），`tyrant.gd` 常态播像素条带、动作特写仍用立绘，按 54px 屏幕目标高度统一缩放，互换不跳大小。
-- 暴君动作：`art/sprites/tyrant/tyrant_{idle,roar,attack,break,stun}.png`（AI 生成，洋红抠图），`tyrant.gd` 按状态切换。
+- **暴君恐怖化重做（2026-11-03）**：
+  - 风格定稿 D1：苍白尸体皮肤 + 粗缝合线 + 胸口/右臂撕裂露红肉肋骨 + 滴血 + 肩部骷髅脸 + 三只红眼（含额头第三眼）+ 骨刺 + 单手巨大变异臂。
+  - **断脚解法**：不要用「破烂裤脚 + 裸足」，改用 **厚黑皮靴 + 裤脚塞进靴筒**，7 张立绘与 32 帧走路脚部全部连续。
+  - 7 套立绘 `tyrant_{front,chase,idle,roar,attack,break,stun}.png` 已重出并覆盖原资源。
+  - 32 帧走路（4 方向 × 8 帧，含血迹/滴血/血溅）已重出 → 去底 → 缩 192 → alpha 二值化 → **帧间色调统一 + 16 色固定调色板量化** → 拼 64×64×8 条带，覆盖 `art/sprites/tyrant/walk_*.png`。
+  - `tyrant.gd` 未改（`WALK_FPS=9`、`TARGET_SCREEN_H=54`、优先播放像素走路）。
+  - 中间帧 `art/sprites/tyrant/horror_rebuild/ai/`、`ai_norm/` 已 gitignore（可再生）；入库的是立绘、`norm/` 条带、样张与 3 个 manifest。
+- **程序化随机数学题库**（2026-10-30）：`scripts/math_gen.gd` 按需生成，`question_bank.gd` 用 `MATH_GEN_CHANCE = 0.33` 混入固定题库。
+- 双工具交接制度：`HANDOFF.md` + `tools/handoff.ps1`（`-Start/-End/-Force/-Clipboard`）+ `SESSION.lock`。
+- 新手关：固定教学地图、7 步引导、新过场 CG、首次启动「CG → 新手关 → 新 CG → 主菜单」。
+- 主角走路/冲刺 AI 逐帧（`art/sprites/64/anim/player_walk_{front,back,left,right}.png`），冲刺复用走路帧加速（11fps → 18fps）。
 
 ## 未提交改动
 
-无。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
+无（本轮改动全部提交）。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. 实际玩几局看随机数学题：难度是否跟档位匹配、干扰项是否太容易/太离谱。比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`，范围改 `math_gen.gd` 的 `SPECS`。
-2. 若发现某档生成失败率偏高（目前 1400 题 0 空题）：先看 `_build()` 的分支是否覆盖该档的运算符组合，不要让 `make()` 退化成纯重试。
-3. 加英语/语文随机题时，照 `math_gen.gd` 写同签名 `make(tier)`，再在 `question_bank.gd` 注册；题干/选项仍走 `_ensure_choice` 或自行给 `_prepared`。
-4. 动作手感回归仍然有效：主角 `player.gd` 的 `WALK_FPS/RUN_FPS`，暴君 `tyrant.gd` 的 `WALK_FPS/TARGET_SCREEN_H`。
-5. 正式美术阶段：重新出模型/统一画风，替换 `player_walk_*` 与 `tyrant/walk_*` 即可，代码不用改。
+1. **实机验收暴君**：玩第 5 关/新手关看 54px 表现。若偏暗 → 调 `normalize_walk_frames.py` 的增益区间重跑；若偏亮/糊 → 换更深的尸体色板；若跳色 → 加大调色板量化力度（K 降到 12）。**不要动立绘**。
+2. 觉得走路动作不够「沉重」可调 `scripts/tyrant.gd` 的 `WALK_FPS`（9 → 7~8 更沉）；想更恐怖可让 `_kick_action()` 的攻击/咆哮更频繁。
+3. 若某方向走路帧看着别扭，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk.json -Only thw_left_03 -Force`，再跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`，思路已写进开发记录 2026-11-03 条目）。
+4. 实际玩几局看随机数学题：难度/干扰项是否合理；比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`。
+5. **git push 仍可能被代理阻塞**（`127.0.0.1` 代理未启动会连不上 github）；push 前先确认代理/网络。
 6. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
 
+- 暴君恐怖风格 = 剥皮 + 尸体 + 畸形 融合，基准 D1；**像素走路优先于立绘**；结构（两条腿）必须对，风格可后修。
+- 暴君/怪物画脚一律用「厚黑皮靴 + 裤脚塞进靴筒」，禁用「破烂裤脚 + 裸足」（必断脚）。
 - 存档不加密、单槽、带版本迁移与 .bak；背包本版只做数据接口。
 - 新手关不计正式进度；宽松模式不失败；真刷追击者演示；固定 3 道送分题；教学给 3 颗假星。
 - 现有追击者不接溶解特效，只保留接口；暂停必须真暂停。
@@ -62,14 +60,15 @@
 
 ## 已知问题 / 风险
 
-- `素材/` 仅本机存在且被忽略；换机器时 DSH 看不到候选图，需要重新解压/生成预览。
-- 部分切片把相邻图标粘连（如 b3_19 含灯+魔杖、b13_17 含上下两个物体），替换前必须再裁干净并目视。
-- 素材包 README 声明版权不确定（仅仓库结构 MIT），**未确认授权前不要公开发布这些素材**。
+- `horror_rebuild/ai`、`ai_norm` 是本地中间帧（已忽略）；换机器后想再看逐帧需要重跑生成管线。
+- 免费出图通道（imagefree / pollinations）偶发 503、连接失败、返回 JPEG 却存成 `.png`（Godot 报 `Error 16`）；用 PIL 转真 PNG 再单独跑 `--script res://tools/post_art.gd`。
+- 立绘姿势区分度有限：`chase`/`idle`/`stun` 差别偏小，靠游戏内动作时序区分。
+- `素材/` 仅本机存在且被忽略；换机器时 DSH 看不到候选图。
 - Web 包 35.7MB（已排除 tests/tools/素材）；线上部署需用户批准后 push 触发。
 
 ## 测试状态
 
-2026-10-30 全绿（程序化随机数学题库接入后）：
+2026-11-03 全绿（暴君恐怖化重做 + 资源替换后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -80,7 +79,7 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --path . res://tests/screenshot.tscn                                    # exit 0
 ```
 
-> 注：Godot 测试进程有时会脱离控制台，管道里拿不到输出；最稳的读法是看 `%APPDATA%\Godot\app_userdata\卷狗必须死\logs\godot.log`。
+> 注：Godot 测试进程有时会脱离控制台，管道里拿不到输出；最稳的读法是看 `%APPDATA%\Godot\app_userdata\卷狗必须死\logs\godot.log`（历史日志会归档成 `godot<时间戳>.log`，需逐个搜）。
 
 ## 环境
 

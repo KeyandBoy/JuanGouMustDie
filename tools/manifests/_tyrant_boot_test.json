@@ -1,0 +1,10 @@
+[
+  {
+    "name": "th_test_boot_front",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, heavy black leather boots laced up, trousers tucked into the boots, standing upright facing the viewer in a heavy idle stance, shoulders hunched, both clawed hands hanging loose, both legs fully visible from hips to boots, both boots firmly attached to the legs and planted on the ground, continuous silhouette from hips through knees to boots, correct anatomy, no detached feet, no floating limbs, no gap between boots and legs, full body from head to toes, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_rebuild/test_front_boot.png",
+    "key": true,
+    "resize_h": 300
+  }
+]

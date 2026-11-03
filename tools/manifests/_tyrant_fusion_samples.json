@@ -1,0 +1,18 @@
+[
+  {
+    "name": "f3_fusion_blood",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale bloated corpse skin with dark veins and rough black stitches, the chest and right arm torn open exposing deep red muscle fibres and rib bones, dark blood dripping from the wounds and clawed hands, a half-formed skeletal second face growing out of the left shoulder, three clearly glowing red eyes (two in the main face and one large eye in the centre of the forehead), bone spikes on the back and forearms, split jaw with uneven teeth and blood on the chin, one enormous mutated arm, dark trousers with intact hems at the ankles, both legs fully visible from hips to feet, both feet firmly attached to the ankles and planted on the ground, correct anatomy, no torn-off feet, no floating limbs, no gap between legs and feet, full body from head to toes, standing upright facing the viewer, crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_samples/f3_fusion_blood.png",
+    "key": true,
+    "resize_h": 300
+  },
+  {
+    "name": "f4_fusion_blood2",
+    "prompt": "Full body horror game sprite of a huge muscular humanoid tyrant monster: pale corpse skin covered in stitches and dark blood, the left side of the chest ripped open showing red muscle and ribs, thick blood running down the torso and both arms, a half-formed skeletal second face on the left shoulder, three glowing red eyes with one in the middle of the forehead, bone spikes through the back and forearms, a long ragged black coat whose hem ends above the ankles, both legs complete and straight down to the ankles, both feet firmly attached to the ankles and planted on the ground, correct anatomy, no torn-off feet, no floating limbs, no gap between legs and feet, full body from head to toes, standing upright facing the viewer, cold crimson rim light, high contrast, no fire, stylized survival-horror art, isolated on a solid flat magenta background, no ground shadow, no text",
+    "ratio": "3:4",
+    "out": "res://art/sprites/tyrant/horror_samples/f4_fusion_blood2.png",
+    "key": true,
+    "resize_h": 300
+  }
+]
