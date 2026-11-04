@@ -3,7 +3,7 @@
 - 更新时间：2026-11-03
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`f40c713`（修复暴君走路四方向朝向）
+- 当前 HEAD：`add1c53`（字体切到方舟像素字体 Ark Pixel 12px）
 - 工作区：干净（`horror_rebuild/ai`、`ai_norm` 已忽略）
 
 ## 最简用法（推荐）
