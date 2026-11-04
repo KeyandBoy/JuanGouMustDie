@@ -1,10 +1,10 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-04
+- 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`85fff76`（音频结构 D1~D4：总线/交叉淡入/音效池/分类目录）
-- 工作区：干净（本轮音频改动已提交）；仍有别的会话留下的**未跟踪**研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`、`tools/manifests/intro_panels.json` 等，不是本轮产物，未改动。
+- 当前 HEAD：`2e1b6ff`（开场 CG 水墨化 + 推镜/手持抖动伪动效）
+- 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`scripts/main.gd`、`scripts/fx.gd`、`scripts/school_map.gd`、`scripts/gear_button.gd`、`scripts/settings_ui.gd`、`tests/_fx_shot*`、`tests/_settings_shot*`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
 ## 最简用法（推荐）
 
@@ -17,10 +17,15 @@
 
 ## 当前目标
 
-暴君登场过场已从「四张插画拼接」改成**真正的漫画分镜**：4 页 × 3 格，游戏内一页一页全屏播放。
-下一步请**实机跑一次暴君登场**看：页面在 1080p/窗口模式下对白和拟声词是否看得清、4 页节奏（每页 2 秒）会不会太快、红边框和游戏 HUD 是否打架。
+暴君登场过场已从「四张插画拼接」改成**真正的漫画分镜**（4 页 × 3 格，逐页全屏播放）；开场 CG 也已重做成水墨漫画 + 推镜/手持抖动伪动效。
+下一步请**实机跑一次开场 + 暴君登场**看：开场推镜（1.01→1.10）和抖动幅度是否自然、黑板那张压暗后粉笔字够不够清楚、分镜每页 2 秒会不会太快。
 
 ## 本轮已完成
+
+- **开场 CG 重做 + 伪动效（2026-11-04）**：
+  - 三张 16:9 水墨稿覆盖 `art/cutscene/intro_classroom|intro_board|intro_hall.png`，清单 `tools/manifests/intro_panels.json`。
+  - 新增 `tools/finalize_cg.py`：裁白边 + 强制黑白单红，可选 `--dark` / `--blur`（黑板那张就是压暗+虚化出来的）。
+  - `intro.gd` 新增 `_cam` 摄影机层：整幅缓慢推近（`TRANS_SINE/EASE_OUT`）+ 每帧手持抖动（`jitter`），危险镜头自动加到 2.4px、红闪瞬间 9px；每场景可用 `zoom_from/zoom_to/jitter` 覆盖。
 
 - **音频结构 D1~D4（2026-11-04）**：
   - D4：`default_bus_layout.tres` = Master / Music / SFX / UI / Ambience，音量统一走 `AudioServer`，设置仍存 ConfigFile（新增 `sfx` 键）。

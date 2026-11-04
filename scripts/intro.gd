@@ -8,12 +8,18 @@ const SCENES := [
 		"text": "我以为，只是睡了一觉。",
 		"dur": 1.5,
 		"danger": false,
+		"zoom_from": 1.02,
+		"zoom_to": 1.14,
+		"jitter": 0.9,
 	},
 	{
 		"bg": "res://art/cutscene/intro_board.png",
 		"text": "醒来时，躺在一间陌生的教室。\n黑板上还留着四个没干的字——",
 		"dur": 2.1,
 		"danger": false,
+		"zoom_from": 1.03,
+		"zoom_to": 1.15,
+		"jitter": 0.8,
 	},
 	{
 		"bg": "res://art/cutscene/intro_board.png",
@@ -28,6 +34,9 @@ const SCENES := [
 		"text": "这里是 躺平世界：内卷违法，被发现就会被打死。\n可我的「学习之魂」，不允许我裸考。",
 		"dur": 16.0,
 		"danger": false,
+		"zoom_from": 1.0,
+		"zoom_to": 1.16,
+		"jitter": 1.1,
 	},
 ]
 
@@ -67,6 +76,9 @@ var _line: Label
 var _chalk: Label
 var _font: FontFile
 var _shake_amp := 0.0
+var _cam: Control          # 装画面的「摄影机」：整体缩放/位移做推镜 + 手持抖动
+var _cam_tween: Tween
+var _cam_jitter := 0.0
 
 func _ready() -> void:
 	layer = 60
@@ -100,13 +112,18 @@ func play(scenes_override: Array = []) -> void:
 	_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_backdrop)
+	_cam = Control.new()
+	_cam.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_cam.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cam.pivot_offset = get_viewport().get_visible_rect().size * 0.5
+	add_child(_cam)
 	_bg = TextureRect.new()
 	_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_bg.stretch_mode = TextureRect.STRETCH_SCALE
 	_bg.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_bg)
+	_cam.add_child(_bg)
 	_bg_dark = ColorRect.new()
 	_bg_dark.color = Color(0.0, 0.0, 0.0, 0.55)
 	_bg_dark.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -165,11 +182,7 @@ func _run_scenes() -> void:
 			var ft := create_tween()
 			ft.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 			ft.tween_property(_bg, "modulate:a", 1.0, 0.35)
-			var kt := create_tween()
-			kt.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-			_bg.scale = Vector2.ONE
-			_bg.pivot_offset = _bg.size * 0.5
-			kt.tween_property(_bg, "scale", Vector2(1.07, 1.07), float(scene["dur"]) + 0.6)
+			_start_camera(scene)
 		var show_line := not bool(scene.get("hide_line", false))
 		if scene.get("chalk", false):
 			await _chalk_write("内卷即死")
@@ -196,6 +209,7 @@ func _run_scenes() -> void:
 			tw_out.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 			tw_out.tween_property(_line, "modulate:a", 0.0, 0.25)
 		_shake_amp = 0.0
+		_cam_jitter = 0.0
 		await _hold(0.25)
 		_clear_chalk()
 
@@ -203,6 +217,26 @@ func _read_time(scene: Dictionary) -> float:
 	var text := String(scene.get("text", ""))
 	var by_length := float(text.length()) * 0.18 + 1.0
 	return maxf(float(scene.get("dur", 1.4)), by_length)
+
+# 伪动效：整幅画面缓慢推近（dolly-in）+ 每帧手持抖动，制造「朝画面里走」的错觉。
+# 单场景可用 zoom_from / zoom_to / jitter 覆盖默认值。
+func _start_camera(scene: Dictionary) -> void:
+	if _cam == null:
+		return
+	if _cam_tween != null and _cam_tween.is_valid():
+		_cam_tween.kill()
+	var vs: Vector2 = get_viewport().get_visible_rect().size
+	_cam.pivot_offset = vs * 0.5
+	_cam.position = Vector2.ZERO
+	var danger := bool(scene.get("danger", false))
+	var z0 := float(scene.get("zoom_from", 1.04 if danger else 1.01))
+	var z1 := float(scene.get("zoom_to", 1.18 if danger else 1.10))
+	_cam.scale = Vector2(z0, z0)
+	_cam_jitter = float(scene.get("jitter", 2.4 if danger else 0.7))
+	_cam_tween = create_tween()
+	_cam_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_cam_tween.tween_property(_cam, "scale", Vector2(z1, z1), float(scene.get("dur", 2.0)) + 1.6) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _clear_chalk() -> void:
 	if _chalk == null or not is_instance_valid(_chalk):
@@ -267,8 +301,10 @@ func _red_flash() -> void:
 	t.tween_property(flash, "color:a", 0.0, 0.45)
 	t.tween_callback(flash.queue_free)
 	_shake_amp = 9.0
+	_cam_jitter = 9.0
 	await _hold(0.1)
 	_shake_amp = 3.0
+	_cam_jitter = 2.4
 
 func _type(text: String) -> void:
 	var i := 0
@@ -286,6 +322,12 @@ func _type(text: String) -> void:
 
 func _title_card() -> void:
 	_clear_chalk()
+	_cam_jitter = 0.0
+	if _cam_tween != null and _cam_tween.is_valid():
+		_cam_tween.kill()
+	if _cam != null:
+		_cam.scale = Vector2.ONE
+		_cam.position = Vector2.ZERO
 	_bg_dark.color = Color(0.0, 0.0, 0.0, 0.92)
 	_line.text = ""
 	_line.modulate.a = 0.0
@@ -316,16 +358,21 @@ func _hold(sec: float) -> void:
 			return
 		await get_tree().create_timer(0.03).timeout
 		t += 0.03
-		if _shake_amp > 0.0 and _line != null:
+		if _line != null and _shake_amp > 0.0:
 			_line.position = Vector2(randf_range(-_shake_amp, _shake_amp), randf_range(-_shake_amp, _shake_amp))
+		if _cam != null and _cam_jitter > 0.0:
+			_cam.position = Vector2(randf_range(-_cam_jitter, _cam_jitter), randf_range(-_cam_jitter, _cam_jitter))
 	if _line != null:
 		_line.position = Vector2.ZERO
+	if _cam != null:
+		_cam.position = Vector2.ZERO
 
 func _finish() -> void:
 	if _done:
 		return
 	_done = true
 	_chalk = null
+	_cam_jitter = 0.0
 	if _line != null:
 		_line.position = Vector2.ZERO
 	var fade := ColorRect.new()

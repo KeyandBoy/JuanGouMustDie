@@ -1,0 +1,20 @@
+[
+  {
+    "name": "intro_classroom",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, thick black outlines, red used only for one small accent, no text, no speech bubbles, no watermark, no border. First person view from lying on the floor of an empty old classroom, rows of wooden desks seen from a very low angle, a large dark chalkboard on the far wall, one flickering fluorescent ceiling light, the viewer's own sneakers and legs at the bottom edge of the frame, dust hanging in the air, a single red chalk mark on the chalkboard, oppressive silence, wide cinematic establishing shot"
+  },
+  {
+    "name": "intro_board",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, thick black outlines, red used only for one small accent, no text, no speech bubbles, no watermark, no border. A dark empty blackboard hanging on a classroom wall, seen straight on from a few meters away, wooden chalk tray along the bottom edge, faint chalk dust smudges and wiped streaks on a mostly empty dark surface, a hard raking light from the left, the rest of the wall in deep shadow, quiet and ominous, lots of empty black space in the middle of the board"
+  },
+  {
+    "name": "intro_hall",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, thick black outlines, red used only for one small accent, no text, no speech bubbles, no watermark, no border. A long empty school corridor at dusk in one point perspective, rows of identical classroom doors, flickering fluorescent lights along the ceiling, cold fog drifting along the polished floor, the vanishing point swallowed in pure black, one tiny red emergency light burning far away, silent and threatening"
+  }
+]
