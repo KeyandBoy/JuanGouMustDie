@@ -67,6 +67,7 @@ var room_heat_cd: Array[float] = []
 var room_heat_tier: Array[int] = []
 var rustle_timer := 0.0
 var visited_rooms := {}
+var safe_room_used := false
 var item_spawn_script := load("res://scripts/pickup.gd")
 var tyrant_script := load("res://scripts/tyrant.gd")
 var portal_anchor := Vector2.INF
@@ -394,6 +395,7 @@ func _setup_level(p_spawn_random := false) -> void:
 	camera.reset_smoothing()
 	camera.global_position = player.global_position
 	visited_rooms.clear()
+	safe_room_used = false
 	if minimap != null and minimap.has_method("reset_discovered"):
 		minimap.reset_discovered()
 	room_heat.clear()
@@ -881,6 +883,9 @@ func _toggle_study() -> void:
 		return
 	if GameState.run_state != GameState.RunState.EXPLORING:
 		return
+	if not studying and map != null and not map.study_allowed_at(player.position):
+		hud.toast("安全屋禁止答题——这里只能喘口气（回理智、存档），出去再学")
+		return
 	if studying:
 		study_paused = false
 		var q: Dictionary = held_question
@@ -1048,6 +1053,20 @@ func _on_room_entered(index: int) -> void:
 			GameState.exam_hint = true
 			hud.toast("探索度已达 60%：解锁「考试范围」，答题会排除一个错误选项")
 	hud.toast("进入 %s" % String(map.room_names[index]))
+	if map.safe_room_index == index:
+		_enter_safe_room(index)
+
+## 安全屋：每层一次，回理智 + 存档；不刷新题、不刷怪
+func _enter_safe_room(_index: int) -> void:
+	if safe_room_used:
+		hud.toast("安全屋已经用过了——这一层不会再回理智")
+		return
+	safe_room_used = true
+	GameState.restore_emptiness(8.0)
+	hud.toast("安全屋：理智 +8（本层仅一次）。这里不能答题，休息一下就走吧")
+	if hud != null and player != null:
+		hud.pop_number(player.global_position + Vector2(0.0, -34.0), "理智 +8", "gain")
+	SaveManager.save_run()
 
 func _on_door_slam() -> void:
 	hud.toast("门板砸中了！")

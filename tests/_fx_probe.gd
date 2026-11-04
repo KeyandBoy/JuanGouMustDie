@@ -44,6 +44,24 @@ func _ready() -> void:
 			odd += 1
 	_check(odd == 0, "pool labels use UiTheme font (odd=%d)" % odd)
 
+	# --- 房间角色（S2）：纵深 + 安全屋 ---
+	_check(inst.map.room_roles.size() == inst.map.rooms.size(),
+		"map: room_roles aligned (%d/%d)" % [inst.map.room_roles.size(), inst.map.rooms.size()])
+	_check(inst.map.room_roles.has("deep"), "map: has a deep room")
+	var safe_i: int = inst.map.safe_room_index
+	_check(safe_i >= 0, "map: safe room assigned (idx=%d)" % safe_i)
+	if safe_i >= 0:
+		_check(not inst.map.study_allowed_at(inst.map.rooms[safe_i].get_center()),
+			"map: safe room blocks study")
+		var outside := -1
+		for i in inst.map.rooms.size():
+			if i != safe_i:
+				outside = i
+				break
+		if outside >= 0:
+			_check(inst.map.study_allowed_at(inst.map.rooms[outside].get_center()),
+				"map: other rooms still allow study")
+
 	# --- 答对：色闪层 + 绿色飘字 ---
 	var before := 0
 	for c in inst.get_children():

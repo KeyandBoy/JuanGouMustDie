@@ -52,6 +52,12 @@ var nav_points := PackedVector2Array()
 var nav_links: Array = []
 var nav_is_corridor: Array[bool] = []
 
+## 房间角色（替代「主路/支路」）：stair / hall / safe / deep / normal
+## depth = 到楼梯房的距离，用来做风险梯度，不依赖「入口/出口」概念。
+var room_roles: Array[String] = []
+var room_depth: Array[int] = []
+var safe_room_index := -1
+
 var _astar := AStarGrid2D.new()
 var _astar_dirty := true
 var _astar_built := false
@@ -262,6 +268,7 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	_build_nav()
 	_build_doors()
 	_build_tiles()
+	_compute_roles(true)
 	_spawn_furniture()
 	_build_astar()
 	queue_redraw()
@@ -381,6 +388,69 @@ func _pick_type() -> String:
 		if roll <= acc:
 			return k
 	return "classroom"
+
+## 计算房间到楼梯房的「纵深」并分配角色。
+## allow_safe=false 用于教学关：教学图小且需要确定性，不放安全屋。
+func _compute_roles(allow_safe := true) -> void:
+	room_roles.clear()
+	room_depth.clear()
+	room_roles.resize(rooms.size())
+	room_roles.fill("normal")
+	room_depth.resize(rooms.size())
+	room_depth.fill(0)
+	safe_room_index = -1
+	if rooms.is_empty():
+		return
+	var anchor := room_types.find("stair")
+	if anchor < 0:
+		anchor = room_types.find("hall")
+	if anchor < 0:
+		anchor = 0
+	var ac := _walkable_center(rooms[anchor])
+	var maxd := 0
+	for i in rooms.size():
+		var d := int(rooms[i].get_center().distance_to(ac))
+		room_depth[i] = d
+		maxd = maxi(maxd, d)
+	for i in rooms.size():
+		if room_types[i] == "stair":
+			room_roles[i] = "stair"
+		elif room_types[i] == "hall":
+			room_roles[i] = "hall"
+		elif maxd > 0 and float(room_depth[i]) >= float(maxd) * 0.68:
+			room_roles[i] = "deep"
+	if not allow_safe or maxd <= 0:
+		return
+	# 安全屋：纵深 33%~62% 里最接近 47% 的一间，排除楼梯/大厅
+	var best := -1
+	var best_score := 1.0e9
+	for i in rooms.size():
+		if room_roles[i] == "stair" or room_roles[i] == "hall":
+			continue
+		var r := float(room_depth[i]) / float(maxd)
+		if r < 0.33 or r > 0.62:
+			continue
+		var score := absf(r - 0.47)
+		if score < best_score:
+			best_score = score
+			best = i
+	if best >= 0:
+		room_roles[best] = "safe"
+		safe_room_index = best
+		room_names[best] = "安全屋（禁止答题）"
+
+func room_role_at(pos: Vector2) -> String:
+	var i := room_index_at(pos)
+	if i < 0 or i >= room_roles.size():
+		return ""
+	return room_roles[i]
+
+func is_safe_room_at(pos: Vector2) -> bool:
+	return safe_room_index >= 0 and room_index_at(pos) == safe_room_index
+
+## 安全屋不能做题：给学生一个"喘息点"，但代价是不能刷题
+func study_allowed_at(pos: Vector2) -> bool:
+	return not is_safe_room_at(pos)
 
 func _ensure_stair(north: Array[String], south: Array[String], tail: Array[String]) -> void:
 	if north.has("stair") or south.has("stair") or tail.has("stair"):
@@ -723,6 +793,15 @@ func _spawn_furniture() -> void:
 	for i in rooms.size():
 		var t := room_types[i]
 		var eff: float = type_defs[t]["eff"]
+		var role: String = room_roles[i] if i < room_roles.size() else "normal"
+		# 风险梯度：越深收益越高、大厅更安全、安全屋不摆课桌
+		match role:
+			"deep":
+				eff *= 1.35
+			"hall":
+				eff *= 0.8
+			"safe":
+				eff = 0.0
 		var count := 0
 		match t:
 			"classroom":
@@ -735,6 +814,8 @@ func _spawn_furniture() -> void:
 				count = rng.randi_range(1, 2)
 			"toilet":
 				count = 1
+		if role == "safe":
+			count = 0
 		for j in count:
 			var rect := _pick_desk_rect(rooms[i], t == "hall")
 			if rect.size.x <= 0.0:
