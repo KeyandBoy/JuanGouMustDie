@@ -391,3 +391,11 @@
 - 用户复查：**4 方向里 back/left/right 必须真的是背影/侧面**，不能全是正脸（已按「镜头方向优先」重出 24 帧）
 - 多方向帧 prompt 规范：镜头描述放最前、背面删掉「三个红眼」等正脸诱因、写明「NO face / NO eyes visible」或「pure side profile + 朝左/右边缘行走」
 - 地面阴影是被压暗的洋红/粉红，去底规则必须同时覆盖亮洋红和暗洋红，否则脚下留粉边
+
+【字体更换：方舟像素字体（2026-11-04）】
+- 用户指定：游戏字体改用 https://github.com/TakWolf/ark-pixel-font
+- 采用 `ark-pixel-12px-proportional-zh_hans`（简体中文、比例宽度，OFL-1.1），文件 `assets/fonts/ark_pixel_12px_zh_hans.ttf`
+- 授权文件随包保留：`assets/fonts/OFL_ark-pixel-font.txt`（OFL 要求随分发保留）
+- 回退顺序：Ark Pixel → zpix.ttf（旧字体）→ 引擎默认；旧字体不删，保留回退能力
+- 不改动任何现有字号（12px 设计尺寸与 11~17px 的 UI 字号分布最匹配）
+

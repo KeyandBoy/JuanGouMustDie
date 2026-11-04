@@ -22,6 +22,11 @@
 
 ## 本轮已完成
 
+- **字体切换为方舟像素字体（2026-11-04）**：
+  - 用户指定 <https://github.com/TakWolf/ark-pixel-font>；采用 `12px proportional zh_hans`（OFL-1.1）。
+  - 新文件 `assets/fonts/ark_pixel_12px_zh_hans.ttf` + 授权 `assets/fonts/OFL_ark-pixel-font.txt`。
+  - `ui_theme.gd` 的 `font()` 改为 Ark → zpix → 引擎默认三级回退，并缓存；关闭 subpixel/hinting。`intro.gd` 改为复用 `UiTheme.font()`。
+  - 字号一个没动；`zpix.ttf` 保留作兜底。
 - **暴君走路四方向朝向修复（2026-11-03/04）**：
   - 用户发现 `back/left/right` 三条带其实都是正脸；已重写 24 帧 prompt（镜头方向前置、背面写死「NO face / NO eyes visible」、侧面写「pure side profile + 朝左/右边缘行走」），只重出 back/left/right。
   - 去底规则补了「暗洋红地面阴影」与「地面孤立色块」清理，脚下不再有粉边/悬空血点。

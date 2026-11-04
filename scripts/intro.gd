@@ -84,8 +84,8 @@ func _input(event: InputEvent) -> void:
 		_advance = true
 
 func _font_or_default() -> Font:
-	if _font == null and ResourceLoader.exists("res://assets/fonts/zpix.ttf"):
-		_font = load("res://assets/fonts/zpix.ttf")
+	if _font == null:
+		_font = UiTheme.font() as FontFile
 	if _font != null:
 		return _font
 	return ThemeDB.fallback_font

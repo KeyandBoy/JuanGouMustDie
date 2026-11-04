@@ -24,14 +24,35 @@ const COL_BLUE := Color(0.32, 0.52, 0.58)  # 暗冷蓝
 const COL_PURPLE := Color(0.50, 0.40, 0.58)  # 暗紫（诡异感）
 const COL_ORANGE := Color(0.62, 0.42, 0.22)  # 昏黄（坏灯泡）
 
+## 主字体：方舟像素字体 12px（简中比例宽度，OFL-1.1）
+const FONT_ARK := "res://assets/fonts/ark_pixel_12px_zh_hans.ttf"
+## 兜底字体：最像素（旧字体，缺失主字体时使用）
+const FONT_FALLBACK := "res://assets/fonts/zpix.ttf"
+
 static var _theme: Theme = null
+static var _font_cache: Font = null
+
+static func _load_pixel_font(path: String) -> Font:
+	if not ResourceLoader.exists(path):
+		return null
+	var f := load(path) as FontFile
+	if f == null:
+		return null
+	# 像素字体对齐像素网格：关掉子像素定位与 hinting，避免字重忽粗忽细
+	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+	f.hinting = TextServer.HINTING_NONE
+	f.force_autohinter = false
+	f.multichannel_signed_distance_field = false
+	return f
 
 static func font() -> Font:
-	if ResourceLoader.exists("res://assets/fonts/zpix.ttf"):
-		var f: Font = load("res://assets/fonts/zpix.ttf")
-		if f != null:
-			return f
-	return ThemeDB.fallback_font
+	if _font_cache == null:
+		_font_cache = _load_pixel_font(FONT_ARK)
+		if _font_cache == null:
+			_font_cache = _load_pixel_font(FONT_FALLBACK)
+		if _font_cache == null:
+			_font_cache = ThemeDB.fallback_font
+	return _font_cache
 
 static func apply(root: Control) -> void:
 	if _theme == null:
