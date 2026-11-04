@@ -22,6 +22,11 @@
 
 ## 本轮已完成
 
+- **暴君走路四方向朝向修复（2026-11-03/04）**：
+  - 用户发现 `back/left/right` 三条带其实都是正脸；已重写 24 帧 prompt（镜头方向前置、背面写死「NO face / NO eyes visible」、侧面写「pure side profile + 朝左/右边缘行走」），只重出 back/left/right。
+  - 去底规则补了「暗洋红地面阴影」与「地面孤立色块」清理，脚下不再有粉边/悬空血点。
+  - `thw_back_08` 走了 pollinations 兜底（灰底+水印），已单帧重抽。
+  - 4 条条带已重新生成（色调统一 + 16 色量化）并覆盖 `art/sprites/tyrant/walk_*.png`。
 - **暴君恐怖化重做（2026-11-03）**：
   - 风格定稿 D1：苍白尸体皮肤 + 粗缝合线 + 胸口/右臂撕裂露红肉肋骨 + 滴血 + 肩部骷髅脸 + 三只红眼（含额头第三眼）+ 骨刺 + 单手巨大变异臂。
   - **断脚解法**：不要用「破烂裤脚 + 裸足」，改用 **厚黑皮靴 + 裤脚塞进靴筒**，7 张立绘与 32 帧走路脚部全部连续。
@@ -41,11 +46,11 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **实机验收暴君**：玩第 5 关/新手关看 54px 表现。若偏暗 → 调 `normalize_walk_frames.py` 的增益区间重跑；若偏亮/糊 → 换更深的尸体色板；若跳色 → 加大调色板量化力度（K 降到 12）。**不要动立绘**。
-2. 觉得走路动作不够「沉重」可调 `scripts/tyrant.gd` 的 `WALK_FPS`（9 → 7~8 更沉）；想更恐怖可让 `_kick_action()` 的攻击/咆哮更频繁。
-3. 若某方向走路帧看着别扭，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk.json -Only thw_left_03 -Force`，再跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`，思路已写进开发记录 2026-11-03 条目）。
+1. **实机验收四方向**：走一圈看正面/背面/左右是否对得上移动方向（`tyrant.gd` 里 `facing.x>0` 用 right、`<0` 用 left，且走路帧强制 `flip_h=false`）。
+2. 若某个方向个别帧糊/畸形，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk_fix.json -Only twf_back_03 -Force`，再把 `tools/_gen/twf_*.png` 改名成 `thw_*.png`，依次跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`）。
+3. 觉得走路不够「沉重」可调 `scripts/tyrant.gd` 的 `WALK_FPS`（9 → 7~8）。
 4. 实际玩几局看随机数学题：难度/干扰项是否合理；比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`。
-5. **git push 仍可能被代理阻塞**（`127.0.0.1` 代理未启动会连不上 github）；push 前先确认代理/网络。
+5. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
 6. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
@@ -69,7 +74,7 @@
 
 ## 测试状态
 
-2026-11-03 全绿（暴君恐怖化重做 + 资源替换后）：
+2026-11-04 全绿（四方向朝向修复 + 去底规则调整后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -77,7 +82,7 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --headless --path . --quit-after 8000 res://tests/flow_test.tscn        # FLOW_TEST: ALL PASSED
 & $G --headless --path . --quit-after 8000 res://tests/_stalkerprobe.tscn    # STALKER_PROBE: ALL PASSED
 & $G --headless --path . --quit-after 8000 res://tests/student_test.tscn     # BAD_FRAMES=0
-& $G --path . res://tests/screenshot.tscn                                    # exit 0
+& $G --path . res://tests/screenshot.tscn                                    # exit 0，shot_* 全部重拍
 ```
 
 > 注：Godot 测试进程有时会脱离控制台，管道里拿不到输出；最稳的读法是看 `%APPDATA%\Godot\app_userdata\卷狗必须死\logs\godot.log`（历史日志会归档成 `godot<时间戳>.log`，需逐个搜）。
