@@ -28,6 +28,23 @@
 用户提供素材（版权归提供者，替换/发布前请确认授权）
 - alarm.mp3             "警报声"              由用户提供（素材/警报声.mp3），用于暴君登场
 
+================================================================
+以下为 CC BY 4.0 素材（来自 Audionautix，**必须保留署名**）
+================================================================
+Music by Audionautix.com (Jason Shaw) — https://audionautix.com/
+许可：Creative Commons Attribution 4.0 International (CC BY 4.0)
+     https://creativecommons.org/licenses/by/4.0/
+要求：可商用、可修改，但必须署名并提供许可链接，且注明做过修改。
+本项目的修改：原 MP3 → OGG Vorbis（q3~q5）+ 统一音量标准化（loudnorm -16 LUFS）。
+
+- cutscene_dread.ogg    "The Childrens Room"  by Jason Shaw   https://audionautix.com/free-music/soundtrack
+- clear_victory.ogg     "Big Intro #2"        by Jason Shaw   https://audionautix.com/free-music/other
+- gameover_somber.ogg   "Somber"              by Jason Shaw   https://audionautix.com/free-music/soundtrack
+- tension_mid.ogg       "Night Runner"        by Jason Shaw   https://audionautix.com/free-music/soundtrack
+- amb_tyrant_drone.ogg  "Horror Drone #1"     by Jason Shaw   https://audionautix.com/free-music/soundtrack
+
+完整清单（含用途/情绪/楼层/授权审计）见 assets/music/catalog.json 与 CATALOG.md。
+
 说明：以上合成音效由项目内 Python 脚本生成（无第三方版权），
 警报 A/B 为两版可选方案，默认使用 alarm_a.wav，可试听后替换；
 暴君登场优先使用用户提供的 alarm.mp3，缺失时回退 alarm_a.wav。

@@ -411,3 +411,11 @@
 - 补素材来源：Audionautix（CC BY 4.0，**必须署名**）+ Freesound（逐条看授权，避开 CC BY-NC），优先免费可商用
 - 不做：不改《杀死比尔》警报（版权）；不引入需要付费授权的曲库
 
+【配乐补全 · 首批（2026-11-04）】
+- 素材来源：Audionautix（https://audionautix.com），按缺口表的情绪/强度/时长筛
+- 授权：全部 **CC BY 4.0**，可商用，**必须署名**并给许可链接；本项目做了转码+电平标准化，需注明修改
+- 已接入：过场 `cutscene_dread`、通关 `clear_victory`（11 秒短句）、失败 `gameover_somber`
+- 已入库未接入：`tension_mid`（L2~L4 紧张，等方案 B 开启）、`amb_tyrant_drone`（暴君压迫层临时替代，非分轨）
+- 命名规范：`<槽位>_<气质>.ogg`，如 `cutscene_dread` / `gameover_somber`
+- 仍未解决：真正的同 BPM 分轨（压迫层、节奏层）、环境层（喘息/钟声/电流）→ 需 Freesound 采样或程序合成
+

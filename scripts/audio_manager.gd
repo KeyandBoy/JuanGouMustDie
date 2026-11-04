@@ -59,6 +59,19 @@ func _load_catalog() -> void:
 ## 规则：status=active、声明了该 slot、level_scope 覆盖当前楼层；
 ## 多条命中时按曲库顺序取第一条（想换优先级就调 JSON 里的顺序）。
 func catalog_slot_path(slot: String) -> String:
+	var d := _entry_for_slot(slot)
+	if not d.is_empty():
+		return String(d.get("file", ""))
+	return String(TRACK_PATHS.get(slot, ""))
+
+## 该槽位是否循环播放（曲库里 loop 字段，缺省 true）。
+func catalog_slot_loop(slot: String) -> bool:
+	var d := _entry_for_slot(slot)
+	if d.is_empty():
+		return true
+	return bool(d.get("loop", true))
+
+func _entry_for_slot(slot: String) -> Dictionary:
 	var level: int = int(GameState.level)
 	for entry in _tracks:
 		if typeof(entry) != TYPE_DICTIONARY:
@@ -72,10 +85,10 @@ func catalog_slot_path(slot: String) -> String:
 		var scope = d.get("level_scope", ["all"])
 		if scope is Array and not scope.has("all") and not scope.has(level):
 			continue
-		var path := String(d.get("file", ""))
-		if not path.is_empty():
-			return path
-	return String(TRACK_PATHS.get(slot, ""))
+		if String(d.get("file", "")).is_empty():
+			continue
+		return d
+	return {}
 
 func _music_db() -> float:
 	if music_volume <= 0.5:
@@ -120,17 +133,17 @@ func _refresh() -> void:
 
 func _desired_key() -> String:
 	if GameState.run_state == GameState.RunState.GAMEOVER:
-		return ""
+		return "gameover"
 	if GameState.run_state == GameState.RunState.MENU:
 		return "happy"
 	if GameState.cutscene_active:
-		return ""
+		return "cutscene"
 	if GameState.tyrant_active:
 		return "tyrant_l5" if GameState.level >= 5 else "tyrant"
 	if GameState.run_state == GameState.RunState.QUIZ:
 		return "absurd"
 	if GameState.run_state == GameState.RunState.CLEARED:
-		return "happy"
+		return "cleared"
 	var w: int = GameState.warnings
 	if w >= 2 or _any_chasing():
 		return "chase"
@@ -161,19 +174,20 @@ func _play(key: String) -> void:
 		return
 	if _player.stream == stream and _player.playing:
 		return
+	var loop := catalog_slot_loop(key)
 	if _player.playing:
 		_tween = create_tween()
 		_tween.tween_property(_player, "volume_db", -40.0, FADE * 0.5)
-		_tween.tween_callback(_start.bind(stream))
+		_tween.tween_callback(_start.bind(stream, loop))
 		_tween.tween_property(_player, "volume_db", _music_db(), FADE * 0.5)
 	else:
-		_start(stream)
+		_start(stream, loop)
 
-func _start(stream: AudioStream) -> void:
+func _start(stream: AudioStream, loop: bool = true) -> void:
 	_player.stop()
 	_player.stream = stream
 	if "loop" in stream:
-		stream.set("loop", true)
+		stream.set("loop", loop)
 	_player.volume_db = -40.0
 	_player.play()
 	if _tween != null and _tween.is_valid():
