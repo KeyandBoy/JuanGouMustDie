@@ -1283,6 +1283,7 @@ func _start_tyrant_intro() -> void:
 	if alarm != null:
 		var alarm_player := AudioStreamPlayer.new()
 		alarm_player.stream = alarm
+	alarm_player.bus = AudioManager.BUS_SFX
 		alarm_player.bus = AudioManager.BUS_SFX
 		alarm_player.volume_db = -4.0
 		layer.add_child(alarm_player)

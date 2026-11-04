@@ -206,11 +206,12 @@ func _say(entries: Array, cb: Callable) -> void:
 
 func _start_broadcast_noise() -> void:
 	if _broadcast_player == null:
-		var stream = load("res://assets/sfx/broadcast_noise.mp3")
+		var stream = load("res://assets/sfx/ambient/broadcast_noise.mp3")
 		if stream == null:
 			return
 		_broadcast_player = AudioStreamPlayer.new()
 		_broadcast_player.stream = stream
+		_broadcast_player.bus = AudioManager.BUS_SFX
 		_broadcast_player.volume_db = -12.0
 		_broadcast_player.process_mode = Node.PROCESS_MODE_ALWAYS
 		add_child(_broadcast_player)

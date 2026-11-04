@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://co1fjvhtgg0g2"
-path="res://.godot/imported/tyrant_step.wav-96f067ccc36b2f133046e0517ec3e87d.sample"
+uid="uid://dy0e0ocj0ggwp"
+path="res://.godot/imported/alarm_a.wav-1b00e373b6f6b4c5df3c0056a65fa626.sample"
 
 [deps]
 
-source_file="res://assets/sfx/tyrant_step.wav"
-dest_files=["res://.godot/imported/tyrant_step.wav-96f067ccc36b2f133046e0517ec3e87d.sample"]
+source_file="res://assets/sfx/alarm/alarm_a.wav"
+dest_files=["res://.godot/imported/alarm_a.wav-1b00e373b6f6b4c5df3c0056a65fa626.sample"]
 
 [params]
 

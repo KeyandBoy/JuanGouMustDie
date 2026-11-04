@@ -133,26 +133,29 @@ func _ready() -> void:
 	smoke_front.z_index = 3
 	add_child(smoke_front)
 	footstep = AudioStreamPlayer2D.new()
+	footstep.bus = AudioManager.BUS_SFX
 	footstep.max_distance = 1500.0
 	footstep.attenuation = 1.6
 	footstep.volume_db = 2.0
-	var stream: AudioStream = load("res://assets/sfx/tyrant_step.wav")
+	var stream: AudioStream = load("res://assets/sfx/step/tyrant_step.wav")
 	if stream != null:
 		footstep.stream = stream
 	add_child(footstep)
 	heartbeat = AudioStreamPlayer2D.new()
+	heartbeat.bus = AudioManager.BUS_SFX
 	heartbeat.max_distance = 900.0
 	heartbeat.attenuation = 1.2
 	heartbeat.volume_db = -6.0
-	var hb: AudioStream = load("res://assets/sfx/heartbeat.wav")
+	var hb: AudioStream = load("res://assets/sfx/creature/heartbeat.wav")
 	if hb != null:
 		heartbeat.stream = hb
 	add_child(heartbeat)
 	roar_player = AudioStreamPlayer2D.new()
+	roar_player.bus = AudioManager.BUS_SFX
 	roar_player.max_distance = 2200.0
 	roar_player.attenuation = 0.9
 	roar_player.volume_db = 1.0
-	var rr: AudioStream = load("res://assets/sfx/tyrant_roar.wav")
+	var rr: AudioStream = load("res://assets/sfx/creature/tyrant_roar.wav")
 	if rr != null:
 		roar_player.stream = rr
 	add_child(roar_player)
@@ -235,17 +238,7 @@ func _attack() -> void:
 	if player.has_method("stun"):
 		player.stun(1.5)
 	player.velocity = Vector2.ZERO
-	var swipe: AudioStream = load("res://assets/sfx/tyrant_swipe.wav")
-	if swipe != null:
-		var p := AudioStreamPlayer2D.new()
-		p.stream = swipe
-		p.max_distance = 900.0
-		add_child(p)
-		p.play()
-		get_tree().create_timer(1.0).timeout.connect(func():
-			if is_instance_valid(p):
-				p.queue_free()
-		)
+	AudioManager.play_sfx_2d("res://assets/sfx/impact/tyrant_swipe.wav", global_position, 900.0)
 	hit_player.emit()
 
 func _player_dodging() -> bool:
