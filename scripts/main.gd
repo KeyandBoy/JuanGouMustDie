@@ -2106,6 +2106,7 @@ func _volume_settings_box() -> Control:
 	for row_def in [
 		["主音量", AudioManager.master_volume, AudioManager.set_master_volume],
 		["音乐音量", AudioManager.music_volume, AudioManager.set_music_volume],
+		["音效音量", AudioManager.sfx_volume, AudioManager.set_sfx_volume],
 	]:
 		var row := HBoxContainer.new()
 		var lbl := Label.new()
