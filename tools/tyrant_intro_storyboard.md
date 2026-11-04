@@ -1,4 +1,8 @@
-# 暴君登场 · 分镜 CG 内容包（AIMangaStudio / Gemini）
+# 暴君登场 · 分镜 CG 内容包（脚本来源）
+
+> **状态（2026-11-04）**：这份文稿是**分镜脚本的文本来源**，最终实现没有用 AIMangaStudio（浏览器直连 Google 被墙 + 用户提供的是 OAuth 令牌而非 API key）。
+> 实际管线是：`tools/manifests/tyrant_intro_panels.json`（12 格 prompt）→ `tools/gen_panels.py`（imagefree）→ `tools/compose_manga.py`（排成 4 页漫画）。
+> 本文件保留世界观/角色/逐格描述，改台词或调整镜头时先改这里，再同步到 manifest。
 
 > 用途：在 `aimangastudio`（本地 `http://127.0.0.1:5173`）里「世界观设置 + 场景脚本」直接粘贴本文件的内容，生成暴君登场过场 CG。
 > 画幅：**横版 16:9**（游戏内 2×2 四格，每格一张）。

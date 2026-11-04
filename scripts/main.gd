@@ -1264,31 +1264,16 @@ func _start_tyrant_intro() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(dim)
 	var vs: Vector2 = get_viewport().get_visible_rect().size
-	# 四格漫画版式：2×2 等大格子；图按 4:3 完整显示（不裁切），字幕条在图片下方
-	var gutter := 14.0
-	var cap_h := 34.0
-	var pad := 3.0
-	var margin := Vector2(vs.x * 0.045, vs.y * 0.045)
-	var avail := vs - margin * 2.0
-	var cell_w := (avail.x - gutter) * 0.5
-	var cell_h := (avail.y - gutter) * 0.5
-	var img_h := cell_h - cap_h
-	var img_w := img_h * (4.0 / 3.0)
-	if img_w > cell_w:
-		img_w = cell_w
-		img_h = img_w * 0.75
-	var panel_w := img_w
-	var panel_h := img_h + cap_h
-	var grid_w := panel_w * 2.0 + gutter
-	var grid_h := panel_h * 2.0 + gutter
-	var ox := (vs.x - grid_w) * 0.5
-	var oy := (vs.y - grid_h) * 0.5
-	var corners: Array[Vector2] = [
-		Vector2(ox, oy),
-		Vector2(ox + panel_w + gutter, oy),
-		Vector2(ox, oy + panel_h + gutter),
-		Vector2(ox + panel_w + gutter, oy + panel_h + gutter),
-	]
+	# 漫画分镜版式：一页一页全屏播放（页内已有分格线/对白泡泡/拟声词），底部一条字幕
+	var cap_h := 38.0
+	var page_h := vs.y * 0.80
+	var page_w := page_h * (4.0 / 3.0)
+	var max_w := vs.x * 0.92
+	if page_w > max_w:
+		page_w = max_w
+		page_h = page_w * 0.75
+	var page_x := (vs.x - page_w) * 0.5
+	var page_y := (vs.y - page_h - cap_h - 16.0) * 0.5
 	var texts: Array[String] = [
 		"走廊尽头\n有什么在靠近",
 		"整栋楼\n都在看你，",
@@ -1304,23 +1289,10 @@ func _start_tyrant_intro() -> void:
 	]
 	for i in 4:
 		var wrap := Control.new()
-		wrap.position = corners[i]
-		wrap.size = Vector2(panel_w, panel_h)
-		wrap.clip_contents = true
+		wrap.position = Vector2(page_x, page_y)
+		wrap.size = Vector2(page_w, page_h + cap_h + 10.0)
 		wrap.modulate.a = 0.0
-		wrap.scale = Vector2(0.92, 0.92)
-		wrap.pivot_offset = Vector2(panel_w * 0.5, panel_h * 0.5)
 		root.add_child(wrap)
-		var frame := Panel.new()
-		frame.size = Vector2(panel_w, panel_h)
-		var fsb := StyleBoxFlat.new()
-		fsb.bg_color = Color(0.02, 0.02, 0.03)
-		fsb.border_color = Color(0.72, 0.06, 0.06)
-		fsb.set_border_width_all(int(pad))
-		fsb.set_corner_radius_all(0)
-		frame.add_theme_stylebox_override("panel", fsb)
-		wrap.add_child(frame)
-		var art_size := Vector2(panel_w - pad * 2.0, img_h - pad)
 		var tex: Texture2D = load(panel_paths[i]) if ResourceLoader.exists(panel_paths[i]) else null
 		if tex != null:
 			var art := TextureRect.new()
@@ -1328,39 +1300,62 @@ func _start_tyrant_intro() -> void:
 			art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			art.position = Vector2(pad, pad)
+			art.position = Vector2.ZERO
+			art.size = Vector2(page_w, page_h)
 			wrap.add_child(art)
-			art.size = art_size
 		else:
 			var paper := ColorRect.new()
 			paper.color = Color(0.90, 0.88, 0.82)
-			paper.position = Vector2(pad, pad)
-			paper.size = art_size
+			paper.size = Vector2(page_w, page_h)
 			wrap.add_child(paper)
+		var frame := Panel.new()
+		frame.position = Vector2.ZERO
+		frame.size = Vector2(page_w, page_h)
+		var fsb := StyleBoxFlat.new()
+		fsb.bg_color = Color(0, 0, 0, 0)
+		fsb.border_color = Color(0.72, 0.06, 0.06)
+		fsb.set_border_width_all(2)
+		fsb.set_corner_radius_all(0)
+		frame.add_theme_stylebox_override("panel", fsb)
+		wrap.add_child(frame)
 		var caption_bg := ColorRect.new()
 		caption_bg.color = Color(0.04, 0.04, 0.05)
-		caption_bg.position = Vector2(pad, img_h)
-		caption_bg.size = Vector2(panel_w - pad * 2.0, panel_h - img_h - pad)
+		caption_bg.position = Vector2(0.0, page_h + 4.0)
+		caption_bg.size = Vector2(page_w, cap_h)
 		wrap.add_child(caption_bg)
 		var label := Label.new()
 		label.text = texts[i].replace("\n", " ")
-		label.position = Vector2(pad + 6.0, img_h)
-		label.size = Vector2(panel_w - pad * 2.0 - 12.0, panel_h - img_h - pad)
-		label.add_theme_font_size_override("font_size", 16)
+		label.position = Vector2(8.0, page_h + 4.0)
+		label.size = Vector2(page_w - 16.0, cap_h)
+		label.add_theme_font_size_override("font_size", 18)
 		label.add_theme_color_override("font_color", Color(0.94, 0.92, 0.88))
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		wrap.add_child(label)
+		var idx := Label.new()
+		idx.text = "%d / 4" % (i + 1)
+		idx.position = Vector2(page_w - 64.0, -26.0)
+		idx.size = Vector2(64.0, 22.0)
+		idx.add_theme_font_size_override("font_size", 15)
+		idx.add_theme_color_override("font_color", Color(0.55, 0.12, 0.12))
+		idx.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		wrap.add_child(idx)
 		panels.append(wrap)
 
 	for i in panels.size():
+		var pg: Control = panels[i]
+		pg.position = Vector2(page_x + 70.0, page_y)
 		var tw := create_tween()
 		tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		tw.tween_property(panels[i], "modulate:a", 1.0, 0.28)
-		tw.parallel().tween_property(panels[i], "scale", Vector2.ONE, 0.28)
-		await _wait(0.52)
+		tw.tween_property(pg, "modulate:a", 1.0, 0.26)
+		tw.parallel().tween_property(pg, "position:x", page_x, 0.32)
+		await _wait(2.0)
+		var out := create_tween()
+		out.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		out.tween_property(pg, "modulate:a", 0.0, 0.2)
+		await _wait(0.22)
 
-	await _wait(0.45)
+	await _wait(0.25)
 	var flash := ColorRect.new()
 	flash.color = Color(1, 1, 1, 0.9)
 	flash.set_anchors_preset(Control.PRESET_FULL_RECT)

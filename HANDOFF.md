@@ -4,7 +4,7 @@
 - 最后操作：opencode
 - 分支：main
 - 当前 HEAD：`764b413`（补首批配乐：Audionautix CC BY 4.0 · 5 首）
-- 工作区：**有另一个会话留下的未提交改动**（`scripts/main.gd` 把暴君登场改成整页分镜、`tests/screenshot.gd` 加长等待、`tools/gen_panels.py`、`tools/manifests/tyrant_intro_panels.json`、`参考清单_可移植.md`、`参考研究_PixelGame.md`），不是音乐改动，未提交、未改动。
+- 工作区：干净（本轮暴君分镜改动已提交）；仍有两个别的会话留下的**未跟踪**研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
 ## 最简用法（推荐）
 
@@ -17,10 +17,17 @@
 
 ## 当前目标
 
-暴君恐怖化重做已完成并替换进游戏：新立绘（7 套动作）+ 新 4 方向像素走路条带（32 帧、归一化调色）。
-下一步请**实际玩一局第 5 关/新手关**看暴君在真实光照下的效果，重点看：暗处是否太暗、血是否看得清、走路 9fps 是否顺、动作立绘与走路切换是否跳大小/跳色。
+暴君登场过场已从「四张插画拼接」改成**真正的漫画分镜**：4 页 × 3 格，游戏内一页一页全屏播放。
+下一步请**实机跑一次暴君登场**看：页面在 1080p/窗口模式下对白和拟声词是否看得清、4 页节奏（每页 2 秒）会不会太快、红边框和游戏 HUD 是否打架。
 
 ## 本轮已完成
+
+- **暴君登场分镜重做 · 真漫画页（2026-11-04）**：
+  - 旧 `tyrant_p1~p4` 是四张单幅插画硬拼，没有分格/格线/对白 → 用户判定「不是分镜」。
+  - 改为 **12 格逐格出图 → 程序排版成 4 页 1200×900（4:3）**：
+    `tools/manifests/tyrant_intro_panels.json`（12 条 prompt）+ `tools/gen_panels.py`（只用 imagefree，429 退避，**不走 pollinations 兜底**）+ `tools/compose_manga.py`（格线 / 对白泡泡 / 拟声词 / 旁白黑框 / 黑白+单红统一 / 裁白边）。
+  - 游戏内 `main.gd` 暴君登场改为**逐页全屏播放**（底部字幕 + 右上角 `1 / 4` 页码），`tests/screenshot.gd` 的后续等待 6.5s → 11.0s。
+  - AIMangaStudio / ComicFlow-Engine 两条路都已排除并记入开发记录：前者浏览器直连 Google 被墙且用户给的是 OAuth 令牌，后者只能 PDF 转短视频、无生成能力。
 
 - **补首批配乐 · Audionautix（2026-11-04）**：
   - 新入库 5 首（全部 CC BY 4.0，**必须署名**）：`cutscene_dread.ogg`（The Childrens Room，过场）、`clear_victory.ogg`（Big Intro #2，11 秒胜利短句）、`gameover_somber.ogg`（Somber，失败）、`tension_mid.ogg`（Night Runner，L2~L4 紧张，**standby**）、`amb_tyrant_drone.ogg`（Horror Drone #1，暴君压迫层临时替代，**standby**）。

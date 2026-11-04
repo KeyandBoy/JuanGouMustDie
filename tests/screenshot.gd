@@ -290,7 +290,7 @@ func _ready() -> void:
 	inst._start_tyrant_intro()
 	await get_tree().create_timer(2.6).timeout
 	_save(inst, "res://tests/shot_tyrant_comic.png")
-	await get_tree().create_timer(6.5).timeout
+	await get_tree().create_timer(11.0).timeout
 	_save(inst, "res://tests/shot_tyrant_chase.png")
 	print("TYRANT spawned=", inst.tyrant_spawned, " intro=", GameState.tyrant_intro_seen, " active=", GameState.tyrant_active, " ambient=", inst.fog.ambient_density)
 	if inst.tyrant != null and is_instance_valid(inst.tyrant):

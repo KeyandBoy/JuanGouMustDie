@@ -1,0 +1,74 @@
+[
+  {
+    "name": "ti_p1_1",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for glowing eyes and blood, no text, no speech bubbles, no watermark, no border. A long empty night school corridor in one point perspective, rows of identical classroom doors, only one ceiling fluorescent light still flickering, cold light pooling on the polished floor, dust hanging in the air, a crude scrawled mark in red chalk on the wall, oppressive emptiness, wide establishing shot"
+  },
+  {
+    "name": "ti_p1_2",
+    "ratio": "3:4",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for glowing eyes and blood, no text, no speech bubbles, no watermark, no border. Back view of a seventeen year old male high school student with messy black hair and a navy school jacket, standing frozen at the entrance of a school corridor, holding a blood stained test paper that drips a single drop of blood, medium shot from slightly below, shoulders tense with fear, his eyes are dark grey and NOT red, red appears only on the blood soaked paper"
+  },
+  {
+    "name": "ti_p1_3",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for glowing eyes and blood, no text, no speech bubbles, no watermark, no border. The far end of a dark school corridor swallowed in absolute blackness, a gigantic distorted silhouette wider than the door frame standing in the dark, only three glowing red eyes visible, two side by side and one larger on the forehead, extreme wide shot, vast negative black space"
+  },
+  {
+    "name": "ti_p2_1",
+    "ratio": "3:4",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for glowing eyes and blood, no text, no speech bubbles, no watermark, no border. Medium shot of a towering three meter tall stitched corpse monster, pale grey corpse skin covered with dark suture lines, its chest and right arm torn open exposing dark red muscle, three glowing red eyes igniting with the third eye on its forehead, a half skeletal face embedded in its left shoulder, bone spikes along its spine, one enormous mutated right arm, heavy black boots, blood dripping from its claws, head lowered"
+  },
+  {
+    "name": "ti_p2_2",
+    "ratio": "3:4",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, no text, no speech bubbles, no watermark, no border. Extreme close up of a seventeen year old male high school student with messy black hair, pupils shrunk in terror, sweat running down his jaw, lips trembling, half of his face lit by cold corridor light and the rest sinking into deep shadow"
+  },
+  {
+    "name": "ti_p2_3",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, no text, no speech bubbles, no watermark, no border. Extreme low angle shot from the floor: a giant black boot of a monster crashing down into the frame, the floor tiles cracking and dust bursting outward, the boot almost touching the camera, shallow depth of field"
+  },
+  {
+    "name": "ti_p3_1",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for glowing eyes and blood, no text, no speech bubbles, no watermark, no border. Dynamic action panel, the huge stitched corpse monster charging down the corridor toward the viewer, body leaning far forward, enormous right arm swung back, bone spikes scraping the wall leaving white gouges, heavy motion blur and speed lines, floor lines converging to the vanishing point, three red eyes burning, heavy black boots on both feet"
+  },
+  {
+    "name": "ti_p3_2",
+    "ratio": "3:4",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, no text, no speech bubbles, no watermark, no border. A seventeen year old male high school student in a navy school jacket vaulting over a wooden school desk, test papers and loose pages exploding into the air around him, side view, strong speed lines, panic"
+  },
+  {
+    "name": "ti_p3_3",
+    "ratio": "4:3",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for blood, no text, no speech bubbles, no watermark, no border. The enormous clawed hand of a monster smashing straight through a classroom door, splintered wood and shattered glass flying toward the viewer, a bloody handprint left on the door panel, violent impact composition"
+  },
+  {
+    "name": "ti_p4_1",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, no text, no speech bubbles, no watermark, no border. Close up of a seventeen year old male high school student looking back over his shoulder in a dark stairwell, his wide dark grey eye reflecting three tiny red points of light, shallow depth of field, sweat on his skin, his eyes are NOT red"
+  },
+  {
+    "name": "ti_p4_2",
+    "ratio": "3:4",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for glowing eyes and blood, no text, no speech bubbles, no watermark, no border. The stitched corpse monster standing in the middle of a dark corridor, the ceiling light exploding above it, glass shards raining down, its torn jaw opening wide with blood stretching in strings between the teeth, extreme low angle shot, three red eyes"
+  },
+  {
+    "name": "ti_p4_3",
+    "ratio": "16:9",
+    "key": false,
+    "prompt": "Black and white manga panel, heavy ink linework, dense screentone halftone shading, extreme high contrast, dramatic cinematic composition, thick black outlines, red used only for blood, no text, no speech bubbles, no watermark, no border. A giant bloody handprint smeared across a cracked white wall, thick blood dripping down in long streaks, extreme close up, ominous and quiet"
+  }
+]
