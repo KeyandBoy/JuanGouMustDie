@@ -28,6 +28,9 @@ var _panel_tween: Tween
 var _panel_cooldown := 0.0
 var _warning_pips: Array[Panel] = []
 var _hot_pips: Array[Panel] = []
+var _num_root: Control
+var _num_pool: Array[Label] = []
+const NUM_POOL_SIZE := 18
 
 func _ready() -> void:
 	layer = 10
@@ -221,6 +224,61 @@ func _ready() -> void:
 	GameState.stars_changed.connect(_refresh_stars)
 	GameState.hot_changed.connect(_refresh_hot)
 	get_viewport().size_changed.connect(func(): _set_panel_side(panel_side, false))
+	_build_number_pool(root)
+
+## 飘字池：一次答对/答错/被抓都能在角色头顶飘一个数字。
+## 复用 Label，避免每次 new/tween/free 造成抖动。
+## 必须挂在 root（已 apply UiTheme）下：网页端没有系统字体回退，
+## 挂到 CanvasLayer 上会解析到引擎默认字体，中文直接变方块。
+func _build_number_pool(host: Control) -> void:
+	_num_root = Control.new()
+	_num_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_num_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(_num_root)
+	for i in NUM_POOL_SIZE:
+		var l := Label.new()
+		l.visible = false
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.add_theme_font_size_override("font_size", 18)
+		l.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.92))
+		l.add_theme_constant_override("outline_size", 5)
+		_num_root.add_child(l)
+		_num_pool.append(l)
+
+func _number_color(kind: String) -> Color:
+	match kind:
+		"loss", "warn":
+			return Color(0.96, 0.34, 0.28)
+		"crit":
+			return Color(1.0, 0.83, 0.30)
+		"info":
+			return Color(0.74, 0.86, 0.96)
+		_:
+			return Color(0.62, 0.96, 0.68)
+
+## world_pos 用世界坐标（传 player.global_position 即可），内部转屏幕坐标。
+func pop_number(world_pos: Vector2, text: String, kind: String = "gain") -> void:
+	if _num_root == null or _num_pool.is_empty():
+		return
+	var l: Label = _num_pool.pop_front()
+	_num_pool.push_back(l)
+	var screen: Vector2 = get_viewport().get_canvas_transform() * world_pos
+	var box := Vector2(240.0, 30.0)
+	l.text = text
+	l.size = box
+	l.pivot_offset = box * 0.5
+	l.position = screen - Vector2(box.x * 0.5, 46.0) + Vector2(randf_range(-9.0, 9.0), 0.0)
+	l.modulate = _number_color(kind)
+	l.add_theme_font_size_override("font_size", 26 if kind == "crit" else 18)
+	l.scale = Vector2(1.5, 1.5) if kind == "crit" else Vector2(1.0, 1.0)
+	l.visible = true
+	var tw := create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 44.0, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(l, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.34).set_delay(0.38)
+	tw.tween_callback(func(): l.visible = false)
 
 func _chip(parent: Control) -> Label:
 	var wrap := PanelContainer.new()

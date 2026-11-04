@@ -969,10 +969,20 @@ func _on_answered(correct: bool) -> void:
 	var room_i: int = map.room_index_at(player.position)
 	if room_i >= 0:
 		_add_room_heat(room_i)
+	var anchor: Vector2 = (player.global_position + Vector2(0.0, -30.0)) if player != null else Vector2.ZERO
 	if correct:
-		hud.toast("回答正确！净答对 %.1f / %.0f" % [GameState.study, GameState.study_goal])
+		# 反馈层：色闪 + 飘字（连对倍率由 GameState.hot_multiplier 结算，这里只负责让人看见）
+		Fx.flash(self, Color(0.55, 0.95, 0.66), 0.10, 0.26)
+		var gain: float = maxf(0.1, GameState.answer_efficiency * GameState.hot_multiplier())
+		if hud != null:
+			hud.pop_number(anchor, "+%.1f" % gain, "gain")
+			hud.toast("回答正确！净答对 %.1f / %.0f" % [GameState.study, GameState.study_goal])
 	else:
-		hud.toast("答错！净答对 -1、空虚值 -2，还制造了动静")
+		Fx.flash(self, Color(0.96, 0.30, 0.24), 0.16, 0.30)
+		Fx.shake(self, 1)
+		if hud != null:
+			hud.pop_number(anchor, "净答对 -1", "loss")
+			hud.toast("答错！净答对 -1、空虚值 -2，还制造了动静")
 		map.noise_made.emit(player.position, 45.0)
 	_update_answer_efficiency()
 	if GameState.run_state == GameState.RunState.CLEARED:
@@ -1006,6 +1016,10 @@ func _on_hot_changed(level: int) -> void:
 		var mults := [1.0, 1.1, 1.2, 1.3]
 		if level < names.size():
 			hud.toast("火热 %s！答题收益 ×%.1f" % [names[level], mults[level]])
+			if player != null:
+				hud.pop_number(player.global_position + Vector2(0.0, -58.0), "连对 ×%.1f" % mults[level], "crit")
+			Fx.flash(self, Color(1.0, 0.84, 0.35), 0.12, 0.28)
+			Fx.shake(self, 1)
 	_last_hot_level = level
 
 func _tween_zoom(to: float) -> void:
@@ -1048,6 +1062,13 @@ func _fx_flash(col: Color, peak: float, dur: float) -> void:
 	t.tween_property(rect, "color:a", peak, 0.08)
 	t.tween_property(rect, "color:a", 0.0, dur)
 	t.tween_callback(layer.queue_free)
+
+## 被抓时的飘字：警告与理智分开两行，避免一次刷太多层
+func _pop_caught_numbers() -> void:
+	if hud == null or player == null:
+		return
+	hud.pop_number(player.global_position + Vector2(0.0, -34.0), "警告 -1", "warn")
+	hud.pop_number(player.global_position + Vector2(0.0, -62.0), "理智 -6", "loss")
 
 func _punish_effect(by: Node2D) -> void:
 	if player != null:
@@ -1112,6 +1133,7 @@ func _on_player_caught(by: Node2D) -> void:
 		_punish_effect(by)
 		GameState.add_warning(1)
 		GameState.damage_emptiness(6.0)
+		_pop_caught_numbers()
 		player.stun(0.8)
 		player.velocity = Vector2.ZERO
 		if by != null and is_instance_valid(by):
@@ -1127,6 +1149,7 @@ func _on_player_caught(by: Node2D) -> void:
 	_punish_effect(by)
 	GameState.add_warning(1)
 	GameState.damage_emptiness(6.0)
+	_pop_caught_numbers()
 	player.stun(1.2)
 	player.position = map.exit_pos
 	player.velocity = Vector2.ZERO
@@ -1209,8 +1232,10 @@ func _shake_camera(amount: float, duration: float) -> void:
 	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	var steps := 7
 	for i in steps:
-		var off := Vector2(randf_range(-amount, amount), randf_range(-amount, amount))
-		tw.tween_property(camera, "offset", off, duration / float(steps))
+		# 线性衰减 + 取整：像素游戏里浮点 offset 会抖出半像素白缝
+		var k := 1.0 - float(i) / float(steps)
+		var off := Vector2(randf_range(-amount, amount), randf_range(-amount, amount)) * k
+		tw.tween_property(camera, "offset", off.round(), duration / float(steps))
 	tw.tween_property(camera, "offset", Vector2.ZERO, duration / float(steps))
 
 func _wait(sec: float) -> void:

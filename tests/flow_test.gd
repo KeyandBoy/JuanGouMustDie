@@ -746,7 +746,7 @@ func _ready() -> void:
 	_check(not inst._modal_open(), "modal: all closed", failures)
 	_check(inst.modal_stack.is_empty(), "modal: stack empty (%d)" % inst.modal_stack.size(), failures)
 
-	# --- 字体兜底：网页端没有系统字体回退，所有中文 Label 必须解析到 zpix ---
+	# --- 字体兜底：网页端没有系统字体回退，所有中文 Label 必须解析到 UiTheme 字体 ---
 	inst._punish_effect(inst.player)
 	await get_tree().process_frame
 	var fx_root: Control = null
@@ -760,7 +760,7 @@ func _ready() -> void:
 		label_count += 1
 		if l.get_theme_font("font") != UiTheme.font():
 			odd_fonts.append(String(l.text).substr(0, 8))
-	_check(odd_fonts.is_empty(), "font: %d labels all resolve to zpix (odd: %s)" % [label_count, ", ".join(odd_fonts)], failures)
+	_check(odd_fonts.is_empty(), "font: %d labels all resolve to UiTheme font (odd: %s)" % [label_count, ", ".join(odd_fonts)], failures)
 
 	var tip2: DialogueData = DialogueDb.level_tip(2)
 	_check(DialogueDb.level_tip(1) == null, "dialogue: level 1 tip removed", failures)
