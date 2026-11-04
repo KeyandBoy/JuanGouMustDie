@@ -31,6 +31,8 @@ var _hot_pips: Array[Panel] = []
 var _num_root: Control
 var _num_pool: Array[Label] = []
 var _stars_shown := 0.0
+var _stars_init := false
+var _stars_force_snap := false
 var _sanity_vignette: ColorRect
 const NUM_POOL_SIZE := 18
 const SANITY_WARN := 35.0
@@ -376,8 +378,10 @@ func _refresh_floor() -> void:
 
 func _refresh_stars() -> void:
 	var target := float(tutorial_stars if tutorial_mode else GameState.stars)
-	if absf(target - _stars_shown) > 4.0:
-		# 初次进入/大跳变（读档、切教学）直接对齐，避免数字从 0 滚过一整屏
+	if not _stars_init or _stars_force_snap or absf(target - _stars_shown) > 4.0:
+		# 首次进入 / 大跳变（读档、切教学）直接对齐，避免数字从 0 滚过一整屏
+		_stars_init = true
+		_stars_force_snap = false
 		_stars_shown = target
 		stars_label.text = "★ %d" % int(target)
 		return
@@ -396,6 +400,7 @@ func _refresh_stars() -> void:
 func set_tutorial_mode(on: bool) -> void:
 	tutorial_mode = on
 	tutorial_stars = 3 if on else 0
+	_stars_force_snap = true
 	if task_panel != null:
 		task_panel.visible = on
 	if skip_button != null:
