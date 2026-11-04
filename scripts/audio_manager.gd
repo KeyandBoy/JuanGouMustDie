@@ -1,5 +1,9 @@
 extends Node
 
+## 背景音乐曲库：唯一真相源是 res://assets/music/catalog.json。
+## 这里只保留一份「兜底表」——曲库文件缺失/解析失败时仍能出声，
+## 但正常情况下一律以 JSON 为准（改歌只改 JSON，再跑 tools/music_catalog.py 导出文档）。
+const CATALOG_PATH := "res://assets/music/catalog.json"
 const TRACK_PATHS := {
 	"happy": "res://assets/music/happy_loop.mp3",
 	"tension": "res://assets/music/chase_pursuit.mp3",
@@ -21,15 +25,57 @@ var _player: AudioStreamPlayer
 var _timer := 0.0
 var _tween: Tween
 var _cache: Dictionary = {}
+var _tracks: Array = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_load_catalog()
 	_player = AudioStreamPlayer.new()
 	add_child(_player)
 	master_volume = float(SaveManager.get_setting("master", 100.0))
 	music_volume = float(SaveManager.get_setting("music", 100.0))
 	muted = bool(SaveManager.get_setting("muted", false))
 	apply_volumes()
+
+## 读曲库。解析失败就静默回退到 TRACK_PATHS，不影响游戏出声。
+func _load_catalog() -> void:
+	_tracks.clear()
+	if not FileAccess.file_exists(CATALOG_PATH):
+		return
+	var file := FileAccess.open(CATALOG_PATH, FileAccess.READ)
+	if file == null:
+		return
+	var text := file.get_as_text()
+	file.close()
+	var data = JSON.parse_string(text)
+	if typeof(data) != TYPE_DICTIONARY:
+		push_warning("music catalog 解析失败，回退到内置表")
+		return
+	var list = data.get("tracks", [])
+	if list is Array:
+		_tracks = list
+
+## 把 AudioManager 的槽位名解析成实际文件路径。
+## 规则：status=active、声明了该 slot、level_scope 覆盖当前楼层；
+## 多条命中时按曲库顺序取第一条（想换优先级就调 JSON 里的顺序）。
+func catalog_slot_path(slot: String) -> String:
+	var level: int = int(GameState.level)
+	for entry in _tracks:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var d: Dictionary = entry
+		if String(d.get("status", "")) != "active":
+			continue
+		var slots = d.get("slots", [])
+		if not (slots is Array) or not slots.has(slot):
+			continue
+		var scope = d.get("level_scope", ["all"])
+		if scope is Array and not scope.has("all") and not scope.has(level):
+			continue
+		var path := String(d.get("file", ""))
+		if not path.is_empty():
+			return path
+	return String(TRACK_PATHS.get(slot, ""))
 
 func _music_db() -> float:
 	if music_volume <= 0.5:
@@ -139,14 +185,14 @@ func is_playing() -> bool:
 	return _player != null and _player.playing
 
 func _stream_for(key: String) -> AudioStream:
-	if _cache.has(key):
-		return _cache[key] as AudioStream
-	var path: String = String(TRACK_PATHS.get(key, ""))
+	var path: String = catalog_slot_path(key)
 	if path.is_empty():
 		return null
+	if _cache.has(path):
+		return _cache[path] as AudioStream
 	var stream: AudioStream = load(path)
 	if stream != null:
-		_cache[key] = stream
+		_cache[path] = stream
 	return stream
 
 func kick() -> void:
