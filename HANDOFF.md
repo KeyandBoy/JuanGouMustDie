@@ -1,10 +1,10 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-03
+- 更新时间：2026-11-04
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`add1c53`（字体切到方舟像素字体 Ark Pixel 12px）
-- 工作区：干净（`horror_rebuild/ai`、`ai_norm` 已忽略）
+- 当前 HEAD：`2065e2e`（背景音乐曲库化：catalog.json + CATALOG.md）
+- 工作区：**有另一个会话留下的未提交改动**（`scripts/main.gd` 把暴君登场改成整页分镜、`tests/screenshot.gd` 加长等待、`tools/gen_panels.py`、`tools/manifests/tyrant_intro_panels.json`、`参考研究_PixelGame.md`），不是本次音乐改动，未提交、未改动。
 
 ## 最简用法（推荐）
 
@@ -22,6 +22,10 @@
 
 ## 本轮已完成
 
+- **背景音乐曲库化（2026-11-04）**：
+  - 新增 `assets/music/catalog.json`（唯一真相源，18 条 = 在用 6 + 备用 3 + 待补 9），双主键（玩法状态 + 情绪），含 `level_scope` / `layer_role` / `intensity 1~5` / `elements` 描述标签 / `license`。
+  - 新增 `tools/music_catalog.py`：校验 + 导出 `assets/music/CATALOG.md`（在用表、备用表、待补表、状态索引、声音元素索引、授权审计）。
+  - `audio_manager.gd` 改为按 `slots` + `level_scope` 从曲库解析文件，`TRACK_PATHS` 降级为兜底；状态机 `_desired_key()` 未改，行为零变化。
 - **字体切换为方舟像素字体（2026-11-04）**：
   - 用户指定 <https://github.com/TakWolf/ark-pixel-font>；采用 `12px proportional zh_hans`（OFL-1.1）。
   - 新文件 `assets/fonts/ark_pixel_12px_zh_hans.ttf` + 授权 `assets/fonts/OFL_ark-pixel-font.txt`。
@@ -51,12 +55,16 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **实机验收四方向**：走一圈看正面/背面/左右是否对得上移动方向（`tyrant.gd` 里 `facing.x>0` 用 right、`<0` 用 left，且走路帧强制 `flip_h=false`）。
-2. 若某个方向个别帧糊/畸形，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk_fix.json -Only twf_back_03 -Force`，再把 `tools/_gen/twf_*.png` 改名成 `thw_*.png`，依次跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`）。
-3. 觉得走路不够「沉重」可调 `scripts/tyrant.gd` 的 `WALK_FPS`（9 → 7~8）。
-4. 实际玩几局看随机数学题：难度/干扰项是否合理；比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`。
-5. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
-6. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+1. **补音乐缺口（优先级从高到低）**：过场 BGM（现在过场静音）→ 通关结算 BGM（现在复用 happy_loop）→ 失败 BGM（现在淡出静音）→ 中段紧张曲 L2~L4。补到 `assets/music/` 后改 `catalog.json` 的 `status`/`file`，再跑 `python tools/music_catalog.py`。
+2. **做分层**：暴君压迫层（低频轰鸣+心跳，与 `tyrant_dread.wav` 同 BPM）→ 追逐节奏层（与 `chase_electro.ogg` 同 BPM）。**动手前必须先测 BPM**，否则叠加会打架；层文件入库后把 `catalog.json` 里对应 `gap_*` 条目改成 active 并补 `layer_role`。
+3. **给 AudioManager 加分轨播放**（目前只有单轨 `_player`，分层要再加 1~2 个 AudioStreamPlayer + 独立的淡入淡出，按 `layer_role` 控制）。
+4. 三首 standby（`chase_assault` / `fridge_hungry` / `wacky_wobblings`）目前没用上：`chase_assault` 建议给 L4/L5 追逐，`fridge_hungry` 可做暴君近身压迫层，`wacky_wobblings` 可做连错插曲。
+5. **实机验收四方向**：走一圈看正面/背面/左右是否对得上移动方向（`tyrant.gd` 里 `facing.x>0` 用 right、`<0` 用 left，且走路帧强制 `flip_h=false`）。
+6. 若某个方向个别帧糊/畸形，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk_fix.json -Only twf_back_03 -Force`，再把 `tools/_gen/twf_*.png` 改名成 `thw_*.png`，依次跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`）。
+7. 觉得走路不够「沉重」可调 `scripts/tyrant.gd` 的 `WALK_FPS`（9 → 7~8）。
+8. 实际玩几局看随机数学题：难度/干扰项是否合理；比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`。
+9. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
+10. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -79,7 +87,7 @@
 
 ## 测试状态
 
-2026-11-04 全绿（四方向朝向修复 + 去底规则调整后）：
+2026-11-04 全绿（曲库化 + 字体切换后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
