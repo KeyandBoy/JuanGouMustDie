@@ -1073,6 +1073,8 @@ func _pop_caught_numbers() -> void:
 func _punish_effect(by: Node2D) -> void:
 	if player != null:
 		_shake_camera(10.0, 0.45)
+		Fx.sprite_flash(player.sprite)
+	Fx.hitstop(3)
 	var layer := CanvasLayer.new()
 	layer.layer = L_FX
 	add_child(layer)
@@ -1224,6 +1226,11 @@ func _on_tyrant_hit() -> void:
 	_stop_study()
 	hud.toast("暴君抓住了你！眩晕 1.5 秒，赶紧拉开距离！")
 	_shake_camera(7.0, 0.35)
+	if player != null:
+		Fx.sprite_flash(player.sprite)
+		if hud != null:
+			hud.pop_number(player.global_position + Vector2(0.0, -34.0), "被撞飞", "warn")
+	Fx.hitstop(3)
 
 func _shake_camera(amount: float, duration: float) -> void:
 	if camera == null:
@@ -1270,12 +1277,13 @@ func _start_tyrant_intro() -> void:
 	layer.layer = L_TYRANT_CUT
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(layer)
-	var alarm: AudioStream = load("res://assets/sfx/alarm.mp3")
+	var alarm: AudioStream = load("res://assets/sfx/alarm/alarm.mp3")
 	if alarm == null:
-		alarm = load("res://assets/sfx/alarm_a.wav")
+		alarm = load("res://assets/sfx/alarm/alarm_a.wav")
 	if alarm != null:
 		var alarm_player := AudioStreamPlayer.new()
 		alarm_player.stream = alarm
+		alarm_player.bus = AudioManager.BUS_SFX
 		alarm_player.volume_db = -4.0
 		layer.add_child(alarm_player)
 		alarm_player.play()

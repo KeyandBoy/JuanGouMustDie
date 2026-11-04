@@ -30,7 +30,10 @@ var _warning_pips: Array[Panel] = []
 var _hot_pips: Array[Panel] = []
 var _num_root: Control
 var _num_pool: Array[Label] = []
+var _stars_shown := 0.0
+var _sanity_vignette: ColorRect
 const NUM_POOL_SIZE := 18
+const SANITY_WARN := 35.0
 
 func _ready() -> void:
 	layer = 10
@@ -39,6 +42,14 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiTheme.apply(root)
 	add_child(root)
+
+	# 低理智红晕：放在最底层，只做边缘压暗感，不挡可读性
+	_sanity_vignette = ColorRect.new()
+	_sanity_vignette.color = Color(0.45, 0.02, 0.02, 0.0)
+	_sanity_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_sanity_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_sanity_vignette)
+	root.move_child(_sanity_vignette, 0)
 
 	dev_label = Label.new()
 	dev_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -364,7 +375,23 @@ func _refresh_floor() -> void:
 	floor_label.text = "教学" if tutorial_mode else "%dF" % GameState.level
 
 func _refresh_stars() -> void:
-	stars_label.text = "★ %d" % (tutorial_stars if tutorial_mode else GameState.stars)
+	var target := float(tutorial_stars if tutorial_mode else GameState.stars)
+	if absf(target - _stars_shown) > 4.0:
+		# 初次进入/大跳变（读档、切教学）直接对齐，避免数字从 0 滚过一整屏
+		_stars_shown = target
+		stars_label.text = "★ %d" % int(target)
+		return
+	if is_equal_approx(target, _stars_shown):
+		stars_label.text = "★ %d" % int(target)
+		return
+	var from := _stars_shown
+	_stars_shown = target
+	var tw := create_tween()
+	tw.tween_method(func(v: float): stars_label.text = "★ %d" % int(round(v)), from, target, 0.4)
+	if target > from:
+		stars_label.modulate = Color(1.0, 0.94, 0.55)
+		var tw2 := create_tween()
+		tw2.tween_property(stars_label, "modulate", Color(1, 1, 1, 1), 0.5)
 
 func set_tutorial_mode(on: bool) -> void:
 	tutorial_mode = on
@@ -479,7 +506,20 @@ func _process(delta: float) -> void:
 	if dev_label != null:
 		dev_label.text = DevMode.status_text()
 		dev_label.visible = DevMode.enabled
+	# 交互提示呼吸：让底部提示不"死板"，但只做透明度，避免和容器布局打架
+	if prompt_chip != null and prompt_label != null:
+		if prompt_chip.visible:
+			var t := Time.get_ticks_msec() / 1000.0
+			prompt_label.modulate.a = 0.80 + 0.20 * sin(t * 4.0)
+		else:
+			prompt_label.modulate.a = 1.0
 	_update_panel_side(delta)
+	# 低理智：越接近 0 越红，带 1.5s 左右的心跳呼吸
+	if _sanity_vignette != null:
+		var low := clampf((SANITY_WARN - GameState.emptiness) / SANITY_WARN, 0.0, 1.0)
+		var t := Time.get_ticks_msec() / 1000.0
+		var pulse := 0.045 + 0.035 * (0.5 + 0.5 * sin(t * 4.2))
+		_sanity_vignette.color.a = lerpf(_sanity_vignette.color.a, low * pulse, clampf(delta * 5.0, 0.0, 1.0))
 	if toast_timer > 0:
 		toast_timer -= delta
 		if toast_timer <= 0:
