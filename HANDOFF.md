@@ -3,8 +3,8 @@
 - 更新时间：2026-11-04
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`2065e2e`（背景音乐曲库化：catalog.json + CATALOG.md）
-- 工作区：**有另一个会话留下的未提交改动**（`scripts/main.gd` 把暴君登场改成整页分镜、`tests/screenshot.gd` 加长等待、`tools/gen_panels.py`、`tools/manifests/tyrant_intro_panels.json`、`参考研究_PixelGame.md`），不是本次音乐改动，未提交、未改动。
+- 当前 HEAD：`764b413`（补首批配乐：Audionautix CC BY 4.0 · 5 首）
+- 工作区：**有另一个会话留下的未提交改动**（`scripts/main.gd` 把暴君登场改成整页分镜、`tests/screenshot.gd` 加长等待、`tools/gen_panels.py`、`tools/manifests/tyrant_intro_panels.json`、`参考清单_可移植.md`、`参考研究_PixelGame.md`），不是音乐改动，未提交、未改动。
 
 ## 最简用法（推荐）
 
@@ -22,6 +22,12 @@
 
 ## 本轮已完成
 
+- **补首批配乐 · Audionautix（2026-11-04）**：
+  - 新入库 5 首（全部 CC BY 4.0，**必须署名**）：`cutscene_dread.ogg`（The Childrens Room，过场）、`clear_victory.ogg`（Big Intro #2，11 秒胜利短句）、`gameover_somber.ogg`（Somber，失败）、`tension_mid.ogg`（Night Runner，L2~L4 紧张，**standby**）、`amb_tyrant_drone.ogg`（Horror Drone #1，暴君压迫层临时替代，**standby**）。
+  - 统一转码 OGG Vorbis + loudnorm -16 LUFS；命名 `<槽位>_<气质>.ogg`。
+  - `_desired_key()`：`cutscene` / `cleared` / `gameover` 三个状态真正响应对应曲子（之前分别是静音 / 复用 happy / 静音）。
+  - 新增 `catalog_slot_loop()`，按曲库 `loop` 字段决定是否循环（胜利短句只播一次）。
+  - 署名写进 `assets/music/CREDITS.txt`（新增分段）、`catalog.json`、`CATALOG.md`。
 - **背景音乐曲库化（2026-11-04）**：
   - 新增 `assets/music/catalog.json`（唯一真相源，18 条 = 在用 6 + 备用 3 + 待补 9），双主键（玩法状态 + 情绪），含 `level_scope` / `layer_role` / `intensity 1~5` / `elements` 描述标签 / `license`。
   - 新增 `tools/music_catalog.py`：校验 + 导出 `assets/music/CATALOG.md`（在用表、备用表、待补表、状态索引、声音元素索引、授权审计）。
@@ -55,13 +61,13 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **补音乐缺口（优先级从高到低）**：过场 BGM（现在过场静音）→ 通关结算 BGM（现在复用 happy_loop）→ 失败 BGM（现在淡出静音）→ 中段紧张曲 L2~L4。补到 `assets/music/` 后改 `catalog.json` 的 `status`/`file`，再跑 `python tools/music_catalog.py`。
-2. **做分层**：暴君压迫层（低频轰鸣+心跳，与 `tyrant_dread.wav` 同 BPM）→ 追逐节奏层（与 `chase_electro.ogg` 同 BPM）。**动手前必须先测 BPM**，否则叠加会打架；层文件入库后把 `catalog.json` 里对应 `gap_*` 条目改成 active 并补 `layer_role`。
-3. **给 AudioManager 加分轨播放**（目前只有单轨 `_player`，分层要再加 1~2 个 AudioStreamPlayer + 独立的淡入淡出，按 `layer_role` 控制）。
-4. 三首 standby（`chase_assault` / `fridge_hungry` / `wacky_wobblings`）目前没用上：`chase_assault` 建议给 L4/L5 追逐，`fridge_hungry` 可做暴君近身压迫层，`wacky_wobblings` 可做连错插曲。
-5. **实机验收四方向**：走一圈看正面/背面/左右是否对得上移动方向（`tyrant.gd` 里 `facing.x>0` 用 right、`<0` 用 left，且走路帧强制 `flip_h=false`）。
-6. 若某个方向个别帧糊/畸形，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk_fix.json -Only twf_back_03 -Force`，再把 `tools/_gen/twf_*.png` 改名成 `thw_*.png`，依次跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`）。
-7. 觉得走路不够「沉重」可调 `scripts/tyrant.gd` 的 `WALK_FPS`（9 → 7~8）。
+1. **剩余 5 条缺口**（`CATALOG.md` 第三节）：暴君压迫层（同 BPM 分轨 + 心跳）、追逐节奏层（同 BPM 鼓点）、走廊喘息/呼吸环境层、钟声/下课铃环境层、L5 电流嗡鸣层。前两条建议程序合成，后三条去 Freesound 找采样（逐条查授权，避开 CC BY-NC）。
+2. **先实机听一遍新接的三处**：过场（含暴君登场的警报 + cutscene_dread 叠加）、通关、失败。若过场垫乐和警报打架，把 `catalog.json` 里 `cutscene_dread` 的 `status` 改成 `standby` 即可（一行回退）。
+3. **想开「按楼层递进」（方案 B）**：把 `tension_mid` 改 `active`、`chase_pursuit` 的 `level_scope` 改成 `[1]`，再跑 `python tools/music_catalog.py`。
+4. **做分层播放**：AudioManager 目前只有单轨 `_player`，分层要再加 1~2 个 AudioStreamPlayer + 独立淡入淡出，按 `layer_role` 控制；层文件必须与底曲同 BPM。
+5. 三首 standby（`chase_assault` / `fridge_hungry` / `wacky_wobblings`）还没用上。
+6. **实机验收四方向**：走一圈看正面/背面/左右是否对得上移动方向（`tyrant.gd` 里 `facing.x>0` 用 right、`<0` 用 left，且走路帧强制 `flip_h=false`）。
+7. 若某个方向个别帧糊/畸形，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk_fix.json -Only twf_back_03 -Force`，再把 `tools/_gen/twf_*.png` 改名成 `thw_*.png`，依次跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`）。
 8. 实际玩几局看随机数学题：难度/干扰项是否合理；比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`。
 9. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
 10. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
