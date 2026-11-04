@@ -625,6 +625,8 @@ func _spawn_anti_tyrant_drops() -> void:
 func _on_item_picked(item_id: String) -> void:
 	var def: Dictionary = GameState.get_item_def(item_id)
 	hud.toast("拾取 %s：%s" % [String(def.get("name", item_id)), String(def.get("desc", ""))])
+	if hud != null and player != null:
+		hud.pop_number(player.global_position + Vector2(0.0, -30.0), "+ %s" % String(def.get("name", item_id)), "info")
 
 func _on_item_full(item_id: String) -> void:
 	var def: Dictionary = GameState.get_item_def(item_id)
@@ -1691,11 +1693,37 @@ func _fade_from_black(duration: float) -> void:
 	screen_fade.visible = false
 	screen_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+## 死亡定格：把当前画面抓成贴图铺在 FX 层（结算面板在 L_MODAL，会盖在它上面），
+## 压暗 + 缓慢淡出，制造"世界被按下暂停键"的感觉。
+func _freeze_frame() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	var img := get_viewport().get_texture().get_image()
+	if img == null or img.is_empty():
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = L_FX
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var rect := TextureRect.new()
+	rect.texture = ImageTexture.create_from_image(img)
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.modulate = Color(0.52, 0.48, 0.50, 1.0)  # 压暗 + 轻微褪色
+	layer.add_child(rect)
+	var tw := create_tween()
+	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tw.tween_interval(0.4)
+	tw.tween_property(rect, "modulate:a", 0.0, 0.55)
+	tw.tween_callback(layer.queue_free)
+
 func _on_game_over() -> void:
 	if end_panel_shown:
 		return
 	end_panel_shown = true
 	_stop_study()
+	_freeze_frame()
 	var reason := "空虚值归零" if GameState.emptiness <= 0.0 else "警告 %d/%d" % GameState.max_warnings
 	hud.toast("失败：%s" % reason)
 	_show_end_panel("失败", "%s。重开本关，保留能力，失去部分消耗品。" % reason)

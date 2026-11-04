@@ -33,7 +33,7 @@ var _num_pool: Array[Label] = []
 var _stars_shown := 0.0
 var _stars_init := false
 var _stars_force_snap := false
-var _sanity_vignette: ColorRect
+var _sanity_vignette: TextureRect
 const NUM_POOL_SIZE := 18
 const SANITY_WARN := 35.0
 
@@ -45,11 +45,14 @@ func _ready() -> void:
 	UiTheme.apply(root)
 	add_child(root)
 
-	# 低理智红晕：放在最底层，只做边缘压暗感，不挡可读性
-	_sanity_vignette = ColorRect.new()
-	_sanity_vignette.color = Color(0.45, 0.02, 0.02, 0.0)
+	# 低理智红晕：径向渐变（中心透明→边缘暗红），比整屏纯色更像"视野收缩"
+	_sanity_vignette = TextureRect.new()
+	_sanity_vignette.texture = _make_vignette_texture()
+	_sanity_vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_sanity_vignette.stretch_mode = TextureRect.STRETCH_SCALE
 	_sanity_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_sanity_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sanity_vignette.modulate = Color(1, 1, 1, 0)
 	root.add_child(_sanity_vignette)
 	root.move_child(_sanity_vignette, 0)
 
@@ -259,6 +262,21 @@ func _build_number_pool(host: Control) -> void:
 		l.add_theme_constant_override("outline_size", 5)
 		_num_root.add_child(l)
 		_num_pool.append(l)
+
+## 径向渐变贴图：中心全透明，靠边缘逐渐变暗红
+func _make_vignette_texture() -> GradientTexture2D:
+	var g := Gradient.new()
+	g.set_color(0, Color(0.50, 0.02, 0.02, 0.0))
+	g.set_color(1, Color(0.50, 0.02, 0.02, 1.0))
+	g.add_point(0.58, Color(0.50, 0.02, 0.02, 0.0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 256
+	tex.height = 256
+	return tex
 
 func _number_color(kind: String) -> Color:
 	match kind:
@@ -523,8 +541,8 @@ func _process(delta: float) -> void:
 	if _sanity_vignette != null:
 		var low := clampf((SANITY_WARN - GameState.emptiness) / SANITY_WARN, 0.0, 1.0)
 		var t := Time.get_ticks_msec() / 1000.0
-		var pulse := 0.045 + 0.035 * (0.5 + 0.5 * sin(t * 4.2))
-		_sanity_vignette.color.a = lerpf(_sanity_vignette.color.a, low * pulse, clampf(delta * 5.0, 0.0, 1.0))
+		var pulse := 0.55 + 0.45 * (0.5 + 0.5 * sin(t * 4.2))
+		_sanity_vignette.modulate.a = lerpf(_sanity_vignette.modulate.a, low * pulse, clampf(delta * 5.0, 0.0, 1.0))
 	if toast_timer > 0:
 		toast_timer -= delta
 		if toast_timer <= 0:
