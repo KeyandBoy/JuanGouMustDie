@@ -512,3 +512,10 @@
 - G5 稀有度：普通/精良/稀有/传说（60/25/12/3），道具映射 + pick_loot 加权掉落；HUD 名称与 Tooltip 显示稀有度
 - 未做：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表（按之前决定留待单独立项）
 - 验证：十一套测试全绿；新增 tests/_e_probe、_f_probe、_g_probe
+
+【B 组收口（B12/B13，2026-11-05）】
+- B12 手电光锥：torch_light.gd 纯代码锥形贴图（24°、128px），挂玩家脚下随 face_dir 旋转，暖色 ADD、轻微呼吸
+- B12 敌人红眼：eye_glow.gd 红色小点光；暴君常亮，学生仅 chase/search/stalk；L1 白天不可见，L2+ 或停电生效
+- B13 视差：parallax_bg.gd 两层程序绘制（窗外树冠 16%、远处楼体 7%），z=-7，12Hz 重绘，不挡角色
+- flow_test 的旧断言改为“玩家手电存在且有锥形贴图”
+- 验证：十二套测试全绿；新增 tests/_b_probe

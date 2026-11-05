@@ -18,13 +18,16 @@
 
 ## 当前目标
 
-C 组 UI、D 组音频、E/F/G 第一批（E2/E3/E4、F1/F8、G5/G11）已完成。
+B 组已收口（B12 手电/红眼、B13 视差完成，`stash` 已清空）；C/D 组与 E/F/G 第一批也已完成。
 剩下的大件都需要单独立项：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
-B 组只剩 **B12（手电光锥 + 红眼）与 B13（视差背景）**，WIP 在 `stash@{0}`，继续时先 `git stash pop` 并接 `main.gd` 的 `_build_world()`。
 D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素材。
 
 ## 本轮已完成
 
+- **B 组收口（2026-11-05）**：
+  - B12：`torch_light.gd` 纯代码手电锥（24°/128px，随 face_dir 旋转）；`eye_glow.gd` 敌人红眼（暴君常亮、学生 chase/search/stalk，L1 白天不可见）。
+  - B13：`parallax_bg.gd` 两层程序视差（窗外树冠 16%、楼体 7%），z=-7，12Hz 重绘。
+  - `flow_test` 旧“玩家不能有 PointLight2D”断言改为“手电存在且有锥形贴图”；新增 `_b_probe`；十二套测试全绿。
 - **E/F/G 批次（2026-11-05）**：
   - E2：入口改为离楼梯最远房间；随机出生排除入口。
   - E3：`main_path_rooms` + `is_main_path()`。
@@ -127,23 +130,21 @@ D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素
 
 ## 未提交改动
 
-无（C 组改动提交后清空）。B12/B13 在 `stash@{0}`，不属于未提交改动。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
+无（B 组收口提交后清空；`stash@{0}` 已 pop）。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **B12/B13 收尾**：`git stash pop` 恢复 `torch_light.gd` / `eye_glow.gd` / `parallax_bg.gd` 与 player/student/tyrant 挂载；在 `main._build_world()` 里 `parallax.setup(map, camera)`；跑六套 + 截图确认暗场光锥/红眼/视差强度。
-2. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
+1. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
 2. **A10 接线**：音频窗口按 `Breath.state`（0 calm / 1 tense / 2 panic / 3 blind）或 `Breath.STREAM_SLOTS` 播放/停止循环；素材路径已预留 `assets/sfx/breath/breath_{tense,panic,blind}.ogg`，缺文件时逻辑不受影响。
 3. **A8 音效**：拾取「叮」在 `main._on_item_picked()` 里接 `AudioManager.play_sfx`（或专用 pickup 音效），动画已就位。
-4. **需要碰 AI 的**：F1（0.35s 决策 tick）、F8（按层视野/移速/答题时间缩放）、F5（情报共享）；建议先跑实机确认手感再加。
-5. **G11**：答错→残页，5 张换 1 提示符（要碰结算 + 背包，单独一轮）。
+4. **F5 情报共享**：一个敌人看到玩家后，同房间/相邻房间 2s 后进入怀疑；先把事件接到 `student.investigate()`。
+5. **D8 素材**：音频窗口补 `assets/sfx/step/step_{tile,wood,carpet}_{1..3}.ogg` 后玩家脚步自动生效；D6 的追逐节奏层仍需与 `chase_electro` 同 BPM 的分轨。
 6. 音乐侧剩余 5 条环境层与实机听感验收见 `CATALOG.md`（未变）。
 7. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
 8. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 9. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
-10. **D8 素材**：音频窗口补 `assets/sfx/step/step_{tile,wood,carpet}_{1..3}.ogg` 后玩家脚步自动生效；D6 的追逐节奏层仍需与 `chase_electro` 同 BPM 的分轨。
-11. **EFG 剩余大件**：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表——每项单独一轮，先确认再动。
+10. **EFG 剩余大件**：E1 模板插门、E6 SubViewport 小地图、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表——每项单独一轮，先确认再动。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）

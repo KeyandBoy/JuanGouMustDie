@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const ShadowScript := preload("res://scripts/shadow.gd")
+const EyeGlowScript := preload("res://scripts/eye_glow.gd")
 
 const JUAN_TEX := [
 	preload("res://art/sprites/64/05_npc_front.png"),
@@ -83,6 +84,11 @@ func _ready() -> void:
 	var shadow = ShadowScript.new()
 	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 19.0), 0.38)
 	add_child(shadow)
+	# B12：追击 / 搜寻 / 潜行时眼睛亮红；平时不亮
+	var eye: PointLight2D = EyeGlowScript.new()
+	eye.position = Vector2(0.0, -17.0)
+	eye.dot_scale = 0.22
+	add_child(eye)
 	sprite = Sprite2D.new()
 	sprite.texture = _textures()[0]
 	sprite.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)

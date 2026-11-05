@@ -3,6 +3,7 @@ extends CharacterBody2D
 signal hit_player
 
 const ShadowScript := preload("res://scripts/shadow.gd")
+const EyeGlowScript := preload("res://scripts/eye_glow.gd")
 
 const GUARD_TEX := [
 	preload("res://art/sprites/64/20_guard_front.png"),
@@ -90,6 +91,12 @@ func _ready() -> void:
 	shadow = ShadowScript.new()
 	shadow.setup(Vector2(23.0, 7.5), Vector2(0.0, 1.0), 0.40)
 	add_child(shadow)
+	# B12：暴君红眼常亮（暗场 / 停电才可见）
+	var eye: PointLight2D = EyeGlowScript.new()
+	eye.position = Vector2(0.0, -35.0)
+	eye.dot_scale = 0.55
+	eye.always_on = true
+	add_child(eye)
 	smoke_back = smoke_script.new()
 	smoke_back.alpha = 0.5
 	smoke_back.radius = 18.0

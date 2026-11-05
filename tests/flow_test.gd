@@ -451,7 +451,8 @@ func _ready() -> void:
 	for c in inst.player.get_children():
 		if c is PointLight2D:
 			player_light = true
-	_check(not player_light, "lighting: player highlight removed", failures)
+	_check(player_light, "lighting: player torch exists", failures)
+	_check(inst.player.torch != null and inst.player.torch.texture != null, "lighting: torch has cone texture", failures)
 	_check(inst.level_lights != null and inst.level_lights.get_child_count() >= 1, "lighting: lamps spawned (%d)" % (inst.level_lights.get_child_count() if inst.level_lights else 0), failures)
 	var light_dev := DevMode.lighting
 	DevMode.lighting = false

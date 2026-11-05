@@ -68,6 +68,7 @@ var end_panel_shown := false
 var study_hunt_timer := 0.0
 var mark_drift_timer := 0.0
 var fog: Node2D
+var parallax_bg: Node2D
 var tyrant: Node2D = null
 var tyrant_spawned := false
 var breath
@@ -217,6 +218,11 @@ func _build_world() -> void:
 	add_child(fog)
 	fog.setup(map, player)
 	_setup_lighting()
+
+	# B13：校园远景 2 层视差（窗外树影 + 远处楼体），z=-7 不挡角色
+	parallax_bg = load("res://scripts/parallax_bg.gd").new()
+	add_child(parallax_bg)
+	parallax_bg.setup(map, camera)
 
 	hud = load("res://scripts/hud.gd").new()
 	add_child(hud)

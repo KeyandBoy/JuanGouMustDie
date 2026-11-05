@@ -3,6 +3,7 @@ extends CharacterBody2D
 signal interacted
 
 const ShadowScript := preload("res://scripts/shadow.gd")
+const TorchScript := preload("res://scripts/torch_light.gd")
 
 const TEX_FRONT := preload("res://art/sprites/64/01_player_front.png")
 const TEX_BACK := preload("res://art/sprites/64/02_player_back.png")
@@ -30,6 +31,7 @@ var face_dir := Vector2.DOWN
 var bob_time := 0.0
 var anim_time := 0.0
 var sprite: Sprite2D
+var torch: PointLight2D
 var dashing := false
 var speed_buff_timer := 0.0
 var speed_buff_mult := 1.0
@@ -55,6 +57,11 @@ func _ready() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = 1
 	add_child(sprite)
+	# B12：手电光锥。挂在角色脚下略前，随 face_dir 旋转
+	torch = TorchScript.new()
+	torch.position = Vector2(0.0, -2.0)
+	add_child(torch)
+	torch.set_facing(face_dir)
 
 func _physics_process(delta: float) -> void:
 	if stun_timer > 0.0:
@@ -144,6 +151,8 @@ func _process(delta: float) -> void:
 	var moving := velocity.length() > 5.0
 	if moving:
 		face_dir = _dominant_dir(velocity)
+		if torch != null:
+			torch.set_facing(face_dir)
 		anim_time += delta * (RUN_FPS if dashing else WALK_FPS)
 	else:
 		anim_time = 0.0
