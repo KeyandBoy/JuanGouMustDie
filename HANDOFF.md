@@ -3,7 +3,7 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`ac1ce9e`（开场 CG 水墨化 + 推镜/手持抖动伪动效）
+- 当前 HEAD：`cc45fcd`（D7 UI 三音：Kenney CC0）
 - 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`scripts/main.gd`、`scripts/fx.gd`、`scripts/school_map.gd`、`scripts/gear_button.gd`、`scripts/settings_ui.gd`、`tests/_fx_shot*`、`tests/_settings_shot*`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
 ## 最简用法（推荐）
@@ -27,6 +27,11 @@
   - 新增 `tools/finalize_cg.py`：裁白边 + 强制黑白单红，可选 `--dark` / `--blur`（黑板那张就是压暗+虚化出来的）。
   - `intro.gd` 新增 `_cam` 摄影机层：整幅缓慢推近（`TRANS_SINE/EASE_OUT`）+ 每帧手持抖动（`jitter`），危险镜头自动加到 2.4px、红闪瞬间 9px；每场景可用 `zoom_from/zoom_to/jitter` 覆盖。
 
+- **D7 UI 三音（2026-11-05）**：
+  - 素材来自 Kenney「Interface Sounds」（CC0，无需署名）：`ui_hover` / `ui_click` / `ui_confirm`，峰值归一 -3dBFS + OGG q5。
+  - 4 个 UI 播放器挂 UI 总线，音量跟「音效音量」滑条。
+  - 悬停用轮询 `gui_get_hovered_control()`（菜单按钮是运行时建的，连信号会漏）；点击走 `_input` 左键 + `ui_accept`。
+  - 用户明确：**不要程序合成音效，一律找现成素材**。
 - **音频结构 D1~D4（2026-11-04）**：
   - D4：`default_bus_layout.tres` = Master / Music / SFX / UI / Ambience，音量统一走 `AudioServer`，设置仍存 ConfigFile（新增 `sfx` 键）。
   - D1：BGM 双轨交叉淡入，循环曲 1.5s、一次性短句 0.25s。
