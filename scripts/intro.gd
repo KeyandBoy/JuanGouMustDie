@@ -49,6 +49,9 @@ const OUTRO_SCENES := [
 		"text": "训练结束。走廊重新安静下来。",
 		"dur": 2.0,
 		"danger": false,
+		"zoom_from": 1.01,
+		"zoom_to": 1.09,
+		"jitter": 0.6,
 	},
 	{
 		"bg": "res://art/cutscene/tutorial_outro_2.png",
@@ -61,6 +64,9 @@ const OUTRO_SCENES := [
 		"text": "往上走。别停。",
 		"dur": 2.0,
 		"danger": false,
+		"zoom_from": 1.02,
+		"zoom_to": 1.16,
+		"jitter": 1.0,
 	},
 ]
 

@@ -22,6 +22,9 @@
 
 ## 本轮已完成
 
+- **新手关结尾 3 张 CG 水墨化（2026-11-05）**：
+  - `tutorial_outro_1~3` 换成水墨版（`tools/manifests/outro_panels.json` → `tools/finalize_cg.py` → `art/cutscene/`）：空教室晨光 / 暗走廊无脸人影 + 红色应急灯 / 仰视楼梯过曝门洞。
+  - `intro.gd` 的 `OUTRO_SCENES` 补上推镜参数：1 号 1.01→1.09（抖动 0.6）、2 号危险镜头默认、3 号 1.02→1.16（抖动 1.0）。
 - **开场 CG 重做 + 伪动效（2026-11-04）**：
   - 三张 16:9 水墨稿覆盖 `art/cutscene/intro_classroom|intro_board|intro_hall.png`，清单 `tools/manifests/intro_panels.json`。
   - 新增 `tools/finalize_cg.py`：裁白边 + 强制黑白单红，可选 `--dark` / `--blur`（黑板那张就是压暗+虚化出来的）。
