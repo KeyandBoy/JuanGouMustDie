@@ -3,8 +3,8 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`4002a75`（C 组收口 HANDOFF，**尚未推送**）+ 本轮 D 组（提交后更新）
-- 已推送 origin/main 到 `2bba794`（C 组 UI）；`4002a75` 与 D 组提交因 GitHub 连接被重置暂留本地，网络恢复后 `git -c http.proxy= -c https.proxy= push`。
+- 当前 HEAD：`dccefa1`（C 组 UI + D 组音频均已完成并推送）
+- 已推送 origin/main（2026-11-05，`git -c http.proxy= -c https.proxy= push`）。
 - 工作区：C 组 UI 已改完待提交；**B12/B13 的 WIP 在 `stash@{0}`**（影子以外的光锥/红眼/视差），需要时 `git stash pop`。别的会话仍有未提交改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`），不是本轮产物。
 
 ## 最简用法（推荐）
