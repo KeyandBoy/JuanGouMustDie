@@ -25,6 +25,19 @@ const LEVEL_GOALS := {
 }
 const ITEM_CAPACITY := 3
 const BASE_ITEM_CAPACITY := 1
+
+## G5：四档稀有度（掉落权重 60/25/12/3），只影响掉落权重与展示，不叠加数值。
+const RARITY_DEFS := {
+	"common": {"name": "普通", "color": Color(0.78, 0.78, 0.74), "weight": 60},
+	"rare": {"name": "精良", "color": Color(0.45, 0.72, 0.95), "weight": 25},
+	"epic": {"name": "稀有", "color": Color(0.72, 0.50, 0.95), "weight": 12},
+	"legendary": {"name": "传说", "color": Color(0.95, 0.70, 0.30), "weight": 3},
+}
+const ITEM_RARITY := {
+	"coffee": "common", "bread": "common", "smoke": "rare", "chair": "rare",
+	"stink": "common", "portal": "legendary", "shovel": "epic", "lamp": "rare",
+	"notes": "epic", "shoes": "epic", "stopwatch": "rare", "intel": "epic", "ears": "rare",
+}
 const STAR_BASE := 45.0
 const STAR_PER_GOAL := 15.0
 const MAX_STARS_PER_LEVEL := 3
@@ -123,6 +136,10 @@ var tyrant_active := false
 var cutscene_active := false
 var game_cleared := false
 var intel_reveal_timer := 0.0
+## G11：答错攒残页，5 张换 1 个提示符（答题时排除一个错误项）。
+var residual_pages := 0
+var hint_tokens := 0
+const PAGES_PER_HINT := 5
 ## C4：限时道具效果。id -> {"time": 剩余秒, "max": 总时长, "label": 显示名}
 var active_effects: Dictionary = {}
 ## C10：本局错题（最多 5 条），死亡界面展示；重开/换层清空。
@@ -174,6 +191,8 @@ func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"])
 	items.clear()
 	active_effects.clear()
 	wrong_questions.clear()
+	residual_pages = 0
+	hint_tokens = 0
 	tyrant_intro_seen = false
 	tyrant_active = false
 	cutscene_active = false
@@ -209,6 +228,8 @@ func begin_next_level() -> void:
 	items.clear()
 	active_effects.clear()
 	wrong_questions.clear()
+	residual_pages = 0
+	hint_tokens = 0
 	tyrant_active = false
 	cutscene_active = false
 	intel_reveal_timer = 0.0
@@ -480,6 +501,45 @@ func item_def(item_id: String) -> ItemDef:
 
 func get_item_def(item_id: String) -> Dictionary:
 	return ITEM_DEFS.get(item_id, {})
+
+
+## G5：道具稀有度与加权掉落。
+func item_rarity(item_id: String) -> String:
+	return String(ITEM_RARITY.get(item_id, "common"))
+
+func rarity_def(rarity: String) -> Dictionary:
+	return RARITY_DEFS.get(rarity, RARITY_DEFS["common"])
+
+func roll_rarity(rng: RandomNumberGenerator = null) -> String:
+	var roll: int = rng.randi_range(1, 100) if rng != null else randi_range(1, 100)
+	var acc := 0
+	for key in ["common", "rare", "epic", "legendary"]:
+		acc += int(RARITY_DEFS[key]["weight"])
+		if roll <= acc:
+			return String(key)
+	return "common"
+
+func pick_loot(rng: RandomNumberGenerator = null) -> String:
+	var rarity := roll_rarity(rng)
+	var pool: Array[String] = []
+	for id in ITEM_RARITY.keys():
+		if String(ITEM_RARITY[id]) == rarity and ITEM_DEFS.has(id):
+			pool.append(String(id))
+	if pool.is_empty():
+		pool.append("coffee")
+	var idx: int = rng.randi_range(0, pool.size() - 1) if rng != null else randi_range(0, pool.size() - 1)
+	return pool[idx]
+
+
+## G11：加残页；每满 5 张自动换 1 个提示符，返回本次换到的提示符数量。
+func add_residual_page(count: int = 1) -> int:
+	residual_pages += maxi(0, count)
+	var gained := 0
+	while residual_pages >= PAGES_PER_HINT:
+		residual_pages -= PAGES_PER_HINT
+		hint_tokens += 1
+		gained += 1
+	return gained
 
 ## C4：登记一个限时效果，HUD 会显示竖向剩余时间 + 秒数。
 func set_effect(effect_id: String, duration: float, label: String) -> void:

@@ -501,3 +501,14 @@
 - D8 脚步接口：AudioManager.play_footstep(material, pos, running)，约定 step_<tile|wood|carpet>_<1..3>.ogg；缺文件静音；main 按移动距离和房间类型触发
 - 仍缺素材：真正的同 BPM 追逐鼓点层、三套脚步采样（等音频窗口）
 - 验证：八套测试全绿；新增 tests/_d_probe.tscn
+
+【E/F/G 批次（2026-11-05）】
+- E2 入口：入口改为离楼梯最远的房间，random spawn 排除入口，保证一局走完整图
+- E3 主路：main_path_rooms + is_main_path()，从入口沿导航图 dist-1 到楼梯；其余为支路
+- E4 房间角色：L4+ 设 Boss 房，暴君优先在那里登场；另设宝箱房，第一件道具优先放宝箱房
+- F8 难度缩放：学生每层视野 +8%、移速/追击 +5%，教学关不缩放
+- F1 低频决策：THINK_INTERVAL=0.3，视野/警觉/状态切换 0.3s 一次，移动仍逐帧
+- G11 残页：答错 +1 残页，5 张换 1 提示符；答题界面可消耗提示符排除一个错误项
+- G5 稀有度：普通/精良/稀有/传说（60/25/12/3），道具映射 + pick_loot 加权掉落；HUD 名称与 Tooltip 显示稀有度
+- 未做：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表（按之前决定留待单独立项）
+- 验证：十一套测试全绿；新增 tests/_e_probe、_f_probe、_g_probe

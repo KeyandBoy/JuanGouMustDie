@@ -72,6 +72,10 @@ var idle_timer := 0.0
 var state_timer := 0.0
 var last_seen := Vector2.ZERO
 var can_see := false
+var think_timer := 0.0
+var level_speed_mult := 1.0
+var level_vision_mult := 1.0
+const THINK_INTERVAL := 0.3
 
 func _ready() -> void:
 	add_to_group("students")
@@ -105,6 +109,18 @@ func setup(p_map: Node2D, p_player: Node2D) -> void:
 	map = p_map
 	player = p_player
 	last_seen = position
+	_apply_level_scale()
+
+## F8：按楼层缩放感知与移速（教学关不缩放）。
+func _apply_level_scale() -> void:
+	if GameState.tutorial_active:
+		return
+	var lv := maxi(1, GameState.level)
+	level_vision_mult = 1.0 + 0.08 * float(lv - 1)
+	level_speed_mult = 1.0 + 0.05 * float(lv - 1)
+	vision_range = 160.0 * level_vision_mult
+	speed = 80.0 * level_speed_mult
+	chase_speed = 140.0 * level_speed_mult
 
 func _physics_process(delta: float) -> void:
 	if stun_timer > 0.0:
@@ -116,9 +132,9 @@ func _physics_process(delta: float) -> void:
 		temp_buff_timer -= delta
 		if temp_buff_timer <= 0.0 and temp_buff > 0.0:
 			var m := 1.0 + temp_buff
-			speed = 80.0 / m
-			chase_speed = 140.0 / m
-			vision_range = 160.0 / m
+			speed = 80.0 * level_speed_mult / m
+			chase_speed = 140.0 * level_speed_mult / m
+			vision_range = 160.0 * level_vision_mult / m
 			hear_range = 260.0 / m
 			temp_buff = 0.0
 	if door_pause > 0.0:
@@ -135,30 +151,10 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	var to_player: Vector2 = player.position - position
-	var dist: float = to_player.length()
-	can_see = _can_see_player(to_player, dist)
-	if can_see:
-		alert_level = minf(max_alert, alert_level + delta * (55.0 + (1.0 - clampf(dist / vision_range, 0.0, 1.0)) * 75.0))
-		facing = to_player.normalized()
-		last_seen = player.position
-		if GameState.run_state == GameState.RunState.QUIZ:
-			if state != "chase":
-				state = "chase"
-				repath_timer = 0.0
-				state_timer = 4.0
-		elif GameState.warnings >= 1:
-			if state != "stalk":
-				state = "stalk"
-				repath_timer = 0.0
-				state_timer = 4.0
-		elif state == "chase" or state == "stalk":
-			state = "patrol"
-			path = PackedVector2Array()
-			path_index = 0
-			idle_timer = 0.0
-	else:
-		alert_level = maxf(0.0, alert_level - delta * 35.0)
+	think_timer -= delta
+	if think_timer <= 0.0:
+		think_timer = THINK_INTERVAL
+		_decide(THINK_INTERVAL)
 
 	if GameState.run_state == GameState.RunState.QUIZ and catch_cooldown <= 0.0 and not _player_dodging() and _in_catch_range():
 		_catch()
@@ -178,6 +174,34 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 	move_and_slide()
+
+
+## F1：低频决策。视野/警觉/状态切换每 0.3s 才结算一次，移动仍逐帧。
+func _decide(dt: float) -> void:
+	var to_player: Vector2 = player.position - position
+	var dist: float = to_player.length()
+	can_see = _can_see_player(to_player, dist)
+	if can_see:
+		alert_level = minf(max_alert, alert_level + dt * (55.0 + (1.0 - clampf(dist / vision_range, 0.0, 1.0)) * 75.0))
+		facing = to_player.normalized()
+		last_seen = player.position
+		if GameState.run_state == GameState.RunState.QUIZ:
+			if state != "chase":
+				state = "chase"
+				repath_timer = 0.0
+				state_timer = 4.0
+		elif GameState.warnings >= 1:
+			if state != "stalk":
+				state = "stalk"
+				repath_timer = 0.0
+				state_timer = 4.0
+		elif state == "chase" or state == "stalk":
+			state = "patrol"
+			path = PackedVector2Array()
+			path_index = 0
+			idle_timer = 0.0
+	else:
+		alert_level = maxf(0.0, alert_level - dt * 35.0)
 
 func _in_catch_range() -> bool:
 	if map == null or player == null:
@@ -341,9 +365,9 @@ func _apply_temp_buff(buff: float) -> void:
 		return
 	temp_buff = buff
 	var m := 1.0 + buff
-	speed = 80.0 * m
-	chase_speed = 140.0 * m
-	vision_range = 160.0 * m
+	speed = 80.0 * level_speed_mult * m
+	chase_speed = 140.0 * level_speed_mult * m
+	vision_range = 160.0 * level_vision_mult * m
 	hear_range = 260.0 * m
 	temp_buff_timer = 40.0
 

@@ -11,9 +11,11 @@ var options_box: VBoxContainer
 var fill_edit: LineEdit
 var submit_btn: Button
 var close_btn: Button
+var hint_btn: Button
 var info_label: Label
 var current_question: Dictionary = {}
 var is_open := false
+var _option_buttons: Array[Button] = []
 
 func _ready() -> void:
 	layer = 20
@@ -70,6 +72,12 @@ func _ready() -> void:
 	submit_btn.pressed.connect(_submit_fill)
 	btn_row.add_child(submit_btn)
 
+	# G11：提示符按钮（5 张残页换 1 个，排除一个错误选项）
+	hint_btn = Button.new()
+	hint_btn.visible = false
+	hint_btn.pressed.connect(_use_hint)
+	btn_row.add_child(hint_btn)
+
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_row.add_child(spacer)
@@ -88,10 +96,15 @@ func open(question: Dictionary) -> void:
 	prompt_label.text = String(question.get("prompt", "?"))
 	var qtype := String(question.get("type", "choice"))
 	var options: Array = question.get("options", [])
-	info_label.text = "科目：%s　题型：%s" % [QuestionBank.get_subject_label(question.get("grade", "junior"), question.get("subject", "math")), "选择" if qtype == "choice" else "填空"]
+	info_label.text = "科目：%s　题型：%s　残页 %d/%d　提示符 %d" % [
+		QuestionBank.get_subject_label(question.get("grade", "junior"), question.get("subject", "math")),
+		"选择" if qtype == "choice" else "填空",
+		GameState.residual_pages, GameState.PAGES_PER_HINT, GameState.hint_tokens]
 	for c in options_box.get_children(): c.queue_free()
+	_option_buttons.clear()
 	fill_edit.visible = false
 	submit_btn.visible = false
+	hint_btn.visible = false
 	if qtype == "choice" and options.size() >= 2:
 		var letters := ["A", "B", "C", "D", "E", "F"]
 		var buttons: Array[Button] = []
@@ -103,12 +116,14 @@ func open(question: Dictionary) -> void:
 			btn.pressed.connect(func(): _submit_choice(idx))
 			options_box.add_child(btn)
 			buttons.append(btn)
+			_option_buttons.append(btn)
 		if GameState.exam_hint and options.size() >= 3:
 			var answer := String(question.get("answer", ""))
 			var wrong := _first_wrong_index(options, answer)
 			if wrong >= 0:
 				buttons[wrong].disabled = true
 				buttons[wrong].text += "（已排除）"
+		_refresh_hint_button()
 	else:
 		fill_edit.visible = true
 		submit_btn.visible = true
@@ -130,6 +145,34 @@ func _first_wrong_index(options: Array, answer: String) -> int:
 		if not is_ans and String(options[i]) != answer:
 			return i
 	return -1
+
+
+## G11：消耗 1 个提示符，排除一个还没被排除的错误选项。
+func _use_hint() -> void:
+	if GameState.hint_tokens <= 0 or current_question.is_empty():
+		return
+	var options: Array = current_question.get("options", [])
+	var answer := String(current_question.get("answer", ""))
+	for i in _option_buttons.size():
+		if i >= options.size():
+			break
+		var btn: Button = _option_buttons[i]
+		var is_ans := (String(options[i]) == answer) or (answer == str(i + 1))
+		if is_ans or btn.disabled:
+			continue
+		GameState.hint_tokens -= 1
+		btn.disabled = true
+		btn.text += "（已排除）"
+		_refresh_hint_button()
+		return
+
+
+func _refresh_hint_button() -> void:
+	if hint_btn == null:
+		return
+	var qtype := String(current_question.get("type", "choice"))
+	hint_btn.visible = is_open and qtype == "choice" and GameState.hint_tokens > 0
+	hint_btn.text = "提示符 ×%d（排除一个错项）" % GameState.hint_tokens
 
 func _submit_fill() -> void:
 	var answer := String(current_question.get("answer", "")).strip_edges()
@@ -153,6 +196,8 @@ func _submit(correct: bool) -> void:
 func close() -> void:
 	visible = false
 	is_open = false
+	if hint_btn != null:
+		hint_btn.visible = false
 	current_question = {}
 	if GameState.run_state == GameState.RunState.QUIZ:
 		GameState.run_state = GameState.RunState.EXPLORING

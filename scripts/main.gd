@@ -411,6 +411,8 @@ func _setup_level(p_spawn_random := false) -> void:
 	GameState.cutscene_active = false
 	GameState.active_effects.clear()
 	GameState.wrong_questions.clear()
+	GameState.residual_pages = 0
+	GameState.hint_tokens = 0
 	_footstep_accum = 0.0
 	_footstep_last = Vector2.INF
 	emptiness_timer = 0.0
@@ -512,8 +514,11 @@ func _random_spawn_position() -> Vector2:
 	var candidates: Array[int] = []
 	for i in map.rooms.size():
 		var t: String = String(map.room_types[i])
-		if t != "hall" and t != "stair":
-			candidates.append(i)
+		if t == "hall" or t == "stair":
+			continue
+		if i == map.entry_room_index:
+			continue
+		candidates.append(i)
 	if candidates.is_empty():
 		return map.exit_pos
 	candidates.shuffle()
@@ -632,8 +637,6 @@ func _spawn_high_value_spots() -> void:
 			_make_desk(pos, 1.6, idx, Rect2(-20.0, -10.0, 40.0, 20.0))
 
 func _spawn_items() -> void:
-	var ids: Array[String] = ["coffee", "bread", "smoke", "chair", "stink", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
-	ids.shuffle()
 	var pool: Array[int] = []
 	for i in map.rooms.size():
 		var t: String = String(map.room_types[i])
@@ -642,12 +645,16 @@ func _spawn_items() -> void:
 	if pool.is_empty():
 		return
 	pool.shuffle()
+	# E4：宝箱房优先放第一件道具
+	if map.treasure_room_index >= 0 and pool.has(map.treasure_room_index):
+		pool.erase(map.treasure_room_index)
+		pool.push_front(map.treasure_room_index)
 	var want: int = mini(4, pool.size())
 	for i in want:
 		var idx: int = pool[i]
 		var pos: Vector2 = map._walkable_center(map.rooms[idx])
 		var pickup = item_spawn_script.new()
-		var id: String = ids[i % ids.size()]
+		var id: String = GameState.pick_loot()
 		var def: Dictionary = GameState.get_item_def(id)
 		pickup.setup(id, def.get("color", Color.WHITE))
 		pickup.position = pos + Vector2(randf_range(-18, 18), randf_range(-12, 12))
@@ -694,7 +701,7 @@ func _spawn_anti_tyrant_drops() -> void:
 	for i in spots.size():
 		var id: String = ANTI_TYRANT_ITEMS[i % ANTI_TYRANT_ITEMS.size()]
 		if i > 0 and randf() > 0.65:
-			id = GENERAL_ITEMS[randi() % GENERAL_ITEMS.size()]
+			id = GameState.pick_loot()
 		var def: Dictionary = GameState.get_item_def(id)
 		var pickup = item_spawn_script.new()
 		pickup.setup(id, def.get("color", Color.WHITE))
@@ -1074,9 +1081,14 @@ func _on_answered(correct: bool) -> void:
 		Fx.shake(self, 1)
 		if quiz != null and not quiz.current_question.is_empty():
 			GameState.record_wrong(quiz.current_question)
+		var gained_hint := GameState.add_residual_page(1)
 		if hud != null:
 			hud.pop_number(anchor, "净答对 -1", "loss")
 			hud.toast("答错！净答对 -1、空虚值 -2，还制造了动静")
+			if gained_hint > 0:
+				hud.toast("攒满 5 张残页，换到 1 个提示符！答题时可排除一个错误项")
+			elif GameState.residual_pages > 0:
+				hud.toast("残页 +1（%d/%d）" % [GameState.residual_pages, GameState.PAGES_PER_HINT])
 		map.noise_made.emit(player.position, 45.0)
 	_update_answer_efficiency()
 	if GameState.run_state == GameState.RunState.CLEARED:
@@ -1293,6 +1305,11 @@ func _spawn_tyrant(idle: float, forced_pos := Vector2.INF) -> Node2D:
 	if tyrant_spawned and tyrant != null and is_instance_valid(tyrant):
 		return tyrant
 	var pos: Vector2 = forced_pos
+	if pos == Vector2.INF and map.boss_room_index >= 0 and map.boss_room_index < map.rooms.size():
+		# E4：有 Boss 房时优先在 Boss 房登场（离玩家太近则退回远点）
+		var bc: Vector2 = map._walkable_center(map.rooms[map.boss_room_index])
+		if bc.distance_to(player.position) >= 140.0:
+			pos = bc
 	if pos == Vector2.INF:
 		pos = _far_spawn_point(340.0)
 	tyrant = tyrant_script.new()

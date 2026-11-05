@@ -58,6 +58,10 @@ var nav_is_corridor: Array[bool] = []
 var room_roles: Array[String] = []
 var room_depth: Array[int] = []
 var safe_room_index := -1
+var entry_room_index := -1
+var boss_room_index := -1
+var treasure_room_index := -1
+var main_path_rooms: Array[int] = []
 
 var _astar := AStarGrid2D.new()
 var _astar_dirty := true
@@ -348,6 +352,13 @@ func _reset() -> void:
 	room_types.clear()
 	room_names.clear()
 	explored.clear()
+	room_roles.clear()
+	room_depth.clear()
+	safe_room_index = -1
+	entry_room_index = -1
+	boss_room_index = -1
+	treasure_room_index = -1
+	main_path_rooms.clear()
 	desks.clear()
 	decor_items.clear()
 	wall_rects.clear()
@@ -406,6 +417,10 @@ func _compute_roles(allow_safe := true) -> void:
 	room_depth.resize(rooms.size())
 	room_depth.fill(-1)
 	safe_room_index = -1
+	entry_room_index = -1
+	boss_room_index = -1
+	treasure_room_index = -1
+	main_path_rooms.clear()
 	if rooms.is_empty() or nav_points.is_empty():
 		return
 
@@ -471,14 +486,48 @@ func _compute_roles(allow_safe := true) -> void:
 		elif room_depth[i] >= 0 and float(room_depth[i]) >= float(maxd) * 0.68:
 			room_roles[i] = "deep"
 
+	# E2：入口选离楼梯最远的房间，保证一局必须走完整张图
+	var entry_i := -1
+	var entry_d := -1
+	for i in rooms.size():
+		if room_roles[i] == "stair" or room_roles[i] == "hall":
+			continue
+		if room_depth[i] > entry_d:
+			entry_d = room_depth[i]
+			entry_i = i
+	if entry_i >= 0:
+		entry_room_index = entry_i
+		room_roles[entry_i] = "entry"
+		if entry_i < explored.size():
+			explored[entry_i] = true
+		exit_pos = _walkable_center(rooms[entry_i])
+
+	# E3：沿导航图从入口往楼梯走下坡，记录主路房间（其余是支路）
+	main_path_rooms = _trace_main_path(entry_i, n, dist)
+
+	# E4：L4+ 的 Boss 房 = 除入口/楼梯/大厅/安全屋外最深的房间
+	if GameState.level >= 4:
+		var boss_i := -1
+		var boss_d := -1
+		for i in rooms.size():
+			if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry":
+				continue
+			if room_depth[i] > boss_d:
+				boss_d = room_depth[i]
+				boss_i = i
+		if boss_i >= 0:
+			boss_room_index = boss_i
+			room_roles[boss_i] = "boss"
+			room_names[boss_i] = "Boss 房"
+
 	if not allow_safe:
 		return
 
-	# 安全屋：纵深 33%~62% 里最接近 47% 的一间，排除楼梯/大厅
+	# 安全屋：纵深 33%~62% 里最接近 47% 的一间，排除楼梯/大厅/入口/Boss
 	var best := -1
 	var best_score := 1.0e9
 	for i in rooms.size():
-		if room_roles[i] == "stair" or room_roles[i] == "hall":
+		if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry" or room_roles[i] == "boss":
 			continue
 		if room_depth[i] < 0:
 			continue
@@ -493,6 +542,55 @@ func _compute_roles(allow_safe := true) -> void:
 		room_roles[best] = "safe"
 		safe_room_index = best
 		room_names[best] = "安全屋（禁止答题）"
+
+	# E4：宝箱房 = 不在主路上的最深支路房
+	var tre_i := -1
+	var tre_d := -1
+	for i in rooms.size():
+		if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry" or room_roles[i] == "safe" or room_roles[i] == "boss":
+			continue
+		if main_path_rooms.has(i):
+			continue
+		if room_depth[i] > tre_d:
+			tre_d = room_depth[i]
+			tre_i = i
+	if tre_i < 0:
+		for i in rooms.size():
+			if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry" or room_roles[i] == "safe" or room_roles[i] == "boss":
+				continue
+			tre_i = i
+			break
+	if tre_i >= 0:
+		treasure_room_index = tre_i
+		room_roles[tre_i] = "treasure"
+		room_names[tre_i] = "宝箱房"
+
+## E3：从入口房间的导航点出发，每次走 dist-1 的邻居，直到楼梯（dist=0）。
+func _trace_main_path(start_room: int, n: int, dist: PackedInt32Array) -> Array[int]:
+	var out: Array[int] = []
+	if start_room < 0 or n <= 0:
+		return out
+	var cur := -1
+	var cur_d := -1
+	for pi in n:
+		if room_index_at(nav_points[pi]) == start_room and dist[pi] > cur_d:
+			cur_d = dist[pi]
+			cur = pi
+	var guard := 0
+	while cur >= 0 and guard < n + 4:
+		guard += 1
+		var ri := room_index_at(nav_points[cur])
+		if ri >= 0 and not out.has(ri):
+			out.append(ri)
+		if dist[cur] <= 0:
+			break
+		var next := -1
+		for nb in nav_links[cur]:
+			if nb >= 0 and nb < n and dist[nb] == dist[cur] - 1:
+				next = nb
+				break
+		cur = next
+	return out
 
 ## 房间出入口数量。现在每个房间只有 1 个门，所以都是 1；
 ## 以后做"房间互通门 / 环形地图"时，这个函数直接可用（>=2 表示可绕圈）。
@@ -512,6 +610,10 @@ func room_role_at(pos: Vector2) -> String:
 	if i < 0 or i >= room_roles.size():
 		return ""
 	return room_roles[i]
+
+## E3：该房间是否在入口→楼梯的主路上。
+func is_main_path(i: int) -> bool:
+	return main_path_rooms.has(i)
 
 func is_safe_room_at(pos: Vector2) -> bool:
 	return safe_room_index >= 0 and room_index_at(pos) == safe_room_index

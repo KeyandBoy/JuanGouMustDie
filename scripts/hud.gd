@@ -594,6 +594,8 @@ func _refresh_inventory() -> void:
 			var name_lbl := Label.new()
 			name_lbl.text = String(def.get("name", item_id))
 			name_lbl.add_theme_font_size_override("font_size", 13)
+			if GameState.item_rarity(item_id) != "common":
+				name_lbl.add_theme_color_override("font_color", GameState.rarity_def(GameState.item_rarity(item_id))["color"])
 			row.add_child(name_lbl)
 		else:
 			var empty_lbl := Label.new()
@@ -607,7 +609,9 @@ func _refresh_inventory() -> void:
 		var tip_text := ""
 		if _slot_items[i] != "":
 			var d_tip: Dictionary = GameState.get_item_def(_slot_items[i])
-			tip_text = "%s\n%s" % [String(d_tip.get("name", _slot_items[i])), String(d_tip.get("desc", ""))]
+			var rar := GameState.item_rarity(_slot_items[i])
+			var rdef: Dictionary = GameState.rarity_def(rar)
+			tip_text = "[%s] %s\n%s" % [String(rdef.get("name", "普通")), String(d_tip.get("name", _slot_items[i])), String(d_tip.get("desc", ""))]
 		else:
 			tip_text = "空格\n使用道具后自动填入"
 		bind_tooltip(slot, func() -> String: return tip_text)
