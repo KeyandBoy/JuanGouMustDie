@@ -12,6 +12,9 @@ extends Node2D
 const NEAR_PARALLAX := 0.16
 const FAR_PARALLAX := 0.07
 const REDRAW_INTERVAL := 0.08
+## 窗外树影/枝影默认关闭：当前关卡图窗外是纯黑，画上去只会变成黑底上的黑球
+## （用户实机反馈的「黑色球状图层」）。要开改 true，且窗外必须有可对比的亮部。
+const SHOW_TREES := false
 
 var map: Node2D
 var camera: Camera2D
@@ -57,8 +60,9 @@ func _draw() -> void:
 		var axis := String(w.get("axis", "h"))
 		var outward := _outward(w, r, axis)
 		_far_building(r, outward, far_off, idx)
-		_tree_canopy(r, outward, near_off, idx)
-		_branch_shadow(r, outward, near_off, idx)
+		if SHOW_TREES:
+			_tree_canopy(r, outward, near_off, idx)
+			_branch_shadow(r, outward, near_off, idx)
 		idx += 1
 
 
