@@ -46,6 +46,18 @@ const UI_HOVER_DB := -14.0
 const UI_CLICK_DB := -8.0
 const UI_CONFIRM_DB := -7.0
 
+## D5 环境音：按楼层垫一条低音量循环底噪（先用已入库的广播杂讯）。
+const AMBIENCE_PATH := "res://assets/sfx/ambient/broadcast_noise.mp3"
+const AMBIENCE_DB := -27.0
+const AMBIENCE_FADE := 2.0
+## D6 压迫层：暴君在场时把 Horror Drone 垫在 BGM 下面（不是分轨，只做压迫感）。
+const PRESSURE_PATH := "res://assets/music/amb_tyrant_drone.ogg"
+const PRESSURE_DB := -19.0
+const PRESSURE_FADE := 1.8
+## D8 脚步材质：找不到对应文件就静音，等音频窗口补素材后自动生效。
+const STEP_MATERIALS: Array[String] = ["tile", "wood", "carpet"]
+const STEP_PATH_FMT := "res://assets/sfx/step/step_%s_%d.ogg"
+
 var current_key := ""
 var master_volume := 100.0
 var music_volume := 100.0
@@ -66,6 +78,15 @@ var _sfx2d_cursor := 0
 var _sfx_counts: Dictionary = {}
 var _sfx_cache: Dictionary = {}
 
+## D5 / D6：环境层与压迫层各一条独立播放器，和 BGM 双轨分开。
+var _ambience: AudioStreamPlayer
+var _pressure: AudioStreamPlayer
+var _ambience_key := ""
+var _pressure_key := ""
+var _ambience_tween: Tween
+var _pressure_tween: Tween
+var _file_exists: Dictionary = {}
+
 ## UI 音效（D7）
 var ui_sounds_enabled := true
 var _ui_players: Array[AudioStreamPlayer] = []
@@ -76,6 +97,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_catalog()
 	_build_music_players()
+	_build_ambient_players()
 	_build_sfx_pool()
 	master_volume = float(SaveManager.get_setting("master", 100.0))
 	music_volume = float(SaveManager.get_setting("music", 100.0))
@@ -91,6 +113,18 @@ func _build_music_players() -> void:
 		p.volume_db = SILENCE_DB
 		add_child(p)
 		_players.append(p)
+
+func _build_ambient_players() -> void:
+	_ambience = AudioStreamPlayer.new()
+	_ambience.bus = BUS_AMBIENCE
+	_ambience.process_mode = Node.PROCESS_MODE_ALWAYS
+	_ambience.volume_db = SILENCE_DB
+	add_child(_ambience)
+	_pressure = AudioStreamPlayer.new()
+	_pressure.bus = BUS_MUSIC
+	_pressure.process_mode = Node.PROCESS_MODE_ALWAYS
+	_pressure.volume_db = SILENCE_DB
+	add_child(_pressure)
 
 func _build_sfx_pool() -> void:
 	for i in SFX_POOL_SIZE:
@@ -223,6 +257,7 @@ func apply_volumes() -> void:
 	_set_bus_db(BUS_MUSIC, _music_bus_db())
 	_set_bus_db(BUS_SFX, _bus_db(sfx_volume))
 	_set_bus_db(BUS_UI, _bus_db(sfx_volume))
+	_set_bus_db(BUS_AMBIENCE, _bus_db(sfx_volume, -4.0))
 
 func set_muted(v: bool) -> void:
 	muted = v
@@ -258,6 +293,86 @@ func _refresh() -> void:
 	var key := _desired_key()
 	if key != current_key:
 		_play(key)
+	_refresh_ambience()
+	_refresh_pressure()
+
+
+## D5：环境音只在该楼层探索/答题时存在；教学关、菜单、过场都关掉。
+func desired_ambience_path() -> String:
+	if GameState.tutorial_active:
+		return ""
+	if GameState.run_state != GameState.RunState.EXPLORING and GameState.run_state != GameState.RunState.QUIZ:
+		return ""
+	if GameState.level < 2:
+		return ""
+	return AMBIENCE_PATH if _exists(AMBIENCE_PATH) else ""
+
+
+## D6：暴君在场时垫压迫层；真正的追逐鼓点层仍等分轨素材。
+func desired_pressure_path() -> String:
+	if not GameState.tyrant_active or GameState.cutscene_active:
+		return ""
+	if GameState.run_state == GameState.RunState.MENU:
+		return ""
+	return PRESSURE_PATH if _exists(PRESSURE_PATH) else ""
+
+
+func _refresh_ambience() -> void:
+	var path := desired_ambience_path()
+	if path == _ambience_key:
+		return
+	_ambience_key = path
+	if path.is_empty():
+		_fade_out_player(_ambience, _ambience_tween, AMBIENCE_FADE)
+		return
+	if _ambience_tween != null and _ambience_tween.is_valid():
+		_ambience_tween.kill()
+	var stream := _sfx_stream(path)
+	if stream == null:
+		_ambience_key = ""
+		return
+	if "loop" in stream:
+		stream.set("loop", true)
+	_ambience.stream = stream
+	_ambience.volume_db = SILENCE_DB
+	_ambience.play()
+	var tw := create_tween()
+	_ambience_tween = tw
+	tw.tween_property(_ambience, "volume_db", AMBIENCE_DB, AMBIENCE_FADE)
+
+
+func _refresh_pressure() -> void:
+	var path := desired_pressure_path()
+	if path == _pressure_key:
+		return
+	_pressure_key = path
+	if path.is_empty():
+		_fade_out_player(_pressure, _pressure_tween, PRESSURE_FADE)
+		return
+	if _pressure_tween != null and _pressure_tween.is_valid():
+		_pressure_tween.kill()
+	var stream := _sfx_stream(path)
+	if stream == null:
+		_pressure_key = ""
+		return
+	if "loop" in stream:
+		stream.set("loop", true)
+	_pressure.stream = stream
+	_pressure.volume_db = SILENCE_DB
+	_pressure.play()
+	var tw := create_tween()
+	_pressure_tween = tw
+	tw.tween_property(_pressure, "volume_db", PRESSURE_DB, PRESSURE_FADE)
+
+
+func _fade_out_player(p: AudioStreamPlayer, tw: Tween, dur: float) -> void:
+	if p == null or not p.playing:
+		return
+	if tw != null and tw.is_valid():
+		tw.kill()
+	var t := create_tween()
+	t.tween_property(p, "volume_db", SILENCE_DB, dur)
+	t.tween_callback(p.stop)
 
 func _desired_key() -> String:
 	if GameState.run_state == GameState.RunState.GAMEOVER:
@@ -447,6 +562,32 @@ func _sfx_stream(path: String) -> AudioStream:
 	if stream != null:
 		_sfx_cache[path] = stream
 	return stream
+
+## D8：脚步材质。约定文件：assets/sfx/step/step_<material>_<1..3>.ogg
+## 缺文件直接返回 false（静音），不会每次都报错。
+func play_footstep(material: String, world_pos: Vector2, running := false) -> bool:
+	var m: String = material if STEP_MATERIALS.has(material) else "tile"
+	var candidates: Array[String] = []
+	for i in range(1, 4):
+		candidates.append(STEP_PATH_FMT % [m, i])
+	candidates.append("res://assets/sfx/step/step_%s.ogg" % m)
+	candidates.append("res://assets/sfx/step/step_%s_1.wav" % m)
+	var pool: Array[String] = []
+	for c in candidates:
+		if _exists(c):
+			pool.append(c)
+	if pool.is_empty():
+		return false
+	var path: String = pool[randi_range(0, pool.size() - 1)]
+	var vol := -9.0 if running else -13.0
+	return play_sfx_2d(path, world_pos, 520.0, vol)
+
+
+func _exists(path: String) -> bool:
+	if not _file_exists.has(path):
+		_file_exists[path] = ResourceLoader.exists(path)
+	return bool(_file_exists[path])
+
 
 ## 当前某个音效正在响的数量（调试 / 自测用）。
 func sfx_active_count(path: String) -> int:

@@ -19,16 +19,27 @@
       "title": "Happy Loop",
       "file": "res://assets/music/happy_loop.mp3",
       "status": "active",
-      "slots": ["happy"],
-      "states": ["menu", "explore_calm"],
+      "slots": [
+        "happy"
+      ],
+      "states": [
+        "menu",
+        "explore_calm"
+      ],
       "emotion": "欢乐",
       "intensity": 1,
       "bpm": null,
       "duration_sec": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["轻快鼓点", "校园", "明亮钢琴"],
+      "elements": [
+        "轻快鼓点",
+        "校园",
+        "明亮钢琴"
+      ],
       "notes": "主菜单、平时探索。通关结算改用 clear_victory。BPM/时长待测。",
       "license": {
         "type": "CC0",
@@ -43,15 +54,25 @@
       "title": "Vicegrip of Pursuit",
       "file": "res://assets/music/chase_pursuit.mp3",
       "status": "active",
-      "slots": ["tension"],
-      "states": ["explore_alert"],
+      "slots": [
+        "tension"
+      ],
+      "states": [
+        "explore_alert"
+      ],
       "emotion": "紧张",
       "intensity": 3,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["低频脉动", "金属敲击", "弦乐持续音"],
+      "elements": [
+        "低频脉动",
+        "金属敲击",
+        "弦乐持续音"
+      ],
       "notes": "警告 1 时使用；L2~L4 未来若拆分「中段紧张」可把这首收窄到 L1。BPM/时长待测。",
       "license": {
         "type": "CC0",
@@ -66,15 +87,25 @@
       "title": "Chase!",
       "file": "res://assets/music/chase_electro.ogg",
       "status": "active",
-      "slots": ["chase"],
-      "states": ["chase"],
+      "slots": [
+        "chase"
+      ],
+      "states": [
+        "chase"
+      ],
       "emotion": "追逐",
       "intensity": 4,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["电子琶音", "急促鼓组", "警报音色"],
+      "elements": [
+        "电子琶音",
+        "急促鼓组",
+        "警报音色"
+      ],
       "notes": "警告 ≥2 或有人正在追时使用。BPM/时长待测。",
       "license": {
         "type": "CC0",
@@ -89,15 +120,25 @@
       "title": "Goofy Attitude!",
       "file": "res://assets/music/goofy_attitude.mp3",
       "status": "active",
-      "slots": ["absurd"],
-      "states": ["quiz"],
+      "slots": [
+        "absurd"
+      ],
+      "states": [
+        "quiz"
+      ],
       "emotion": "荒诞",
       "intensity": 2,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["滑稽管乐", "口哨", "弹簧音效"],
+      "elements": [
+        "滑稽管乐",
+        "口哨",
+        "弹簧音效"
+      ],
       "notes": "答题界面。BPM/时长待测。",
       "license": {
         "type": "CC0",
@@ -112,15 +153,28 @@
       "title": "Tyrant Dread",
       "file": "res://assets/music/tyrant_dread.wav",
       "status": "active",
-      "slots": ["tyrant"],
-      "states": ["tyrant"],
+      "slots": [
+        "tyrant"
+      ],
+      "states": [
+        "tyrant"
+      ],
       "emotion": "恐怖",
       "intensity": 4,
       "bpm": null,
       "loop": true,
-      "level_scope": [1, 2, 3, 4],
+      "level_scope": [
+        1,
+        2,
+        3,
+        4
+      ],
       "layer_role": "base",
-      "elements": ["低频轰鸣", "不谐和音簇", "压迫感"],
+      "elements": [
+        "低频轰鸣",
+        "不谐和音簇",
+        "压迫感"
+      ],
       "notes": "项目内脚本合成，无第三方版权。L1~L4 暴君。BPM/时长待测；做分轨时必须先测 BPM。",
       "license": {
         "type": "CC0",
@@ -135,15 +189,25 @@
       "title": "Tyrant Dread L5",
       "file": "res://assets/music/tyrant_dread_l5.wav",
       "status": "active",
-      "slots": ["tyrant_l5"],
-      "states": ["tyrant"],
+      "slots": [
+        "tyrant_l5"
+      ],
+      "states": [
+        "tyrant"
+      ],
       "emotion": "恐怖",
       "intensity": 5,
       "bpm": null,
       "loop": true,
-      "level_scope": [5],
+      "level_scope": [
+        5
+      ],
       "layer_role": "base",
-      "elements": ["低频轰鸣", "加速鼓点", "不谐和音簇"],
+      "elements": [
+        "低频轰鸣",
+        "加速鼓点",
+        "不谐和音簇"
+      ],
       "notes": "项目内脚本合成。第 5 关暴君专用（同曲加速加鼓点版）。",
       "license": {
         "type": "CC0",
@@ -159,14 +223,22 @@
       "file": "res://assets/music/chase_assault.ogg",
       "status": "standby",
       "slots": [],
-      "states": ["chase"],
+      "states": [
+        "chase"
+      ],
       "emotion": "追逐",
       "intensity": 5,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["重鼓", "失真贝斯", "工业噪音"],
+      "elements": [
+        "重鼓",
+        "失真贝斯",
+        "工业噪音"
+      ],
       "notes": "已入库未接入。建议留给 L4/L5 的高强度追逐（比 chase_electro 更硬）。",
       "license": {
         "type": "CC0",
@@ -182,14 +254,22 @@
       "file": "res://assets/music/fridge_hungry.ogg",
       "status": "standby",
       "slots": [],
-      "states": ["explore_alert"],
+      "states": [
+        "explore_alert"
+      ],
       "emotion": "诡异",
       "intensity": 2,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "ambience",
-      "elements": ["冰箱嗡鸣", "怪异采样", "不安持续音"],
+      "elements": [
+        "冰箱嗡鸣",
+        "怪异采样",
+        "不安持续音"
+      ],
       "notes": "已入库未接入。适合做低警告时的诡异环境层，或暴君靠近 200px 的压迫层。",
       "license": {
         "type": "CC0",
@@ -205,14 +285,22 @@
       "file": "res://assets/music/wacky_wobblings.ogg",
       "status": "standby",
       "slots": [],
-      "states": ["quiz"],
+      "states": [
+        "quiz"
+      ],
       "emotion": "荒诞",
       "intensity": 2,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["滑音", "玩具音色", "摇摆节奏"],
+      "elements": [
+        "滑音",
+        "玩具音色",
+        "摇摆节奏"
+      ],
       "notes": "已入库未接入。可做连错/被罚站时的荒诞插曲。",
       "license": {
         "type": "CC0",
@@ -227,16 +315,26 @@
       "title": "The Childrens Room",
       "file": "res://assets/music/cutscene_dread.ogg",
       "status": "active",
-      "slots": ["cutscene"],
-      "states": ["cutscene"],
+      "slots": [
+        "cutscene"
+      ],
+      "states": [
+        "cutscene"
+      ],
       "emotion": "恐怖",
       "intensity": 3,
       "bpm": null,
       "duration_sec": 135,
       "loop": false,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["稀疏钢琴", "弦乐长音", "走廊回响"],
+      "elements": [
+        "稀疏钢琴",
+        "弦乐长音",
+        "走廊回响"
+      ],
       "notes": "过场剧情床（原来过场静音）。慢速、不循环，播完自然收。转码：OGG q4 + loudnorm -16 LUFS。",
       "license": {
         "type": "CC BY 4.0",
@@ -254,16 +352,26 @@
       "title": "Big Intro #2",
       "file": "res://assets/music/clear_victory.ogg",
       "status": "active",
-      "slots": ["cleared"],
-      "states": ["cleared"],
+      "slots": [
+        "cleared"
+      ],
+      "states": [
+        "cleared"
+      ],
       "emotion": "胜利",
       "intensity": 3,
       "bpm": null,
       "duration_sec": 11.6,
       "loop": false,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["铜管齐奏", "上升音阶", "明亮和弦"],
+      "elements": [
+        "铜管齐奏",
+        "上升音阶",
+        "明亮和弦"
+      ],
       "notes": "通关瞬间的胜利短句，11.6 秒不循环（原来复用 happy_loop）。播完静音，统计面板不再垫乐。",
       "license": {
         "type": "CC BY 4.0",
@@ -281,16 +389,26 @@
       "title": "Somber",
       "file": "res://assets/music/gameover_somber.ogg",
       "status": "active",
-      "slots": ["gameover"],
-      "states": ["gameover"],
+      "slots": [
+        "gameover"
+      ],
+      "states": [
+        "gameover"
+      ],
       "emotion": "悲壮",
       "intensity": 2,
       "bpm": null,
       "duration_sec": 110,
       "loop": false,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "base",
-      "elements": ["下沉低音", "低沉弦乐", "空洞回响"],
+      "elements": [
+        "下沉低音",
+        "低沉弦乐",
+        "空洞回响"
+      ],
       "notes": "失败/被抓（原来直接淡出静音）。慢速，建议配合屏幕压黑在前 10 秒后淡出。",
       "license": {
         "type": "CC BY 4.0",
@@ -308,16 +426,28 @@
       "title": "Night Runner",
       "file": "res://assets/music/tension_mid.ogg",
       "status": "standby",
-      "slots": ["tension_mid"],
-      "states": ["explore_alert"],
+      "slots": [
+        "tension_mid"
+      ],
+      "states": [
+        "explore_alert"
+      ],
       "emotion": "紧张",
       "intensity": 3,
       "bpm": null,
       "duration_sec": 100.6,
       "loop": true,
-      "level_scope": [2, 3, 4],
+      "level_scope": [
+        2,
+        3,
+        4
+      ],
       "layer_role": "base",
-      "elements": ["持续低音", "时钟滴答", "渐强弦乐"],
+      "elements": [
+        "持续低音",
+        "时钟滴答",
+        "渐强弦乐"
+      ],
       "notes": "给「按楼层递进」准备的中段紧张曲。现在方案还是 A（全关共用 chase_pursuit），所以先 standby；要开启 B：把本首改 active，并把 chase_pursuit 的 level_scope 改成 [1]。",
       "license": {
         "type": "CC BY 4.0",
@@ -334,18 +464,28 @@
       "id": "amb_tyrant_drone",
       "title": "Horror Drone #1",
       "file": "res://assets/music/amb_tyrant_drone.ogg",
-      "status": "standby",
-      "slots": ["amb_tyrant_drone"],
-      "states": ["tyrant"],
+      "status": "active",
+      "slots": [
+        "pressure"
+      ],
+      "states": [
+        "tyrant"
+      ],
       "emotion": "压迫",
       "intensity": 3,
       "bpm": null,
       "duration_sec": 286.5,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "pressure",
-      "elements": ["低频轰鸣", "嗡鸣", "不安持续音"],
-      "notes": "暴君压迫层的临时替代素材：不是分轨，是独立整轨，只能低音量垫在 tyrant_dread 下面。接入前必须试听调性冲突；真要分层还是得做同 BPM 分轨。",
+      "elements": [
+        "低频轰鸣",
+        "嗡鸣",
+        "不安持续音"
+      ],
+      "notes": "已接入 D6：暴君在场时由 AudioManager 作为压迫层垫在 tyrant_dread 下面（低音量、淡入淡出），不是同 BPM 分轨；真正的节奏层仍待补。",
       "license": {
         "type": "CC BY 4.0",
         "license_url": "https://creativecommons.org/licenses/by/4.0/",
@@ -362,15 +502,25 @@
       "title": "暴君压迫层（低频轰鸣 + 心跳）",
       "file": null,
       "status": "missing",
-      "slots": ["tyrant_pressure"],
-      "states": ["tyrant"],
+      "slots": [
+        "tyrant_pressure"
+      ],
+      "states": [
+        "tyrant"
+      ],
       "emotion": "压迫",
       "intensity": 5,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "pressure",
-      "elements": ["低频轰鸣", "心跳", "喘息"],
+      "elements": [
+        "低频轰鸣",
+        "心跳",
+        "喘息"
+      ],
       "notes": "真正的分轨缺口。`amb_tyrant_drone` 只能临时顶替，缺的仍然是「与 tyrant_dread 同 BPM 的压迫 stem + 心跳采样」。Freesound 补心跳，其余程序合成。",
       "license": null
     },
@@ -379,15 +529,25 @@
       "title": "追逐节奏层（加鼓点）",
       "file": null,
       "status": "missing",
-      "slots": ["chase_rhythm"],
-      "states": ["chase"],
+      "slots": [
+        "chase_rhythm"
+      ],
+      "states": [
+        "chase"
+      ],
       "emotion": "追逐",
       "intensity": 4,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "rhythm",
-      "elements": ["军鼓", "底鼓", "踩镲"],
+      "elements": [
+        "军鼓",
+        "底鼓",
+        "踩镲"
+      ],
       "notes": "警告 ≥2 时叠在追逐底曲上。必须与 chase_electro 同 BPM，且能独立循环。",
       "license": null
     },
@@ -396,15 +556,27 @@
       "title": "走廊喘息/呼吸环境层",
       "file": null,
       "status": "missing",
-      "slots": ["amb_breath"],
-      "states": ["explore_calm", "explore_alert", "tyrant"],
+      "slots": [
+        "amb_breath"
+      ],
+      "states": [
+        "explore_calm",
+        "explore_alert",
+        "tyrant"
+      ],
       "emotion": "恐怖",
       "intensity": 2,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "ambience",
-      "elements": ["喘息", "呼吸", "极轻的风声"],
+      "elements": [
+        "喘息",
+        "呼吸",
+        "极轻的风声"
+      ],
       "notes": "很轻、非旋律、可长时间循环。Freesound 找单声道采样自己拼，注意授权逐条查（避开 CC BY-NC）。",
       "license": null
     },
@@ -413,15 +585,27 @@
       "title": "钟声 / 下课铃环境层",
       "file": null,
       "status": "missing",
-      "slots": ["amb_bell"],
-      "states": ["menu", "explore_calm", "cleared"],
+      "slots": [
+        "amb_bell"
+      ],
+      "states": [
+        "menu",
+        "explore_calm",
+        "cleared"
+      ],
       "emotion": "诡异",
       "intensity": 2,
       "bpm": null,
       "loop": true,
-      "level_scope": ["all"],
+      "level_scope": [
+        "all"
+      ],
       "layer_role": "ambience",
-      "elements": ["钟声", "下课铃", "远处回响"],
+      "elements": [
+        "钟声",
+        "下课铃",
+        "远处回响"
+      ],
       "notes": "校舍氛围点题用。可做成几十秒一次的点缀（accent），不必整段循环。",
       "license": null
     },
@@ -430,15 +614,25 @@
       "title": "L5 灯管闪烁 / 电流嗡鸣层",
       "file": null,
       "status": "missing",
-      "slots": ["amb_flicker"],
-      "states": ["tyrant"],
+      "slots": [
+        "amb_flicker"
+      ],
+      "states": [
+        "tyrant"
+      ],
       "emotion": "压迫",
       "intensity": 3,
       "bpm": null,
       "loop": true,
-      "level_scope": [5],
+      "level_scope": [
+        5
+      ],
       "layer_role": "ambience",
-      "elements": ["电流嗡鸣", "灯管爆闪", "高频颤动"],
+      "elements": [
+        "电流嗡鸣",
+        "灯管爆闪",
+        "高频颤动"
+      ],
       "notes": "配合 L5 的灯光闪烁机制，随机触发短段比长循环更自然。Freesound 找 electrical hum / fluorescent buzz。",
       "license": null
     }

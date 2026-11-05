@@ -493,3 +493,11 @@
 - 已覆盖/不做：C9 暂停键位页已在设置-操作里；C11 已有全屏/震屏；C16 快捷栏已是 R/T/Y 键帽；C12/C14/C15 维持不做
 - 素材目录 素材/_extracted/界面/平台UI 未使用，继续程序绘制，避免授权风险
 - 验证：七套测试全绿；新增 tests/_c_ui_probe.tscn
+
+【D 组音频（2026-11-05）】
+- D1~D4、D7 原本已完成：双轨交叉淡入、12+8 音效池同名限 3、分类目录、五条总线、UI 三音
+- D5 环境音：新增 Ambience 独立播放器，L2~L5 探索/答题循环 broadcast_noise（-27dB、2s 淡入），菜单/过场/教学关自动关闭
+- D6 暴君压迫层：新增 Pressure 播放器，tyrant_active 时用 amb_tyrant_drone 以 -19dB 垫在 tyrant_dread 下（1.8s 淡入/2.5s 淡出）；曲库状态改 active，CATALOG.md 重新生成
+- D8 脚步接口：AudioManager.play_footstep(material, pos, running)，约定 step_<tile|wood|carpet>_<1..3>.ogg；缺文件静音；main 按移动距离和房间类型触发
+- 仍缺素材：真正的同 BPM 追逐鼓点层、三套脚步采样（等音频窗口）
+- 验证：八套测试全绿；新增 tests/_d_probe.tscn

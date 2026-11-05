@@ -3,13 +3,13 @@
 > 由 `tools/music_catalog.py` 从 `assets/music/catalog.json` 生成，最后更新：2026-11-04。
 > 要加歌/换歌/补缺口，改 JSON 再跑一次脚本，**不要直接改这个文件**。
 
-**统计**：在用 9 首 · 备用 5 首 · 待补 5 条
+**统计**：在用 10 首 · 备用 4 首 · 待补 5 条
 
 ## 一、在用曲目
 
 | ID | 曲名 | 情绪 | 强度 | 状态 | 槽位 | 层角色 | 楼层 | 声音元素 | 授权 |
 |---|---|---|---|---|---|---|---|---|---|
-| `happy_loop` | Happy Loop | 欢乐 | 1 | menu、explore_calm、cleared | happy | base | all | 轻快鼓点、校园、明亮钢琴 | CC0 / wipics |
+| `happy_loop` | Happy Loop | 欢乐 | 1 | menu、explore_calm | happy | base | all | 轻快鼓点、校园、明亮钢琴 | CC0 / wipics |
 | `chase_pursuit` | Vicegrip of Pursuit | 紧张 | 3 | explore_alert | tension | base | all | 低频脉动、金属敲击、弦乐持续音 | CC0 / Sudocolon |
 | `chase_electro` | Chase! | 追逐 | 4 | chase | chase | base | all | 电子琶音、急促鼓组、警报音色 | CC0 / Wolfgang_ |
 | `goofy_attitude` | Goofy Attitude! | 荒诞 | 2 | quiz | absurd | base | all | 滑稽管乐、口哨、弹簧音效 | CC0 / SkyleTheFrench |
@@ -18,6 +18,7 @@
 | `cutscene_dread` | The Childrens Room | 恐怖 | 3 | cutscene | cutscene | base | all | 稀疏钢琴、弦乐长音、走廊回响 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
 | `clear_victory` | Big Intro #2 | 胜利 | 3 | cleared | cleared | base | all | 铜管齐奏、上升音阶、明亮和弦 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
 | `gameover_somber` | Somber | 悲壮 | 2 | gameover | gameover | base | all | 下沉低音、低沉弦乐、空洞回响 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
+| `amb_tyrant_drone` | Horror Drone #1 | 压迫 | 3 | tyrant | pressure | pressure | all | 低频轰鸣、嗡鸣、不安持续音 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
 
 ## 二、备用曲目（已入库，未接入）
 
@@ -27,7 +28,6 @@
 | `fridge_hungry` | The Fridge is Hungry | 诡异 | 2 | 已入库未接入。适合做低警告时的诡异环境层，或暴君靠近 200px 的压迫层。 | 冰箱嗡鸣、怪异采样、不安持续音 | CC0 / congusbongus |
 | `wacky_wobblings` | Wacky Wobblings | 荒诞 | 2 | 已入库未接入。可做连错/被罚站时的荒诞插曲。 | 滑音、玩具音色、摇摆节奏 | CC0 / Fupi |
 | `tension_mid` | Night Runner | 紧张 | 3 | 给「按楼层递进」准备的中段紧张曲。现在方案还是 A（全关共用 chase_pursuit），所以先 standby；要开启 B：把本首改 active，并把 chase_pursuit 的 level_scope 改成 [1]。 | 持续低音、时钟滴答、渐强弦乐 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
-| `amb_tyrant_drone` | Horror Drone #1 | 压迫 | 3 | 暴君压迫层的临时替代素材：不是分轨，是独立整轨，只能低音量垫在 tyrant_dread 下面。接入前必须试听调性冲突；真要分层还是得做同 BPM 分轨。 | 低频轰鸣、嗡鸣、不安持续音 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
 
 ## 三、待补曲目清单
 
@@ -42,14 +42,14 @@
 ## 四、按状态索引
 
 - **chase**：Chase!（active）、Assault（standby）、追逐节奏层（加鼓点）（missing）
-- **cleared**：Happy Loop（active）、Big Intro #2（active）、钟声 / 下课铃环境层（missing）
+- **cleared**：Big Intro #2（active）、钟声 / 下课铃环境层（missing）
 - **cutscene**：The Childrens Room（active）
 - **explore_alert**：Vicegrip of Pursuit（active）、The Fridge is Hungry（standby）、Night Runner（standby）、走廊喘息/呼吸环境层（missing）
 - **explore_calm**：Happy Loop（active）、走廊喘息/呼吸环境层（missing）、钟声 / 下课铃环境层（missing）
 - **gameover**：Somber（active）
 - **menu**：Happy Loop（active）、钟声 / 下课铃环境层（missing）
 - **quiz**：Goofy Attitude!（active）、Wacky Wobblings（standby）
-- **tyrant**：Tyrant Dread（active）、Tyrant Dread L5（active）、Horror Drone #1（standby）、暴君压迫层（低频轰鸣 + 心跳）（missing）、走廊喘息/呼吸环境层（missing）、L5 灯管闪烁 / 电流嗡鸣层（missing）
+- **tyrant**：Tyrant Dread（active）、Tyrant Dread L5（active）、Horror Drone #1（active）、暴君压迫层（低频轰鸣 + 心跳）（missing）、走廊喘息/呼吸环境层（missing）、L5 灯管闪烁 / 电流嗡鸣层（missing）
 
 ## 五、按声音元素索引
 

@@ -92,6 +92,8 @@ var stink_cloud := Vector2.INF
 var stink_cloud_timer := 0.0
 var smoke_cloud := Vector2.INF
 var smoke_cloud_timer := 0.0
+var _footstep_accum := 0.0
+var _footstep_last := Vector2.INF
 var lamp_timer := 0.0
 var item_fx: ItemFx
 var last_run_stars := 0
@@ -294,6 +296,38 @@ func _setup_lighting() -> void:
 
 ## A10：把「被追 / 搜寻 / 停电」三个来源汇总成呼吸状态。
 ## 音频窗口只需要读 breath.state / breath.stream_slot。
+## D8：按移动距离触发脚步；具体有没有声音由 AudioManager 检查素材后决定。
+func _update_footsteps() -> void:
+	if player == null or GameState.run_state != GameState.RunState.EXPLORING:
+		_footstep_last = Vector2.INF
+		return
+	if _footstep_last == Vector2.INF:
+		_footstep_last = player.position
+		return
+	var moved := player.position.distance_to(_footstep_last)
+	_footstep_last = player.position
+	if moved <= 0.01:
+		return
+	_footstep_accum += moved
+	var running := player.velocity.length() > 200.0
+	var interval := 34.0 if running else 26.0
+	if _footstep_accum >= interval:
+		_footstep_accum = 0.0
+		AudioManager.play_footstep(_floor_material_at(player.position), player.position, running)
+
+
+func _floor_material_at(pos: Vector2) -> String:
+	if map == null:
+		return "tile"
+	var i: int = map.room_index_at(pos)
+	if i < 0 or i >= map.room_types.size():
+		return "tile"
+	match String(map.room_types[i]):
+		"classroom", "office", "storage":
+			return "wood"
+	return "tile"
+
+
 func _update_breath() -> void:
 	if breath == null:
 		return
@@ -377,6 +411,8 @@ func _setup_level(p_spawn_random := false) -> void:
 	GameState.cutscene_active = false
 	GameState.active_effects.clear()
 	GameState.wrong_questions.clear()
+	_footstep_accum = 0.0
+	_footstep_last = Vector2.INF
 	emptiness_timer = 0.0
 	auto_study_timer = 0.0
 	sprint_noise_timer = 0.0
@@ -681,6 +717,7 @@ func _on_item_full(item_id: String) -> void:
 func _process(delta: float) -> void:
 	_update_lights(delta)
 	_update_breath()
+	_update_footsteps()
 	_update_lingering_items(delta)
 	if menu_music_label != null and is_instance_valid(menu_music_label):
 		menu_music_label.text = _menu_info_text()

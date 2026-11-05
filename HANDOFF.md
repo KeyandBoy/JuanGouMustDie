@@ -3,8 +3,8 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`2bba794`（C 组 UI 完成；B 组第一批在 `2b1e10f`）
-- 已推送 origin/main（2026-11-05）。
+- 当前 HEAD：`4002a75`（C 组收口 HANDOFF，**尚未推送**）+ 本轮 D 组（提交后更新）
+- 已推送 origin/main 到 `2bba794`（C 组 UI）；`4002a75` 与 D 组提交因 GitHub 连接被重置暂留本地，网络恢复后 `git -c http.proxy= -c https.proxy= push`。
 - 工作区：C 组 UI 已改完待提交；**B12/B13 的 WIP 在 `stash@{0}`**（影子以外的光锥/红眼/视差），需要时 `git stash pop`。别的会话仍有未提交改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`），不是本轮产物。
 
 ## 最简用法（推荐）
@@ -18,12 +18,17 @@
 
 ## 当前目标
 
-C 组 UI 已按“先低风险、再全做”完成（C1/C2/C3/C4/C5/C6/C8/C10/C13；C9/C11/C16 已覆盖，C12/C14/C15 不做）。
-B 组只剩 **B12（手电光锥 + 红眼）与 B13（视差背景）**，WIP 在 `stash@{0}`，下次继续时先 `git stash pop` 并接 `main.gd` 的 `_build_world()`。
-**A9 等「打败暴君」流程做出来再接调用点**，A10 的素材与播放由音频窗口负责。
+C 组 UI 与 D 组音频系统已完成。下一步按用户节奏审计 **E（关卡/地图）、F（敌人/难度）、G（系统/成长/背包）**。
+B 组只剩 **B12（手电光锥 + 红眼）与 B13（视差背景）**，WIP 在 `stash@{0}`，继续时先 `git stash pop` 并接 `main.gd` 的 `_build_world()`。
+D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素材。
 
 ## 本轮已完成
 
+- **D 组音频（2026-11-05）**：
+  - D5：新增 Ambience 播放器，L2~L5 循环 `broadcast_noise`（-27dB、2s 淡入），菜单/教学/过场关闭。
+  - D6：新增 Pressure 播放器，`tyrant_active` 时叠 `amb_tyrant_drone`（-19dB、1.8s 淡入）；曲库改 active。
+  - D8：`AudioManager.play_footstep()` + `main` 按移动距离/房间材质触发；脚步素材缺文件时静音。
+  - 新增 `tests/_d_probe.tscn`；八套测试全绿。
 - **C 组 UI（2026-11-05）**：
   - C6：`hud.toast()` 改队列，同屏最多 3 条、错峰淡出，通知与底部交互提示分离。
   - C1/C8：主菜单左下角版本号 `v0.9.0` + 当前 BGM 曲名/作者（读 `catalog.json`）。
@@ -129,6 +134,7 @@ B 组只剩 **B12（手电光锥 + 红眼）与 B13（视差背景）**，WIP �
 7. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
 8. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 9. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+10. **D8 素材**：音频窗口补 `assets/sfx/step/step_{tile,wood,carpet}_{1..3}.ogg` 后玩家脚步自动生效；D6 的追逐节奏层仍需与 `chase_electro` 同 BPM 的分轨。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
