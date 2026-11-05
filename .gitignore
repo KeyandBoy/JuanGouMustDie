@@ -27,6 +27,7 @@ mono_crash.*.json
 # Local tooling / generated intermediates
 .opencode/
 tools/_gen/
+tools/__pycache__/
 
 # Tyrant horror rebuild: per-frame intermediates (regenerable, large)
 art/sprites/tyrant/horror_rebuild/ai/

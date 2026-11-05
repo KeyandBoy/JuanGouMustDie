@@ -3,8 +3,8 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`cc45fcd`（D7 UI 三音：Kenney CC0）
-- 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`scripts/main.gd`、`scripts/fx.gd`、`scripts/school_map.gd`、`scripts/gear_button.gd`、`scripts/settings_ui.gd`、`tests/_fx_shot*`、`tests/_settings_shot*`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
+- 当前 HEAD：`08bcc3e`（设置入口改成右下角圆形按钮；**未推送**——本机 7897 代理未启动）
+- 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
 ## 最简用法（推荐）
 
@@ -19,9 +19,17 @@
 
 暴君登场过场已从「四张插画拼接」改成**真正的漫画分镜**（4 页 × 3 格，逐页全屏播放）；开场 CG 也已重做成水墨漫画 + 推镜/手持抖动伪动效。
 下一步请**实机跑一次开场 + 暴君登场**看：开场推镜（1.01→1.10）和抖动幅度是否自然、黑板那张压暗后粉笔字够不够清楚、分镜每页 2 秒会不会太快。
+另：网络恢复后先 `git push`（本地领先 4 个提交，HEAD `08bcc3e`）。
 
 ## 本轮已完成
 
+- **设置面板 + 右下角圆形设置按钮（2026-11-05）**：
+  - `scripts/gear_button.gd`：52×52 圆形深色圆盘 + 代码绘制齿轮，hover 提亮/齿轮转金，按下 92%，无需美术素材。
+  - 主菜单齿轮从右上角移到右下角，删除底部「设置」长条按钮；游戏内 HUD 右下角常驻同款齿轮（`SettingsGear`），教学关「跳过教学」左移避让。
+  - `scripts/settings_ui.gd`：左分类/右内容、分类数据驱动；声音（主/音乐/音效三条真滑条 + 静音）、画面（全屏、震屏 0/50/100）、操作、关于。打开暂停游戏，关闭恢复原状态。
+  - `tests/_settings_probe.tscn` 断言齿轮位置、暂停/恢复、弹窗栈；截图 `_shot_menu_gear.png`、`_shot_settings_audio.png`、`_shot_hud_gear.png`。
+- **房间角色/纵深（2026-11-05）**：`school_map.gd` 用导航图多源 BFS 算 depth（与布局无关），角色 stair/hall/deep/safe/normal；安全屋禁止答题、回理智 +8、每层一次；deep 课桌效率 ×1.35。
+- **反馈层 S1（2026-11-05）**：`fx.gd` + HUD 飘字池/红晕/星数滚动；答题/被抓/暴君撞/死亡定格补齐多层反馈；`_fx_probe` 全绿。
 - **新手关结尾 3 张 CG 水墨化（2026-11-05）**：
   - `tutorial_outro_1~3` 换成水墨版（`tools/manifests/outro_panels.json` → `tools/finalize_cg.py` → `art/cutscene/`）：空教室晨光 / 暗走廊无脸人影 + 红色应急灯 / 仰视楼梯过曝门洞。
   - `intro.gd` 的 `OUTRO_SCENES` 补上推镜参数：1 号 1.01→1.09（抖动 0.6）、2 号危险镜头默认、3 号 1.02→1.16（抖动 1.0）。
