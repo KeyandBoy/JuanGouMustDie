@@ -3,7 +3,7 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`2e1b6ff`（开场 CG 水墨化 + 推镜/手持抖动伪动效）
+- 当前 HEAD：`ac1ce9e`（开场 CG 水墨化 + 推镜/手持抖动伪动效）
 - 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`scripts/main.gd`、`scripts/fx.gd`、`scripts/school_map.gd`、`scripts/gear_button.gd`、`scripts/settings_ui.gd`、`tests/_fx_shot*`、`tests/_settings_shot*`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
 ## 最简用法（推荐）
