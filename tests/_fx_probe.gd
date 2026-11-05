@@ -117,6 +117,57 @@ func _ready() -> void:
 	_check(is_equal_approx(Engine.time_scale, 1.0), "fx: hitstop restores time_scale (%.2f)" % Engine.time_scale)
 	Engine.time_scale = 1.0
 
+	# --- A9：击杀慢放 API 必须能把 time_scale 还回来 ---
+	_check(inst.breath != null, "breath: node exists on main")
+	Fx.slowmo(0.3, 0.1)
+	_check(Engine.time_scale < 0.5, "fx: slowmo drops time_scale (%.2f)" % Engine.time_scale)
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	_check(is_equal_approx(Engine.time_scale, 1.0), "fx: slowmo restores time_scale (%.2f)" % Engine.time_scale)
+	Engine.time_scale = 1.0
+
+	# --- A4：震屏取更大者、不叠加 ---
+	var shake_before: float = inst._shake_amp
+	Fx.shake(inst, 1)
+	var after_light: float = inst._shake_amp
+	Fx.shake(inst, 0)
+	_check(is_equal_approx(inst._shake_amp, after_light),
+		"fx: weaker shake does not interrupt stronger (%.1f)" % inst._shake_amp)
+	Fx.shake(inst, 3)
+	_check(inst._shake_amp > after_light, "fx: stronger shake wins (%.1f -> %.1f)" % [after_light, inst._shake_amp])
+	_check(shake_before >= 0.0, "fx: shake state readable")
+	await get_tree().create_timer(0.9, true, false, true).timeout
+
+	# --- A8：拾取图标飞入背包 ---
+	var fly_before: int = inst.hud.active_fly_count()
+	inst.hud.fly_item("coffee", inst.player.global_position + Vector2(0, -18))
+	await get_tree().process_frame
+	_check(inst.hud.active_fly_count() == fly_before + 1,
+		"a8: pickup spawns a flying icon (%d -> %d)" % [fly_before, inst.hud.active_fly_count()])
+	await get_tree().create_timer(1.0, true, false, true).timeout
+	_check(inst.hud.active_fly_count() == fly_before,
+		"a8: flying icon cleans up (%d)" % inst.hud.active_fly_count())
+
+	# --- A10：呼吸状态优先级 panic > blind > tense > calm ---
+	var b = preload("res://scripts/breath.gd").new()
+	add_child(b)
+	b.set_sources(false, true, false)
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	_check(b.state == 1, "breath: uneasy -> tense (%s)" % b.state_name())
+	b.set_sources(false, false, true)
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	_check(b.state == 3, "breath: dark -> blind (%s)" % b.state_name())
+	b.set_sources(true, false, true)
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	_check(b.state == 2, "breath: chased beats dark -> panic (%s)" % b.state_name())
+	b.set_sources(false, false, false)
+	await get_tree().create_timer(0.5, true, false, true).timeout
+	_check(b.state == 0, "breath: relax -> calm (%s)" % b.state_name())
+	b.notify_hurt(0.5)
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	_check(b.state == 2, "breath: hurt -> panic (%s)" % b.state_name())
+	_check(not b.stream_slot_for(2).is_empty(), "breath: panic has a reserved stream slot")
+	b.queue_free()
+
 	# --- 飘字必须自动隐藏（不残留） ---
 	await get_tree().create_timer(1.4, true, false, true).timeout
 	var left := _visible_numbers(inst.hud)

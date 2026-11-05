@@ -17,6 +17,9 @@ var show_room_heat := false
 var lighting := true
 var import_bank := true
 var unlock_all_levels := true
+## 呼吸状态只读显示（A10）；逻辑本身始终运行，这里只控制 DEV 文本是否展示。
+var show_breath := true
+var breath_label := ""
 
 const CATCH_RADIUS_PRESETS := [22.0, 26.0, 30.0, 36.0, 44.0]
 var catch_radius_idx := 2
@@ -68,6 +71,8 @@ func status_text() -> String:
 		parts.append("房间热度")
 	if not lighting:
 		parts.append("光照关")
+	if show_breath and not breath_label.is_empty():
+		parts.append(breath_label)
 	if parts.is_empty():
 		return "DEV"
 	return "DEV · " + ", ".join(parts)

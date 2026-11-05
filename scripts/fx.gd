@@ -53,6 +53,19 @@ static func hitstop(frames := 3, slow := 0.05) -> void:
 	await tree.create_timer(0.016 * float(frames), true, false, true).timeout
 	Engine.time_scale = 1.0
 
+## 击杀/击败慢放：Boss 倒下的 0.3 倍速 0.4 秒。
+## 与 hitstop 共用 Engine.time_scale，正在顿帧时不重复触发。
+## 未来「击败暴君」直接调用 Fx.slowmo()；命中用 Fx.hitstop()，两者不叠加。
+static func slowmo(speed := 0.3, dur := 0.4) -> void:
+	if Engine.time_scale < 1.0:
+		return
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	Engine.time_scale = speed
+	await tree.create_timer(dur, true, false, true).timeout
+	Engine.time_scale = 1.0
+
 ## 角色受击/情绪闪白。modulate 可以超过 1，不改 shader 也能过曝成白色。
 static func sprite_flash(item: CanvasItem, col := Color(6, 6, 6), dur := 0.12) -> void:
 	if item == null or not is_instance_valid(item):

@@ -4,6 +4,7 @@
 - 最后操作：opencode
 - 分支：main
 - 当前 HEAD：`0cd94a5`（修复主菜单齿轮点不动 + 圆形设置按钮；**未推送**——本机 7897 代理未启动）
+- 本会话新增（待提交）：A 组收口 A4/A6/A8/A9/A10/A13（震屏统一、拾取飞入、慢放 API、状态呼吸、死亡定格 0.3s）。
 - 本地领先 origin/main 若干提交，网络恢复后先 `git push`。
 - 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
@@ -18,12 +19,19 @@
 
 ## 当前目标
 
-暴君登场过场已从「四张插画拼接」改成**真正的漫画分镜**（4 页 × 3 格，逐页全屏播放）；开场 CG 也已重做成水墨漫画 + 推镜/手持抖动伪动效。
-下一步请**实机跑一次开场 + 暴君登场**看：开场推镜（1.01→1.10）和抖动幅度是否自然、黑板那张压暗后粉笔字够不够清楚、分镜每页 2 秒会不会太快。
-另：网络恢复后先 `git push`（本地领先 4 个提交，HEAD `1a2501f`）。
+A 组手感/反馈已收到「工具齐、调用也齐」：震屏只走 `Fx.shake(tier)`、拾取有飞入、死亡定格 0.3s、慢放 API 就绪、状态呼吸可被音频窗口直接接。
+下一步按用户逐条确认的节奏继续；**A9 等「打败暴君」流程做出来再接调用点**，A10 的素材与播放由音频窗口负责。
+游戏本体下一步仍建议实机跑一次开场 + 暴君登场，看推镜/抖动/分镜节奏。
 
 ## 本轮已完成
 
+- **A 组收口（2026-11-05）**：
+  - A9：`Fx.slowmo(0.3, 0.4)`，与 `hitstop` 不叠加、计时器 `ignore_time_scale`；暴君死亡流程未做，先留 API。
+  - A4/A6：`_shake_camera` 取更大者不叠加 + 0.04s 量化 + `round()`；5 处硬编码全改 `Fx.shake(tier)`。
+  - A8：`hud.fly_item()` 图标从地面飞入背包槽、落位闪金；音效留给音频窗口。
+  - A10：`scripts/breath.gd`（calm/tense/panic/blind，panic > blind > tense > calm）；main 每帧汇总 chased/uneasy/dark，被抓/暴君撞 `notify_hurt(10s)`；只出状态与预留音轨槽。
+  - A13：死亡定格 0.4s → 0.3s。
+  - 事故：`main.gd` 曾被 PowerShell 按 GBK 重写成乱码并解析失败，已从 git 恢复 + edit 重做；以后只用 edit 工具改中文源文件。
 - **设置面板 + 右下角圆形设置按钮（2026-11-05）**：
   - `scripts/gear_button.gd`：52×52 圆形深色圆盘 + 代码绘制齿轮，hover 提亮/齿轮转金，按下 92%，无需美术素材。
   - 主菜单齿轮从右上角移到右下角，删除底部「设置」长条按钮；游戏内 HUD 右下角常驻同款齿轮（`SettingsGear`），教学关「跳过教学」左移避让。
@@ -96,16 +104,16 @@
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **剩余 5 条缺口**（`CATALOG.md` 第三节）：暴君压迫层（同 BPM 分轨 + 心跳）、追逐节奏层（同 BPM 鼓点）、走廊喘息/呼吸环境层、钟声/下课铃环境层、L5 电流嗡鸣层。前两条建议程序合成，后三条去 Freesound 找采样（逐条查授权，避开 CC BY-NC）。
-2. **先实机听一遍新接的三处**：过场（含暴君登场的警报 + cutscene_dread 叠加）、通关、失败。若过场垫乐和警报打架，把 `catalog.json` 里 `cutscene_dread` 的 `status` 改成 `standby` 即可（一行回退）。
-3. **想开「按楼层递进」（方案 B）**：把 `tension_mid` 改 `active`、`chase_pursuit` 的 `level_scope` 改成 `[1]`，再跑 `python tools/music_catalog.py`。
-4. **做分层播放**：AudioManager 目前只有单轨 `_player`，分层要再加 1~2 个 AudioStreamPlayer + 独立淡入淡出，按 `layer_role` 控制；层文件必须与底曲同 BPM。
-5. 三首 standby（`chase_assault` / `fridge_hungry` / `wacky_wobblings`）还没用上。
-6. **实机验收四方向**：走一圈看正面/背面/左右是否对得上移动方向（`tyrant.gd` 里 `facing.x>0` 用 right、`<0` 用 left，且走路帧强制 `flip_h=false`）。
-7. 若某个方向个别帧糊/畸形，单帧重抽：`powershell -ExecutionPolicy Bypass -File tools\gen_art.ps1 -Manifest tools\manifests\_tyrant_horror_walk_fix.json -Only twf_back_03 -Force`，再把 `tools/_gen/twf_*.png` 改名成 `thw_*.png`，依次跑 `make_ai_frames.py` → `normalize_walk_frames.py` → `build_strips.py`（脚本在 `%TEMP%\opencode\`）。
-8. 实际玩几局看随机数学题：难度/干扰项是否合理；比例改 `question_bank.gd` 的 `MATH_GEN_CHANCE`。
-9. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
-10. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+1. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
+2. **A10 接线**：音频窗口按 `Breath.state`（0 calm / 1 tense / 2 panic / 3 blind）或 `Breath.STREAM_SLOTS` 播放/停止循环；素材路径已预留 `assets/sfx/breath/breath_{tense,panic,blind}.ogg`，缺文件时逻辑不受影响。
+3. **A8 音效**：拾取「叮」在 `main._on_item_picked()` 里接 `AudioManager.play_sfx`（或专用 pickup 音效），动画已就位。
+4. **剩余可快速补的反馈**：C4（快捷栏冷却遮罩）、C6（toast 队列，最多同屏 3 条）、C16（R/T/Y 键帽）——都在 `hud.gd`，不动核心逻辑。
+5. **需要碰 AI 的**：F1（0.35s 决策 tick）、F8（按层视野/移速/答题时间缩放）、F5（情报共享）；建议先跑实机确认手感再加。
+6. **G11**：答错→残页，5 张换 1 提示符（要碰结算 + 背包，单独一轮）。
+7. 音乐侧剩余 5 条环境层与实机听感验收见 `CATALOG.md`（未变）。
+8. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
+9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+10. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）

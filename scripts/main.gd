@@ -33,6 +33,9 @@ var _lights_on := true
 var _dialogue_prev_paused := false
 var quiz: CanvasLayer
 var camera: Camera2D
+var _shake_amp := 0.0
+var _shake_left := 0.0
+var _shake_tw: Tween
 var minimap: Control
 var menu_layer: CanvasLayer
 var map_script := preload("res://scripts/school_map.gd")
@@ -55,6 +58,8 @@ var mark_drift_timer := 0.0
 var fog: Node2D
 var tyrant: Node2D = null
 var tyrant_spawned := false
+var breath
+const BreathScript := preload("res://scripts/breath.gd")
 var clear_started := false
 var transitioning := false
 var cutscene_active := false
@@ -201,6 +206,9 @@ func _build_world() -> void:
 
 	hud = load("res://scripts/hud.gd").new()
 	add_child(hud)
+	breath = BreathScript.new()
+	breath.name = "Breath"
+	add_child(breath)
 	hud.skip_pressed.connect(_on_skip_tutorial)
 	quiz = load("res://scripts/quiz_ui.gd").new()
 	add_child(quiz)
@@ -271,6 +279,27 @@ func _setup_lighting() -> void:
 		lamp.position = p
 		level_lights.add_child(lamp)
 	_apply_lighting_visibility()
+
+## A10：把「被追 / 搜寻 / 停电」三个来源汇总成呼吸状态。
+## 音频窗口只需要读 breath.state / breath.stream_slot。
+func _update_breath() -> void:
+	if breath == null:
+		return
+	var chased := false
+	var uneasy := false
+	for s in get_tree().get_nodes_in_group("students"):
+		if not is_instance_valid(s):
+			continue
+		var st := String(s.get("state"))
+		if st == "chase":
+			chased = true
+		elif st == "search" or st == "stalk":
+			uneasy = true
+	if not chased and tyrant_spawned and bool(GameState.tyrant_active):
+		chased = true
+	var dark := (not _lights_on) or bool(GameState.story_flags.get("blackout", false))
+	breath.set_sources(chased, uneasy, dark)
+	DevMode.breath_label = breath.status_text()
 
 func _apply_lighting_visibility() -> void:
 	var on := true
@@ -628,7 +657,8 @@ func _on_item_picked(item_id: String) -> void:
 	var def: Dictionary = GameState.get_item_def(item_id)
 	hud.toast("拾取 %s：%s" % [String(def.get("name", item_id)), String(def.get("desc", ""))])
 	if hud != null and player != null:
-		hud.pop_number(player.global_position + Vector2(0.0, -30.0), "+ %s" % String(def.get("name", item_id)), "info")
+		# A8：图标从地面飞进背包槽，落位时槽位闪一下（音效由音频窗口接）
+		hud.fly_item(item_id, player.global_position + Vector2(0.0, -18.0))
 
 func _on_item_full(item_id: String) -> void:
 	var def: Dictionary = GameState.get_item_def(item_id)
@@ -636,6 +666,7 @@ func _on_item_full(item_id: String) -> void:
 
 func _process(delta: float) -> void:
 	_update_lights(delta)
+	_update_breath()
 	_update_lingering_items(delta)
 	if transitioning or cutscene_active:
 		return
@@ -1092,8 +1123,10 @@ func _pop_caught_numbers() -> void:
 	hud.pop_number(player.global_position + Vector2(0.0, -62.0), "理智 -6", "loss")
 
 func _punish_effect(by: Node2D) -> void:
+	if breath != null:
+		breath.notify_hurt()
 	if player != null:
-		_shake_camera(10.0, 0.45)
+		Fx.shake(self, 2)
 		Fx.sprite_flash(player.sprite)
 	Fx.hitstop(3)
 	var layer := CanvasLayer.new()
@@ -1218,7 +1251,7 @@ func _spawn_tyrant(idle: float, forced_pos := Vector2.INF) -> Node2D:
 	GameState.tyrant_active = true
 	if GameState.tyrant_intro_seen:
 		tyrant.roar()
-		_shake_camera(5.0, 0.3)
+		Fx.shake(self, 1)
 	if fog.has_method("set_tyrant_active"):
 		fog.set_tyrant_active(true, GameState.level)
 	_spawn_anti_tyrant_drops()
@@ -1242,11 +1275,13 @@ func _far_spawn_point(min_dist: float) -> Vector2:
 
 func _on_tyrant_hit() -> void:
 	GameState.tyrant_hits += 1
+	if breath != null:
+		breath.notify_hurt()
 	if quiz.is_open:
 		quiz.close()
 	_stop_study()
 	hud.toast("暴君抓住了你！眩晕 1.5 秒，赶紧拉开距离！")
-	_shake_camera(7.0, 0.35)
+	Fx.shake(self, 2)
 	if player != null:
 		Fx.sprite_flash(player.sprite)
 		if hud != null:
@@ -1256,15 +1291,23 @@ func _on_tyrant_hit() -> void:
 func _shake_camera(amount: float, duration: float) -> void:
 	if camera == null:
 		return
-	var tw := create_tween()
-	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	var steps := 7
+	# 取更大者、不叠加：弱抖动不打断正在进行的强抖动
+	if _shake_left > 0.0 and amount <= _shake_amp:
+		return
+	if _shake_tw != null and _shake_tw.is_valid():
+		_shake_tw.kill()
+	_shake_amp = amount
+	_shake_left = duration
+	_shake_tw = create_tween()
+	_shake_tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	# 0.04s 量化：像素游戏里浮点 offset 会抖出半像素白缝
+	var steps := maxi(1, int(round(duration / 0.04)))
 	for i in steps:
-		# 线性衰减 + 取整：像素游戏里浮点 offset 会抖出半像素白缝
 		var k := 1.0 - float(i) / float(steps)
 		var off := Vector2(randf_range(-amount, amount), randf_range(-amount, amount)) * k
-		tw.tween_property(camera, "offset", off.round(), duration / float(steps))
-	tw.tween_property(camera, "offset", Vector2.ZERO, duration / float(steps))
+		_shake_tw.tween_property(camera, "offset", off.round(), 0.04)
+	_shake_tw.tween_property(camera, "offset", Vector2.ZERO, 0.04)
+	_shake_tw.tween_callback(func() -> void: _shake_left = 0.0)
 
 func _wait(sec: float) -> void:
 	if cutscene_active and (Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER) or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
@@ -1417,7 +1460,7 @@ func _start_tyrant_intro() -> void:
 	var ftw := create_tween()
 	ftw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	ftw.tween_property(flash, "color:a", 0.0, 0.5)
-	_shake_camera(11.0, 0.6)
+	Fx.shake(self, 3)
 	_spawn_tyrant(8.0, room_center)
 	for i in 12:
 		var debris := ColorRect.new()
@@ -1733,7 +1776,7 @@ func _freeze_frame() -> void:
 	layer.add_child(rect)
 	var tw := create_tween()
 	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	tw.tween_interval(0.4)
+	tw.tween_interval(0.3)
 	tw.tween_property(rect, "modulate:a", 0.0, 0.55)
 	tw.tween_callback(layer.queue_free)
 
@@ -1884,7 +1927,7 @@ func _use_item(index: int) -> void:
 			t_chair.position += dir * 46.0
 			GameState.remove_item_at(index)
 			item_fx.burst("chair", fx, t_chair.position)
-			_shake_camera(7.0, 0.28)
+			Fx.shake(self, 1)
 			_fx_flash(Color(1.0, 0.85, 0.3), 0.12, 0.3)
 			hud.toast("折叠椅命中！暴君眩晕 2 秒")
 		"stink":

@@ -34,6 +34,10 @@ var _stars_shown := 0.0
 var _stars_init := false
 var _stars_force_snap := false
 var _sanity_vignette: TextureRect
+var _fly_layer: Control
+var _slot_panels: Array[PanelContainer] = []
+var _slot_items: Array[String] = []
+var _fly_count := 0
 const NUM_POOL_SIZE := 18
 const SANITY_WARN := 35.0
 
@@ -256,6 +260,15 @@ func _ready() -> void:
 	GameState.hot_changed.connect(_refresh_hot)
 	get_viewport().size_changed.connect(func(): _set_panel_side(panel_side, false))
 	_build_number_pool(root)
+	_build_fly_layer(root)
+
+## 拾取图标飞入背包的专用层（在飘字层之上）
+func _build_fly_layer(host: Control) -> void:
+	_fly_layer = Control.new()
+	_fly_layer.name = "FlyLayer"
+	_fly_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fly_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(_fly_layer)
 
 ## 飘字池：一次答对/答错/被抓都能在角色头顶飘一个数字。
 ## 复用 Label，避免每次 new/tween/free 造成抖动。
@@ -448,6 +461,8 @@ func set_task(text: String) -> void:
 func _refresh_inventory() -> void:
 	for c in inventory_box.get_children():
 		c.queue_free()
+	_slot_panels.clear()
+	_slot_items.clear()
 	var cap := GameState.item_capacity()
 	var head := Label.new()
 	head.text = "背包"
@@ -459,6 +474,8 @@ func _refresh_inventory() -> void:
 		var slot := PanelContainer.new()
 		slot.add_theme_stylebox_override("normal", _chip_bg())
 		inventory_box.add_child(slot)
+		_slot_panels.append(slot)
+		_slot_items.append("")
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
 		slot.add_child(row)
@@ -496,6 +513,7 @@ func _refresh_inventory() -> void:
 			continue
 		if i < GameState.inventory.size():
 			var item_id: String = GameState.inventory_item_id(i)
+			_slot_items[i] = item_id
 			var def: Dictionary = GameState.get_item_def(item_id)
 			var icon := UiIcons.item(item_id)
 			if icon != null:
@@ -522,6 +540,70 @@ func _refresh_inventory() -> void:
 			empty_lbl.add_theme_font_size_override("font_size", 13)
 			empty_lbl.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
 			row.add_child(empty_lbl)
+
+## A8 拾取反馈：图标从地面飞到它所在的背包槽，落位时槽位闪一下。
+func fly_item(item_id: String, world_pos: Vector2) -> void:
+	if _fly_layer == null:
+		return
+	var start: Vector2 = get_viewport().get_canvas_transform() * world_pos
+	var icon := UiIcons.item(item_id)
+	var node: Control
+	if icon != null:
+		var tr := TextureRect.new()
+		tr.texture = icon
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		node = tr
+	else:
+		var cr := ColorRect.new()
+		cr.color = GameState.get_item_def(item_id).get("color", Color(0.85, 0.85, 0.7))
+		node = cr
+	var box := Vector2(22.0, 22.0)
+	node.size = box
+	node.pivot_offset = box * 0.5
+	node.position = start - box * 0.5
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fly_layer.add_child(node)
+	_fly_count += 1
+	# 背包槽是刚重建的，布局要等一帧才有效；先飞起来，再取真实槽位中心
+	await get_tree().process_frame
+	if not is_instance_valid(node):
+		_fly_count -= 1
+		return
+	var target := _slot_center_for(item_id)
+	var tw := create_tween()
+	tw.tween_property(node, "position", target - box * 0.5, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(node, "scale", Vector2(0.55, 0.55), 0.4)
+	tw.parallel().tween_property(node, "modulate:a", 0.3, 0.2).set_delay(0.2)
+	tw.tween_callback(func() -> void:
+		_fly_count -= 1
+		node.queue_free()
+		_flash_slot(item_id))
+
+func _slot_center_for(item_id: String) -> Vector2:
+	# 从后往前找：新拾取的同名道具总是追加在背包末尾
+	for i in range(_slot_items.size() - 1, -1, -1):
+		if _slot_items[i] == item_id and i < _slot_panels.size():
+			return _slot_panels[i].get_global_rect().get_center()
+	if not _slot_panels.is_empty():
+		return _slot_panels[0].get_global_rect().get_center()
+	return get_viewport().get_visible_rect().size * 0.5
+
+func _flash_slot(item_id: String) -> void:
+	for i in range(_slot_items.size() - 1, -1, -1):
+		if _slot_items[i] != item_id or i >= _slot_panels.size():
+			continue
+		var slot := _slot_panels[i]
+		if not is_instance_valid(slot):
+			return
+		slot.modulate = Color(1.6, 1.45, 0.6, 1.0)
+		var tw := create_tween()
+		tw.tween_property(slot, "modulate", Color(1, 1, 1, 1), 0.35)
+		return
+
+func active_fly_count() -> int:
+	return _fly_count
 
 func _slot_key(i: int) -> String:
 	match i:
