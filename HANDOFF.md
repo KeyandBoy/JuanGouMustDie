@@ -3,8 +3,7 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`0cd94a5`（修复主菜单齿轮点不动 + 圆形设置按钮；**未推送**——本机 7897 代理未启动）
-- 本会话新增（待提交）：A 组收口 A4/A6/A8/A9/A10/A13（震屏统一、拾取飞入、慢放 API、状态呼吸、死亡定格 0.3s）。
+- 当前 HEAD：`25f2714`（A 组收口：震屏/拾取/慢放/呼吸/死亡定格；**未推送**——本机 7897 代理未启动）
 - 本地领先 origin/main 若干提交，网络恢复后先 `git push`。
 - 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
