@@ -3,7 +3,7 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`1a2501f`（设置入口改成右下角圆形按钮；**未推送**——本机 7897 代理未启动）
+- 当前 HEAD：`0cd94a5`（修复主菜单齿轮点不动 + 圆形设置按钮；**未推送**——本机 7897 代理未启动）
 - 本地领先 origin/main 若干提交，网络恢复后先 `git push`。
 - 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
