@@ -473,3 +473,11 @@
 - A8：拾取时图标从地面飞入背包槽 + 槽位闪金；「叮」由音频窗口接
 - A10：用户要求两种场景——受伤被追的紧张呼吸、停电看不见时的呼吸；实现为 `breath.gd` 状态机（panic > blind > tense > calm），只出状态与预留音轨槽，素材/播放交给音频窗口
 - A13：死亡定格统一 0.3s
+
+【B 组第一批（B4/B9/B14/B11，2026-11-05）】
+- B4 影子：新增 scripts/shadow.gd（CharacterShadow），纯代码椭圆、三层柔边，player/student/tyrant 各自挂子节点；不烘进贴图
+  - 主角要按走路条带的脚底（64 画布 y=62）算位置，用静态图 y=56 的影子会被脚完全挡住
+- B9 图标：tools/repack_icons.py 把 17 个 UI 图标统一成 32×32 画布、内容 ≤24×24、四周 4px 留白；只裁边缩放，不重画
+- B14 交互物：课桌加约 10Hz 呼吸双层暖色描边，暗场也能看出可交互
+- B11 装饰：school_map 生成期用确定性 rng 存 decor_items，绘制期只画；poster/bin/books/paper/chair/puddle 按房型分配，靠墙、避开课桌/门/导航点/房间名/黑板，不参与碰撞
+- B1/B5/B6/B7 只立规矩不改素材：20px 网格、角色尺寸档 64/192、命名 type_description_frame、图层常量（见 ART_PIPELINE.md）

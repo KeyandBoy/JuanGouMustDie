@@ -2,6 +2,8 @@ extends CharacterBody2D
 
 signal interacted
 
+const ShadowScript := preload("res://scripts/shadow.gd")
+
 const TEX_FRONT := preload("res://art/sprites/64/01_player_front.png")
 const TEX_BACK := preload("res://art/sprites/64/02_player_back.png")
 const TEX_LEFT := preload("res://art/sprites/64/03_player_left.png")
@@ -41,6 +43,10 @@ const DASH_DRAIN_RATE := 100.0 / 3.0
 
 func _ready() -> void:
 	add_to_group("player")
+	# B4：统一椭圆影子，位置按贴图内容底部稍往下，避免被脚完全盖住
+	var shadow = ShadowScript.new()
+	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 21.5), 0.40)
+	add_child(shadow)
 	sprite = Sprite2D.new()
 	sprite.texture = TEX_WALK_FRONT
 	sprite.hframes = WALK_FRAMES

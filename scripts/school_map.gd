@@ -28,6 +28,7 @@ var room_types: Array[String] = []
 var room_names: Array[String] = []
 var explored: Array[bool] = []
 var desks: Array[Dictionary] = []
+var decor_items: Array[Dictionary] = []
 var wall_rects: Array[Rect2] = []
 var world_rect := Rect2()
 var exit_pos := Vector2.ZERO
@@ -348,6 +349,7 @@ func _reset() -> void:
 	room_names.clear()
 	explored.clear()
 	desks.clear()
+	decor_items.clear()
 	wall_rects.clear()
 	doors.clear()
 	windows.clear()
@@ -896,6 +898,7 @@ func _spawn_furniture() -> void:
 				_mark_furniture(br)
 				box_rects.append(br)
 	_build_box_collision()
+	_spawn_decor()
 
 func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
 	var x0 := int(round(r.position.x / CELL)) + 1
@@ -952,6 +955,164 @@ func _pick_box_rect(r: Rect2) -> Rect2:
 		if ok:
 			return rect
 	return Rect2()
+
+## B11：每房 6~10 个纯装饰（不参与碰撞），靠墙优先，避开课桌/门/导航点/房间名。
+## 位置在生成期用确定性 rng 选好，存进 decor_items，_draw 只负责画。
+func _spawn_decor() -> void:
+	decor_items.clear()
+	for i in rooms.size():
+		var r: Rect2 = rooms[i]
+		var t: String = room_types[i]
+		if t == "stair":
+			continue
+		if r.size.x < 50.0 or r.size.y < 40.0:
+			continue
+		var target := _decor_target(t, r)
+		if target <= 0:
+			continue
+		var x0 := int(round(r.position.x / CELL)) + 1
+		var x1 := int(round(r.end.x / CELL)) - 1
+		var y0 := int(round(r.position.y / CELL)) + 1
+		var y1 := int(round(r.end.y / CELL)) - 1
+		if x1 - x0 < 2 or y1 - y0 < 1:
+			continue
+		var kinds: Array[String] = _decor_kinds(t)
+		var placed := 0
+		var attempts := 0
+		while placed < target and attempts < 140:
+			attempts += 1
+			var cx := rng.randi_range(x0, x1 - 1)
+			var cy := rng.randi_range(y0, y1 - 1)
+			var edge := cx <= x0 + 1 or cx >= x1 - 2 or cy <= y0 + 1 or cy >= y1 - 2
+			if not edge:
+				continue
+			if not _cells_free(cx, cy, 1, 1):
+				continue
+			var center := Vector2((float(cx) + 0.5) * CELL, (float(cy) + 0.5) * CELL)
+			# 房间名在左上角，避开一块 120x64 的标签区
+			if center.x < r.position.x + 120.0 and center.y < r.position.y + 64.0:
+				continue
+			# 教室黑板在顶部中央，别把海报压上去
+			if center.y < r.position.y + 30.0 and absf(center.x - r.get_center().x) < r.size.x * 0.32:
+				continue
+			var kind: String = kinds[rng.randi_range(0, kinds.size() - 1)]
+			var jitter := Vector2(rng.randf_range(-3.0, 3.0), rng.randf_range(-2.0, 2.0))
+			decor_items.append({
+				"kind": kind,
+				"pos": center + jitter,
+				"room": i,
+				"flip": rng.randf() < 0.5,
+			})
+			placed += 1
+	queue_redraw()
+
+func _decor_target(t: String, r: Rect2) -> int:
+	var base := 6
+	match t:
+		"classroom":
+			base = 9
+		"office":
+			base = 8
+		"storage":
+			base = 7
+		"hall":
+			base = 6
+		"toilet":
+			base = 4
+	var area := r.size.x * r.size.y
+	if area > 26000.0:
+		base += 2
+	if area < 9000.0:
+		base -= 2
+	return clampi(base, 3, 12)
+
+func _decor_kinds(t: String) -> Array[String]:
+	match t:
+		"classroom":
+			return ["poster", "bin", "books", "paper", "chair"]
+		"office":
+			return ["poster", "bin", "books", "paper"]
+		"storage":
+			return ["bin", "books", "paper", "chair"]
+		"hall":
+			return ["poster", "bin", "chair", "paper"]
+		"toilet":
+			return ["bin", "paper", "puddle"]
+	return ["paper"]
+
+func _draw_decor() -> void:
+	for d in decor_items:
+		var p: Vector2 = d["pos"]
+		var flip: bool = d["flip"]
+		var f := -1.0 if flip else 1.0
+		match String(d["kind"]):
+			"poster":
+				_decor_poster(p, f)
+			"bin":
+				_decor_bin(p)
+			"books":
+				_decor_books(p, f)
+			"paper":
+				_decor_paper(p, f)
+			"chair":
+				_decor_chair(p, f)
+			"puddle":
+				_decor_puddle(p)
+
+func _decor_poster(p: Vector2, f: float) -> void:
+	var w := 10.0
+	var h := 14.0
+	var r := Rect2(p - Vector2(w * 0.5, h), Vector2(w, h))
+	draw_rect(Rect2(r.position + Vector2(1.0, 1.5), r.size), Color(0.0, 0.0, 0.0, 0.12))
+	draw_rect(r, Color(0.90, 0.86, 0.70))
+	draw_rect(r, Color(0.35, 0.28, 0.20), false, 1.0)
+	draw_rect(Rect2(r.position + Vector2(2.0, 3.0), Vector2(w - 4.0, 2.0)), Color(0.62, 0.32, 0.28))
+	draw_rect(Rect2(r.position + Vector2(2.0, 7.0), Vector2(w - 4.0, 1.0)), Color(0.40, 0.38, 0.34, 0.8))
+	draw_rect(Rect2(r.position + Vector2(2.0, 10.0), Vector2(w - 6.0, 1.0)), Color(0.40, 0.38, 0.34, 0.6))
+	draw_circle(r.position + Vector2(w * 0.5, 1.5), 1.2, Color(0.72, 0.28, 0.24))
+
+func _decor_bin(p: Vector2) -> void:
+	var r := Rect2(p - Vector2(5.0, 12.0), Vector2(10.0, 12.0))
+	draw_rect(Rect2(r.position + Vector2(1.0, 1.0), r.size), Color(0.0, 0.0, 0.0, 0.12))
+	draw_rect(r, Color(0.45, 0.50, 0.48))
+	draw_rect(r, Color(0.22, 0.26, 0.25), false, 1.0)
+	draw_rect(Rect2(r.position + Vector2(-1.0, -2.0), Vector2(12.0, 3.0)), Color(0.55, 0.60, 0.57))
+	draw_line(r.position + Vector2(3.0, 3.0), r.position + Vector2(3.0, 9.0), Color(0.75, 0.78, 0.74, 0.5), 1.0)
+	draw_line(r.position + Vector2(7.0, 3.0), r.position + Vector2(7.0, 9.0), Color(0.28, 0.31, 0.29, 0.6), 1.0)
+
+func _decor_books(p: Vector2, f: float) -> void:
+	var cols := [Color(0.62, 0.30, 0.28), Color(0.28, 0.44, 0.60), Color(0.56, 0.50, 0.28)]
+	for k in 3:
+		var w := 12.0 - float(k) * 2.0
+		var r := Rect2(p + Vector2(-w * 0.5 + f * float(k), -3.0 - float(k) * 3.0), Vector2(w, 3.0))
+		draw_rect(r, cols[k])
+		draw_rect(r, Color(0.18, 0.16, 0.14, 0.7), false, 1.0)
+
+func _decor_paper(p: Vector2, f: float) -> void:
+	var a := Vector2(-6.0 * f, 1.0)
+	var b := Vector2(5.0 * f, -2.0)
+	var c := Vector2(6.0 * f, 2.0)
+	var d := Vector2(-5.0 * f, 4.0)
+	var pts := PackedVector2Array([p + a, p + b, p + c, p + d])
+	draw_colored_polygon(pts, Color(0.94, 0.92, 0.84, 0.95))
+	draw_polyline(PackedVector2Array([p + a, p + b, p + c, p + d, p + a]), Color(0.52, 0.50, 0.44, 0.8), 1.0)
+	draw_line(p + Vector2(-3.0 * f, 0.5), p + Vector2(3.0 * f, -0.5), Color(0.45, 0.42, 0.38, 0.6), 1.0)
+
+func _decor_chair(p: Vector2, f: float) -> void:
+	var seat := Rect2(p + Vector2(-6.0, -6.0), Vector2(12.0, 4.0))
+	draw_rect(Rect2(seat.position + Vector2(1.0, 1.5), seat.size), Color(0.0, 0.0, 0.0, 0.12))
+	draw_rect(seat, Color(0.70, 0.48, 0.28))
+	draw_rect(seat, Color(0.40, 0.25, 0.14), false, 1.0)
+	draw_rect(Rect2(p + Vector2(-6.0 * f, -12.0), Vector2(3.0, 7.0)), Color(0.70, 0.48, 0.28))
+	draw_rect(Rect2(p + Vector2(-6.0 * f, -12.0), Vector2(3.0, 7.0)), Color(0.40, 0.25, 0.14), false, 1.0)
+	draw_line(p + Vector2(-5.0, -2.0), p + Vector2(-5.0, 2.0), Color(0.36, 0.24, 0.14), 1.5)
+	draw_line(p + Vector2(5.0, -2.0), p + Vector2(5.0, 2.0), Color(0.36, 0.24, 0.14), 1.5)
+
+func _decor_puddle(p: Vector2) -> void:
+	draw_set_transform(p, 0.0, Vector2(1.0, 0.38))
+	draw_circle(Vector2.ZERO, 7.0, Color(0.30, 0.42, 0.52, 0.22))
+	draw_circle(Vector2(-1.0, -1.0), 3.0, Color(0.62, 0.80, 0.90, 0.16))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _cells_free(cx: int, cy: int, w: int, h: int) -> bool:
 	for y in range(cy, cy + h):
@@ -1362,6 +1523,7 @@ func _draw() -> void:
 		return
 	for i in rooms.size():
 		_room_decor(i)
+	_draw_decor()
 
 	for w in windows:
 		_window(w)

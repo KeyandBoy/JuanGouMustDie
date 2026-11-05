@@ -3,9 +3,9 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`25f2714`（A 组收口：震屏/拾取/慢放/呼吸/死亡定格）
+- 当前 HEAD：`69b404f`（A 组收口 + HANDOFF）
 - 已推送 origin/main（2026-11-05，`git -c http.proxy= -c https.proxy= push` 直连成功）。
-- 工作区：本会话改动已提交；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
+- 工作区：本轮 B 组第一批（B4/B9/B11/B14 + 美术规范文档）已改；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
 
 ## 最简用法（推荐）
 
@@ -24,6 +24,13 @@ A 组手感/反馈已收到「工具齐、调用也齐」：震屏只走 `Fx.sha
 
 ## 本轮已完成
 
+- **B 组第一批（2026-11-05）**：
+  - B4：`scripts/shadow.gd` 统一椭圆影子（三层柔边），player/student/tyrant 已挂；主角按走路条带脚底 y=62 定位（y+21.5），暴君按 `offset=-h/2` 对齐到原点。
+  - B9：`tools/repack_icons.py` 把 17 个 UI 图标统一成 32×32（内容 ≤24×24），未重画。
+  - B14：`interactable.gd` 课桌双层暖色呼吸描边（~10Hz）。
+  - B11：`school_map.gd` 的 `decor_items` + `_spawn_decor()` + `_draw_decor()`，每房 3~12 个靠墙装饰，避开课桌/门/导航点/房间名/黑板。
+  - B1/B5/B6/B7：写进 `tools/ART_PIPELINE.md` 第 10 节（20px 网格、角色尺寸档、命名、图层常量）；B2/B3 的描边与色板规范同节。
+  - 验证：六套测试全绿，`screenshot.tscn` 非 headless 跑通。
 - **A 组收口（2026-11-05）**：
   - A9：`Fx.slowmo(0.3, 0.4)`，与 `hitstop` 不叠加、计时器 `ignore_time_scale`；暴君死亡流程未做，先留 API。
   - A4/A6：`_shake_camera` 取更大者不叠加 + 0.04s 量化 + `round()`；5 处硬编码全改 `Fx.shake(tier)`。

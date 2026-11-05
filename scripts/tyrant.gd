@@ -2,6 +2,8 @@ extends CharacterBody2D
 
 signal hit_player
 
+const ShadowScript := preload("res://scripts/shadow.gd")
+
 const GUARD_TEX := [
 	preload("res://art/sprites/64/20_guard_front.png"),
 	preload("res://art/sprites/64/21_guard_back.png"),
@@ -73,6 +75,7 @@ var walk_tex: Array[Texture2D] = []
 var use_pixel_walk := false
 var walk_time := 0.0
 var _cur_scale := 0.24
+var shadow: Node2D
 
 func _ready() -> void:
 	add_to_group("tyrants")
@@ -83,6 +86,10 @@ func _ready() -> void:
 	ty_circle.radius = 16.0
 	ty_shape.shape = ty_circle
 	add_child(ty_shape)
+	# B4：暴君影子。生成贴图脚底在节点原点附近，按贴图模式在下面重新定位
+	shadow = ShadowScript.new()
+	shadow.setup(Vector2(23.0, 7.5), Vector2(0.0, 1.0), 0.40)
+	add_child(shadow)
 	smoke_back = smoke_script.new()
 	smoke_back.alpha = 0.5
 	smoke_back.radius = 18.0
@@ -123,6 +130,8 @@ func _ready() -> void:
 		sprite.position = Vector2(0.0, -8.0)
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		sprite.modulate = _sprite_base
+		if shadow != null:
+			shadow.position = Vector2(0.0, 31.0)
 	sprite.z_index = 2
 	add_child(sprite)
 	smoke_front = smoke_script.new()
@@ -419,6 +428,9 @@ func _set_sprite_tex(tex: Texture2D, frames: int) -> void:
 		sprite.frame = 0
 		sprite.offset = Vector2(0.0, -tex.get_height() * 0.5)
 		_cur_scale = TARGET_SCREEN_H / float(tex.get_height())
+		if shadow != null:
+			# offset 把贴图底部对齐到节点原点，影子贴脚放
+			shadow.position = Vector2(0.0, 1.0)
 
 # 像素走路：按朝向选条带（front/back/left/right），按时间推帧
 func _apply_walk_frame(moving: bool, delta: float) -> void:

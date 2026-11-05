@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+const ShadowScript := preload("res://scripts/shadow.gd")
+
 const JUAN_TEX := [
 	preload("res://art/sprites/64/05_npc_front.png"),
 	preload("res://art/sprites/64/06_npc_back.png"),
@@ -73,6 +75,10 @@ var can_see := false
 
 func _ready() -> void:
 	add_to_group("students")
+	# B4：和学生贴图同一套椭圆影子
+	var shadow = ShadowScript.new()
+	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 19.0), 0.38)
+	add_child(shadow)
 	sprite = Sprite2D.new()
 	sprite.texture = _textures()[0]
 	sprite.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)

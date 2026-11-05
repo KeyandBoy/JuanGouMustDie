@@ -7,9 +7,20 @@ var efficiency := 1.0
 var room_index := -1
 var occupied := false
 var prompt_text := ""
+var _pulse := 0.0
+var _pulse_t := 0.0
 
 func _ready() -> void:
 	add_to_group("interactables")
+	set_process(true)
+
+func _process(delta: float) -> void:
+	# B14：暗场可读性——课桌描边缓慢呼吸，约 10Hz 重绘
+	_pulse_t += delta
+	var p := 0.5 + 0.5 * sin(_pulse_t * 2.2)
+	if absf(p - _pulse) > 0.06:
+		_pulse = p
+		queue_redraw()
 
 func setup_desk(pos: Vector2, eff: float, room: int) -> void:
 	kind = "desk"
@@ -29,6 +40,10 @@ func interact(player_node: Node2D) -> void:
 func _draw() -> void:
 	if kind != "desk":
 		return
+	# B14：一圈低对比呼吸描边，暗场里也能认出是交互物
+	var glow_a := 0.10 + 0.16 * _pulse
+	draw_rect(Rect2(-22.0, -12.0, 44.0, 19.0), Color(1.0, 0.92, 0.62, glow_a), false, 3.0)
+	draw_rect(Rect2(-21.0, -11.0, 42.0, 17.0), Color(1.0, 1.0, 0.92, glow_a * 0.45), false, 1.0)
 	draw_rect(Rect2(-19.0, -7.0, 38.0, 18.0), Color(0.0, 0.0, 0.0, 0.12))
 	draw_rect(Rect2(-7.0, 1.0, 14.0, 9.0), Color(0.26, 0.47, 0.74))
 	draw_rect(Rect2(-7.0, 1.0, 14.0, 9.0), Color(0.15, 0.29, 0.49), false, 1.5)
