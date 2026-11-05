@@ -5,7 +5,8 @@
 - 分支：main
 - 当前 HEAD：`777db7f`（B 组收口；C/D + E/F/G 第一批在其前面）
 - 已推送 origin/main：`2bba794`（C 组）；之后的 D/E/F/G/B 提交因 GitHub 连接被重置暂留本地，恢复后 `git -c http.proxy= -c https.proxy= push`。
-- 工作区：C 组 UI 已改完待提交；**B12/B13 的 WIP 在 `stash@{0}`**（影子以外的光锥/红眼/视差），需要时 `git stash pop`。别的会话仍有未提交改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`），不是本轮产物。
+- 工作区：C 组 UI 已改完待提交；别的会话仍有未提交改动（`scripts/main.gd`、`scripts/player.gd`、`scripts/school_map.gd`、`tests/_b_probe.gd`、`tests/_e_probe.gd`、`tests/_fx_probe.gd`、`tests/shot_*.png` 等），不是本轮产物。
+- 另外：`parallax_bg.gd` 的视差公式修复 + 树影默认关闭已由 opencode 提交（见「本轮已完成」第一条）。
 
 ## 最简用法（推荐）
 
@@ -24,6 +25,9 @@ D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素
 
 ## 本轮已完成
 
+- **修复「黑色球状图层跟着主角跑」（2026-11-05，opencode）**：
+  - 病根是 B13 视差 `parallax_bg.gd`：`off = -cam*f` 写反了（应为 `+cam*(1-f)`），树影以 1.16 倍相机速度漂移，看着就黏在主角身上；首帧 `_cam_pos = INF` 还会画出退化图形。
+  - 已改公式、初始化相机位置、加 `is_nan` 保护；因窗外是纯黑，树冠/枝影用 `SHOW_TREES = false` 默认关闭（要开改 true，且窗外必须有亮部）。
 - **B 组收口（2026-11-05）**：
   - B12：`torch_light.gd` 纯代码手电锥（24°/128px，随 face_dir 旋转）；`eye_glow.gd` 敌人红眼（暴君常亮、学生 chase/search/stalk，L1 白天不可见）。
   - B13：`parallax_bg.gd` 两层程序视差（窗外树冠 16%、楼体 7%），z=-7，12Hz 重绘。

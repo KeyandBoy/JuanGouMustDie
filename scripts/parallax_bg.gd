@@ -24,6 +24,9 @@ func setup(p_map: Node2D, p_camera: Camera2D) -> void:
 	camera = p_camera
 	z_index = -7
 	z_as_relative = false
+	# 首帧就要有有效相机位置，否则 _draw 里用 INF 计算会得到 NaN（引擎报 normalize 失败）
+	if camera != null and is_instance_valid(camera):
+		_cam_pos = camera.global_position
 	queue_redraw()
 
 
@@ -42,8 +45,12 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if map == null:
 		return
-	var near_off := -_cam_pos * NEAR_PARALLAX
-	var far_off := -_cam_pos * FAR_PARALLAX
+	if not (_cam_pos.x == _cam_pos.x and _cam_pos.y == _cam_pos.y):
+		return
+	# 世界坐标系里画视差：屏幕位置 = 世界位置 - 相机 * f
+	# 节点画在世界坐标 Q，屏幕位置 = Q - 相机，所以 Q = P + 相机 * (1 - f)
+	var near_off := _cam_pos * (1.0 - NEAR_PARALLAX)
+	var far_off := _cam_pos * (1.0 - FAR_PARALLAX)
 	var idx := 0
 	for w in map.windows:
 		var r: Rect2 = w["rect"]
