@@ -2212,6 +2212,8 @@ func _show_menu() -> void:
 
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# 全屏容器默认 STOP 会吃掉右下角齿轮的点击，必须放行（子控件仍然可点）
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiTheme.apply(center)
 	menu_layer.add_child(center)
 	var panel := PanelContainer.new()
