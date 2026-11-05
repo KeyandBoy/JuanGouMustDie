@@ -3,7 +3,7 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`dccefa1`（C 组 UI + D 组音频均已完成并推送）
+- 当前 HEAD：`b6ec4ce`（C/D + E/F/G 第一批均已完成）
 - 已推送 origin/main（2026-11-05，`git -c http.proxy= -c https.proxy= push`）。
 - 工作区：C 组 UI 已改完待提交；**B12/B13 的 WIP 在 `stash@{0}`**（影子以外的光锥/红眼/视差），需要时 `git stash pop`。别的会话仍有未提交改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`），不是本轮产物。
 
@@ -18,7 +18,8 @@
 
 ## 当前目标
 
-C 组 UI 与 D 组音频系统已完成。下一步按用户节奏审计 **E（关卡/地图）、F（敌人/难度）、G（系统/成长/背包）**。
+C 组 UI、D 组音频、E/F/G 第一批（E2/E3/E4、F1/F8、G5/G11）已完成。
+剩下的大件都需要单独立项：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
 B 组只剩 **B12（手电光锥 + 红眼）与 B13（视差背景）**，WIP 在 `stash@{0}`，继续时先 `git stash pop` 并接 `main.gd` 的 `_build_world()`。
 D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素材。
 
@@ -142,6 +143,7 @@ D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素
 8. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 9. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
 10. **D8 素材**：音频窗口补 `assets/sfx/step/step_{tile,wood,carpet}_{1..3}.ogg` 后玩家脚步自动生效；D6 的追逐节奏层仍需与 `chase_electro` 同 BPM 的分轨。
+11. **EFG 剩余大件**：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表——每项单独一轮，先确认再动。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
