@@ -30,11 +30,15 @@ static func flash(main: Node, col: Color, peak := 0.18, dur := 0.22) -> void:
 	main._fx_flash(col, peak, dur)
 
 ## 震屏（复用 main.gd 的 _shake_camera，避免两套实现）
+## 强度受设置里的「震屏」档位影响（0 / 50 / 100），方便晕动症玩家关闭。
 static func shake(main: Node, tier := 1) -> void:
 	if main == null or not is_instance_valid(main) or not main.has_method("_shake_camera"):
 		return
+	var scale := clampf(float(SaveManager.get_setting("shake", 100.0)) / 100.0, 0.0, 1.0)
+	if scale <= 0.001:
+		return
 	var cfg: Vector2 = SHAKE_TIERS[clampi(tier, 0, SHAKE_TIERS.size() - 1)]
-	main._shake_camera(cfg.x, cfg.y)
+	main._shake_camera(cfg.x * scale, cfg.y)
 
 ## 顿帧：把引擎时间压慢几帧再恢复。
 ## 只在「打中/被打中/过关」用；答题不要用，会打断输入节奏。

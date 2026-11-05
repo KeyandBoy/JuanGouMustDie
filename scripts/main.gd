@@ -2017,7 +2017,11 @@ func _show_pause_menu() -> void:
 	title.add_theme_font_size_override("font_size", 28)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
-	vbox.add_child(_volume_settings_box())
+	var settings_btn := Button.new()
+	settings_btn.text = "设置"
+	settings_btn.focus_mode = Control.FOCUS_NONE
+	settings_btn.pressed.connect(func(): SettingsUi.open(self))
+	vbox.add_child(settings_btn)
 	for item in [
 		["继续", func(): close_pause.call()],
 		["保存进度", func():
@@ -2196,6 +2200,16 @@ func _show_menu() -> void:
 	_push_modal(menu_layer)
 	_build_menu_background(menu_layer)
 
+	# 右上角设置入口：纯代码绘制的齿轮，不依赖美术素材
+	var gear := GearButton.new()
+	gear.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	gear.offset_left = -62.0
+	gear.offset_top = 16.0
+	gear.offset_right = -18.0
+	gear.offset_bottom = 60.0
+	gear.pressed.connect(func(): SettingsUi.open(self))
+	menu_layer.add_child(gear)
+
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	UiTheme.apply(center)
@@ -2263,7 +2277,12 @@ func _show_menu() -> void:
 		menu_buttons.append(import_btn)
 
 	vbox.add_child(HSeparator.new())
-	vbox.add_child(_volume_settings_box())
+
+	var settings_row := Button.new()
+	settings_row.text = "设置（音量 / 画面 / 操作）"
+	settings_row.focus_mode = Control.FOCUS_NONE
+	settings_row.pressed.connect(func(): SettingsUi.open(self))
+	vbox.add_child(settings_row)
 
 	var tip := Label.new()
 	tip.text = "按 F 学习 · 通关后永久解锁下一层"

@@ -389,7 +389,12 @@ func _pick_type() -> String:
 			return k
 	return "classroom"
 
-## 计算房间到楼梯房的「纵深」并分配角色。
+## 计算房间的「纵深」并分配角色。
+##
+## 关键：深度必须与布局无关。这里用导航图（nav_points / nav_links）做多源 BFS，
+## 而不是"房间中心到楼梯房的直线距离"——以后地图换成多走廊/环形/房间套房间/
+## 多层结构时，这套算法不需要改。
+##
 ## allow_safe=false 用于教学关：教学图小且需要确定性，不放安全屋。
 func _compute_roles(allow_safe := true) -> void:
 	room_roles.clear()
@@ -397,35 +402,83 @@ func _compute_roles(allow_safe := true) -> void:
 	room_roles.resize(rooms.size())
 	room_roles.fill("normal")
 	room_depth.resize(rooms.size())
-	room_depth.fill(0)
+	room_depth.fill(-1)
 	safe_room_index = -1
-	if rooms.is_empty():
+	if rooms.is_empty() or nav_points.is_empty():
 		return
+
+	# 起点：楼梯间（真正上楼的位置），没有就用大厅
 	var anchor := room_types.find("stair")
 	if anchor < 0:
 		anchor = room_types.find("hall")
 	if anchor < 0:
 		anchor = 0
-	var ac := _walkable_center(rooms[anchor])
+
+	# 多源 BFS：以"落在楼梯房内的所有导航点"为源
+	var n := nav_points.size()
+	var dist := PackedInt32Array()
+	dist.resize(n)
+	dist.fill(-1)
+	var queue: PackedInt32Array = PackedInt32Array()
+	for i in n:
+		if room_index_at(nav_points[i]) == anchor:
+			dist[i] = 0
+			queue.append(i)
+	if queue.is_empty():
+		# 兜底：房内没有导航点时取最近的一个，避免整层没有深度
+		var best := -1
+		var bd := INF
+		var ac := _walkable_center(rooms[anchor])
+		for i in n:
+			var d := nav_points[i].distance_to(ac)
+			if d < bd:
+				bd = d
+				best = i
+		if best >= 0:
+			dist[best] = 0
+			queue.append(best)
+
+	var head := 0
+	while head < queue.size():
+		var pi := queue[head]
+		head += 1
+		for nb in nav_links[pi]:
+			if nb >= 0 and nb < n and dist[nb] < 0:
+				dist[nb] = dist[pi] + 1
+				queue.append(nb)
+
+	# 房间深度 = 房内导航点的最小 BFS 步数
+	for i in n:
+		var ri := room_index_at(nav_points[i])
+		if ri < 0 or ri >= room_depth.size() or dist[i] < 0:
+			continue
+		if room_depth[ri] < 0 or dist[i] < room_depth[ri]:
+			room_depth[ri] = dist[i]
+
 	var maxd := 0
-	for i in rooms.size():
-		var d := int(rooms[i].get_center().distance_to(ac))
-		room_depth[i] = d
+	for d in room_depth:
 		maxd = maxi(maxd, d)
+	if maxd <= 0:
+		return
+
 	for i in rooms.size():
 		if room_types[i] == "stair":
 			room_roles[i] = "stair"
 		elif room_types[i] == "hall":
 			room_roles[i] = "hall"
-		elif maxd > 0 and float(room_depth[i]) >= float(maxd) * 0.68:
+		elif room_depth[i] >= 0 and float(room_depth[i]) >= float(maxd) * 0.68:
 			room_roles[i] = "deep"
-	if not allow_safe or maxd <= 0:
+
+	if not allow_safe:
 		return
+
 	# 安全屋：纵深 33%~62% 里最接近 47% 的一间，排除楼梯/大厅
 	var best := -1
 	var best_score := 1.0e9
 	for i in rooms.size():
 		if room_roles[i] == "stair" or room_roles[i] == "hall":
+			continue
+		if room_depth[i] < 0:
 			continue
 		var r := float(room_depth[i]) / float(maxd)
 		if r < 0.33 or r > 0.62:
@@ -438,6 +491,19 @@ func _compute_roles(allow_safe := true) -> void:
 		room_roles[best] = "safe"
 		safe_room_index = best
 		room_names[best] = "安全屋（禁止答题）"
+
+## 房间出入口数量。现在每个房间只有 1 个门，所以都是 1；
+## 以后做"房间互通门 / 环形地图"时，这个函数直接可用（>=2 表示可绕圈）。
+func room_door_count(i: int) -> int:
+	if i < 0 or i >= rooms.size():
+		return 0
+	var near := rooms[i].grow(CELL * 1.5)
+	var count := 0
+	for d in doors:
+		var p: Vector2 = d["pos"]
+		if near.has_point(p) and not rooms[i].has_point(p):
+			count += 1
+	return count
 
 func room_role_at(pos: Vector2) -> String:
 	var i := room_index_at(pos)
