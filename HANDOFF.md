@@ -3,8 +3,8 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`2b1e10f`（B 组第一批）+ 本轮 C 组（提交后更新）
-- 已推送 origin/main（2026-11-05，`git -c http.proxy= -c https.proxy= push` 直连成功）。
+- 当前 HEAD：`2bba794`（C 组 UI 完成；B 组第一批在 `2b1e10f`）
+- 已推送 origin/main（2026-11-05）。
 - 工作区：C 组 UI 已改完待提交；**B12/B13 的 WIP 在 `stash@{0}`**（影子以外的光锥/红眼/视差），需要时 `git stash pop`。别的会话仍有未提交改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`），不是本轮产物。
 
 ## 最简用法（推荐）
