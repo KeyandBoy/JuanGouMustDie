@@ -35,16 +35,18 @@ func _ready() -> void:
 			"hud: gear anchored bottom-right")
 		_check(gr.size.x >= 44.0 and absf(gr.size.x - gr.size.y) < 1.0,
 			"hud: gear is square/circular (%s)" % gr.size)
-	print("PROBE: open settings")
-	SettingsUi.open(inst)
+	print("PROBE: open settings via gear click")
+	if gear != null:
+		gear.pressed.emit()
 	await get_tree().process_frame
 	_check(get_tree().paused, "settings: pauses the tree")
 	_check(inst.modal_stack.size() == 1, "settings: pushed one modal (%d)" % inst.modal_stack.size())
 	var ui: Node = null
-	for c in inst.modal_stack[0].get_children():
-		if c is SettingsUi:
-			ui = c
-	_check(ui != null, "settings: panel instanced")
+	if inst.modal_stack.size() > 0:
+		for c in inst.modal_stack[0].get_children():
+			if c is SettingsUi:
+				ui = c
+	_check(ui != null, "settings: panel instanced from HUD gear")
 	print("PROBE: close settings")
 	if ui != null:
 		ui.close()
