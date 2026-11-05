@@ -3,9 +3,9 @@
 - 更新时间：2026-11-05
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`69b404f`（A 组收口 + HANDOFF）
+- 当前 HEAD：`2b1e10f`（B 组第一批）+ 本轮 C 组（提交后更新）
 - 已推送 origin/main（2026-11-05，`git -c http.proxy= -c https.proxy= push` 直连成功）。
-- 工作区：本轮 B 组第一批（B4/B9/B11/B14 + 美术规范文档）已改；仍有**别的会话**正在进行中的改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`）与未跟踪研究笔记 `参考清单_可移植.md`、`参考研究_PixelGame.md`，不是本轮产物，未改动。
+- 工作区：C 组 UI 已改完待提交；**B12/B13 的 WIP 在 `stash@{0}`**（影子以外的光锥/红眼/视差），需要时 `git stash pop`。别的会话仍有未提交改动（`art/cutscene/tutorial_outro_1~3.png`、`scripts/intro.gd`、`tests/shot_*.png`、`tools/manifests/outro_panels.json`），不是本轮产物。
 
 ## 最简用法（推荐）
 
@@ -18,12 +18,21 @@
 
 ## 当前目标
 
-A 组手感/反馈已收到「工具齐、调用也齐」：震屏只走 `Fx.shake(tier)`、拾取有飞入、死亡定格 0.3s、慢放 API 就绪、状态呼吸可被音频窗口直接接。
-下一步按用户逐条确认的节奏继续；**A9 等「打败暴君」流程做出来再接调用点**，A10 的素材与播放由音频窗口负责。
-游戏本体下一步仍建议实机跑一次开场 + 暴君登场，看推镜/抖动/分镜节奏。
+C 组 UI 已按“先低风险、再全做”完成（C1/C2/C3/C4/C5/C6/C8/C10/C13；C9/C11/C16 已覆盖，C12/C14/C15 不做）。
+B 组只剩 **B12（手电光锥 + 红眼）与 B13（视差背景）**，WIP 在 `stash@{0}`，下次继续时先 `git stash pop` 并接 `main.gd` 的 `_build_world()`。
+**A9 等「打败暴君」流程做出来再接调用点**，A10 的素材与播放由音频窗口负责。
 
 ## 本轮已完成
 
+- **C 组 UI（2026-11-05）**：
+  - C6：`hud.toast()` 改队列，同屏最多 3 条、错峰淡出，通知与底部交互提示分离。
+  - C1/C8：主菜单左下角版本号 `v0.9.0` + 当前 BGM 曲名/作者（读 `catalog.json`）。
+  - C5：`hud.bind_tooltip()`，悬停 0.4s 显示道具名/描述，自动贴边。
+  - C4：限时效果条（图标 + 竖向剩余条 + 秒数），数据走 `GameState.active_effects`。
+  - C10/C13：失败界面补正确率、最近 3 道错题、随机小贴士。
+  - C2：楼层卡片显示历史最佳时间/冲星分，存档新增 `level_best`。
+  - C3：HUD 状态条按重要度分层（理智 18 / 净答对 12 / 闪避 7）。
+  - 新增 `tests/_c_ui_probe.tscn`；七套测试全绿。
 - **B 组第一批（2026-11-05）**：
   - B4：`scripts/shadow.gd` 统一椭圆影子（三层柔边），player/student/tyrant 已挂；主角按走路条带脚底 y=62 定位（y+21.5），暴君按 `offset=-h/2` 对齐到原点。
   - B9：`tools/repack_icons.py` 把 17 个 UI 图标统一成 32×32（内容 ≤24×24），未重画。
@@ -105,21 +114,21 @@ A 组手感/反馈已收到「工具齐、调用也齐」：震屏只走 `Fx.sha
 
 ## 未提交改动
 
-无（本轮改动全部提交）。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
+无（C 组改动提交后清空）。B12/B13 在 `stash@{0}`，不属于未提交改动。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
+1. **B12/B13 收尾**：`git stash pop` 恢复 `torch_light.gd` / `eye_glow.gd` / `parallax_bg.gd` 与 player/student/tyrant 挂载；在 `main._build_world()` 里 `parallax.setup(map, camera)`；跑六套 + 截图确认暗场光锥/红眼/视差强度。
+2. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
 2. **A10 接线**：音频窗口按 `Breath.state`（0 calm / 1 tense / 2 panic / 3 blind）或 `Breath.STREAM_SLOTS` 播放/停止循环；素材路径已预留 `assets/sfx/breath/breath_{tense,panic,blind}.ogg`，缺文件时逻辑不受影响。
 3. **A8 音效**：拾取「叮」在 `main._on_item_picked()` 里接 `AudioManager.play_sfx`（或专用 pickup 音效），动画已就位。
-4. **剩余可快速补的反馈**：C4（快捷栏冷却遮罩）、C6（toast 队列，最多同屏 3 条）、C16（R/T/Y 键帽）——都在 `hud.gd`，不动核心逻辑。
-5. **需要碰 AI 的**：F1（0.35s 决策 tick）、F8（按层视野/移速/答题时间缩放）、F5（情报共享）；建议先跑实机确认手感再加。
-6. **G11**：答错→残页，5 张换 1 提示符（要碰结算 + 背包，单独一轮）。
-7. 音乐侧剩余 5 条环境层与实机听感验收见 `CATALOG.md`（未变）。
-8. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
-9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
-10. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+4. **需要碰 AI 的**：F1（0.35s 决策 tick）、F8（按层视野/移速/答题时间缩放）、F5（情报共享）；建议先跑实机确认手感再加。
+5. **G11**：答错→残页，5 张换 1 提示符（要碰结算 + 背包，单独一轮）。
+6. 音乐侧剩余 5 条环境层与实机听感验收见 `CATALOG.md`（未变）。
+7. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
+8. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+9. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）

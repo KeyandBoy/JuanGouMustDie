@@ -4,6 +4,7 @@ config_version=5
 [application]
 
 config/name="卷狗必须死"
+config/version="0.9.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 

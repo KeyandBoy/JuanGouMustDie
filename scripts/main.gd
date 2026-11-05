@@ -15,6 +15,17 @@ const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
 const MINIMAP_ENABLED := false
 
+# C13：死亡界面随机小贴士（和关卡台词分开，短、可执行）
+const DEATH_TIPS: Array[String] = [
+	"被追时先拐进侧房再关门，直线跑只会把动静带大。",
+	"咖啡的 8 秒加速够穿过一条走廊，别提前喝。",
+	"答错会制造动静，连错时先停手听一听。",
+	"安全屋能回理智，但每层只有一次。",
+	"暴君怕烟雾和臭气，折叠椅只能拖延两秒。",
+	"深夜楼的视野很小，贴着墙走比在走廊中间安全。",
+	"关门能挡住追击者，但也会挡住你自己的退路。",
+]
+
 const TUTORIAL_QUESTIONS: Array = [
 	{"grade": "junior", "subject": "math", "type": "choice", "prompt": "1 + 1 = ?", "options": ["1", "2", "3", "4"], "answer": "2", "explain": "送分题"},
 	{"grade": "junior", "subject": "math", "type": "choice", "prompt": "3 × 2 = ?", "options": ["5", "6", "7", "8"], "answer": "6", "explain": "送分题"},
@@ -38,6 +49,7 @@ var _shake_left := 0.0
 var _shake_tw: Tween
 var minimap: Control
 var menu_layer: CanvasLayer
+var menu_music_label: Label
 var map_script := preload("res://scripts/school_map.gd")
 var minimap_script := preload("res://scripts/minimap.gd")
 var student_scene := preload("res://scripts/student.gd")
@@ -363,6 +375,8 @@ func _setup_level(p_spawn_random := false) -> void:
 	GameState.dash_energy = 0.0
 	GameState.tyrant_active = false
 	GameState.cutscene_active = false
+	GameState.active_effects.clear()
+	GameState.wrong_questions.clear()
 	emptiness_timer = 0.0
 	auto_study_timer = 0.0
 	sprint_noise_timer = 0.0
@@ -668,6 +682,8 @@ func _process(delta: float) -> void:
 	_update_lights(delta)
 	_update_breath()
 	_update_lingering_items(delta)
+	if menu_music_label != null and is_instance_valid(menu_music_label):
+		menu_music_label.text = _menu_info_text()
 	if transitioning or cutscene_active:
 		return
 	camera.global_position = player.global_position
@@ -687,6 +703,7 @@ func _process(delta: float) -> void:
 
 	GameState.level_time += delta
 	GameState.play_time += delta
+	GameState.tick_effects(delta)
 	if quiz.is_open and not study_paused:
 		GameState.quiz_time += delta
 	if GameState.intel_reveal_timer > 0.0:
@@ -1018,6 +1035,8 @@ func _on_answered(correct: bool) -> void:
 	else:
 		Fx.flash(self, Color(0.96, 0.30, 0.24), 0.16, 0.30)
 		Fx.shake(self, 1)
+		if quiz != null and not quiz.current_question.is_empty():
+			GameState.record_wrong(quiz.current_question)
 		if hud != null:
 			hud.pop_number(anchor, "净答对 -1", "loss")
 			hud.toast("答错！净答对 -1、空虚值 -2，还制造了动静")
@@ -1524,6 +1543,8 @@ func _on_level_cleared() -> void:
 	var star_run: int = GameState.evaluate_stars(GameState.level, GameState.level_time, GameState.caught_count)
 	last_run_stars = star_run
 	last_star_gain = GameState.award_stars(GameState.level, star_run)
+	var best_rep: Dictionary = GameState.star_report(GameState.level, GameState.level_time, GameState.caught_count)
+	GameState.record_level_best(GameState.level, float(best_rep["score"]), GameState.level_time, float(best_rep["accuracy"]))
 	GameState.mark_level_cleared(GameState.level)
 	SaveManager.save_run()
 	await _fade_chasers()
@@ -1802,9 +1823,10 @@ func _show_end_panel(title: String, desc: String) -> void:
 	UiTheme.apply(center)
 	layer.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(380, 200)
+	panel.custom_minimum_size = Vector2(440, 220)
 	center.add_child(panel)
 	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
 	panel.add_child(vbox)
 	var t := Label.new()
 	t.text = title
@@ -1816,6 +1838,33 @@ func _show_end_panel(title: String, desc: String) -> void:
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(d)
+
+	# C10：失败界面补正确率 + 错题列表；C13：随机小贴士
+	if title == "失败":
+		var acc := GameState.star_accuracy()
+		var lines: Array[String] = [
+			"用时 %s　正确率 %.0f%%（%d/%d）" % [
+				_format_time(GameState.level_time), acc, GameState.quiz_correct, GameState.questions_answered],
+		]
+		for q in GameState.wrong_questions.slice(0, 3):
+			lines.append("错题：%s　答案 %s" % [String(q.get("prompt", "")), String(q.get("answer", ""))])
+		if GameState.wrong_questions.is_empty():
+			lines.append("这一局没有错题，死因是跑得不够快。")
+		var stats := Label.new()
+		stats.text = "\n".join(lines)
+		stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		stats.add_theme_font_size_override("font_size", 13)
+		stats.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
+		vbox.add_child(stats)
+		var tip := Label.new()
+		tip.text = "贴士：" + DEATH_TIPS.pick_random()
+		tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tip.add_theme_font_size_override("font_size", 13)
+		tip.add_theme_color_override("font_color", UiTheme.COL_GOLD)
+		vbox.add_child(tip)
+
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(row)
@@ -1898,6 +1947,7 @@ func _use_item(index: int) -> void:
 	match id:
 		"coffee":
 			player.apply_speed_buff(1.4, 8.0)
+			GameState.set_effect("coffee", 8.0, "咖啡")
 			GameState.remove_item_at(index)
 			item_fx.burst("coffee", fx)
 			_fx_flash(Color(1.0, 0.62, 0.25), 0.10, 0.35)
@@ -1910,6 +1960,7 @@ func _use_item(index: int) -> void:
 		"smoke":
 			smoke_cloud = player.position
 			smoke_cloud_timer = 6.0
+			GameState.set_effect("smoke", 6.0, "烟雾")
 			var s_ty := _nearest_tyrant_to(smoke_cloud, 260.0)
 			if s_ty != null:
 				s_ty.smoke_slow(3.0)
@@ -1933,6 +1984,7 @@ func _use_item(index: int) -> void:
 		"stink":
 			stink_cloud = player.position
 			stink_cloud_timer = 6.0
+			GameState.set_effect("stink", 6.0, "臭气")
 			var t_stink := _nearest_tyrant_to(stink_cloud, 650.0)
 			if t_stink != null:
 				t_stink.lure_to(stink_cloud, 6.0)
@@ -1966,6 +2018,7 @@ func _use_item(index: int) -> void:
 			hud.toast("土锹：挖出一条捷径，但动静很大")
 		"lamp":
 			lamp_timer = 10.0
+			GameState.set_effect("lamp", 10.0, "台灯")
 			GameState.remove_item_at(index)
 			item_fx.burst("lamp", fx)
 			_fx_flash(Color(1.0, 0.88, 0.4), 0.14, 0.4)
@@ -1990,6 +2043,7 @@ func _use_item(index: int) -> void:
 			hud.toast("秒表：闪避充能速度 +20%")
 		"intel":
 			GameState.intel_reveal_timer = 12.0
+			GameState.set_effect("intel", 12.0, "情报")
 			GameState.remove_item_at(index)
 			item_fx.burst("intel", fx)
 			hud.toast("巡查情报：12 秒内小地图显示巡查者位置")
@@ -2348,7 +2402,30 @@ func _show_menu() -> void:
 		bt.tween_property(b, "modulate:a", 1.0, 0.18)
 		bt.parallel().tween_property(b, "scale", Vector2.ONE, 0.18)
 
+	# C1/C8：左下角版本号 + 当前 BGM 曲名/作者（随 AudioManager 状态刷新）
+	menu_music_label = Label.new()
+	menu_music_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	menu_music_label.offset_left = 24.0
+	menu_music_label.offset_top = -34.0
+	menu_music_label.offset_right = 760.0
+	menu_music_label.offset_bottom = -12.0
+	menu_music_label.add_theme_font_size_override("font_size", 12)
+	menu_music_label.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
+	menu_music_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_music_label.text = _menu_info_text()
+	menu_layer.add_child(menu_music_label)
+
 	_spawn_menu_lightning(menu_layer)
+
+
+## C1/C8：菜单左下角信息条 = 版本号 + 正在播放的 BGM。
+func _menu_info_text() -> String:
+	var ver := String(ProjectSettings.get_setting("application/config/version", "0.9.0"))
+	var out := "v" + ver
+	var credit := AudioManager.current_track_credit()
+	if not credit.is_empty():
+		out += "　　" + credit
+	return out
 
 func _show_level_select() -> void:
 	var layer := CanvasLayer.new()
@@ -2400,7 +2477,7 @@ func _show_level_select() -> void:
 		var best: int = GameState.star_best(lv)
 
 		var card := Control.new()
-		card.custom_minimum_size = Vector2(100, 120)
+		card.custom_minimum_size = Vector2(100, 132)
 		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		cards.add_child(card)
 
@@ -2446,6 +2523,18 @@ func _show_level_select() -> void:
 		star_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		star_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card_v.add_child(star_label)
+
+		# C2：历史最佳成绩（只显示冲星分更高的那次）
+		var best_info: Dictionary = GameState.level_best_of(lv)
+		if not best_info.is_empty():
+			var best_label := Label.new()
+			best_label.text = "最佳 %s\n%.0f 分" % [
+				_format_time(float(best_info.get("time", 0.0))), float(best_info.get("score", 0.0))]
+			best_label.add_theme_font_size_override("font_size", 11)
+			best_label.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
+			best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			best_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card_v.add_child(best_label)
 
 		if unlocked:
 			var hit := Button.new()

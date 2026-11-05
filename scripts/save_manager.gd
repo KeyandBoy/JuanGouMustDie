@@ -77,6 +77,7 @@ func _collect() -> Dictionary:
 		"warnings": GameState.warnings,
 		"stars": GameState.stars,
 		"level_stars": GameState.level_stars,
+		"level_best": GameState.level_best,
 		"max_cleared_level": GameState.max_cleared_level,
 		"upgrades": GameState.upgrades,
 		"items": GameState.items,
@@ -133,6 +134,18 @@ func _apply(d: Dictionary) -> bool:
 		for k in raw_stars:
 			star_map[int(String(k))] = int(raw_stars[k])
 	GameState.level_stars = star_map
+	var best_map := {}
+	var raw_best = d.get("level_best", {})
+	if raw_best is Dictionary:
+		for k in raw_best:
+			var v = raw_best[k]
+			if v is Dictionary:
+				best_map[int(String(k))] = {
+					"score": float(v.get("score", 0.0)),
+					"time": float(v.get("time", 0.0)),
+					"acc": float(v.get("acc", 0.0)),
+				}
+	GameState.level_best = best_map
 	if d.has("max_cleared_level"):
 		GameState.max_cleared_level = clampi(int(d.get("max_cleared_level", 1)), 1, GameState.MAX_LEVEL)
 	else:

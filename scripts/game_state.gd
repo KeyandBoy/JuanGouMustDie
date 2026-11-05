@@ -111,6 +111,8 @@ var items: Dictionary = {}
 var seed_value: int = 0
 var stars: int = 0
 var level_stars: Dictionary = {}
+## C2：每层最佳成绩 level -> {"score": 冲星分, "time": 通关秒数, "acc": 正确率}
+var level_best: Dictionary = {}
 var upgrades: Dictionary = {}
 var max_cleared_level := 1
 
@@ -121,6 +123,10 @@ var tyrant_active := false
 var cutscene_active := false
 var game_cleared := false
 var intel_reveal_timer := 0.0
+## C4：限时道具效果。id -> {"time": 剩余秒, "max": 总时长, "label": 显示名}
+var active_effects: Dictionary = {}
+## C10：本局错题（最多 5 条），死亡界面展示；重开/换层清空。
+var wrong_questions: Array[Dictionary] = []
 var exam_hint := false
 
 var level_time := 0.0
@@ -166,6 +172,8 @@ func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"])
 	inventory.clear()
 	abilities.clear()
 	items.clear()
+	active_effects.clear()
+	wrong_questions.clear()
 	tyrant_intro_seen = false
 	tyrant_active = false
 	cutscene_active = false
@@ -199,6 +207,8 @@ func begin_next_level() -> void:
 	inventory.clear()
 	abilities.clear()
 	items.clear()
+	active_effects.clear()
+	wrong_questions.clear()
 	tyrant_active = false
 	cutscene_active = false
 	intel_reveal_timer = 0.0
@@ -360,6 +370,16 @@ func mark_level_cleared(p_level: int) -> void:
 func star_best(p_level: int) -> int:
 	return int(level_stars.get(p_level, 0))
 
+## C2：只在冲星分更高时覆盖，避免“重开一把更差”把最佳成绩洗掉。
+func record_level_best(p_level: int, score: float, clear_time: float, acc: float) -> void:
+	var key := int(p_level)
+	var prev: Dictionary = level_best.get(key, {})
+	if prev.is_empty() or score > float(prev.get("score", -1.0)):
+		level_best[key] = {"score": score, "time": clear_time, "acc": acc}
+
+func level_best_of(p_level: int) -> Dictionary:
+	return level_best.get(int(p_level), {})
+
 func award_stars(p_level: int, gained: int) -> int:
 	var s := clampi(gained, 0, MAX_STARS_PER_LEVEL)
 	var best := star_best(p_level)
@@ -460,6 +480,30 @@ func item_def(item_id: String) -> ItemDef:
 
 func get_item_def(item_id: String) -> Dictionary:
 	return ITEM_DEFS.get(item_id, {})
+
+## C4：登记一个限时效果，HUD 会显示竖向剩余时间 + 秒数。
+func set_effect(effect_id: String, duration: float, label: String) -> void:
+	active_effects[effect_id] = {"time": maxf(0.05, duration), "max": maxf(0.05, duration), "label": label}
+
+func tick_effects(delta: float) -> void:
+	if active_effects.is_empty():
+		return
+	for key in active_effects.keys():
+		var e: Dictionary = active_effects[key]
+		e["time"] = float(e["time"]) - delta
+		if float(e["time"]) <= 0.0:
+			active_effects.erase(key)
+
+## C10：记录一道错题（题干 + 正确答案），最多留 5 条。
+func record_wrong(q: Dictionary) -> void:
+	if q.is_empty():
+		return
+	if wrong_questions.size() >= 5:
+		wrong_questions.pop_front()
+	wrong_questions.append({
+		"prompt": String(q.get("prompt", "")),
+		"answer": String(q.get("answer", "")),
+	})
 
 func set_ability(key: String, value: int = 1) -> void:
 	abilities[key] = value

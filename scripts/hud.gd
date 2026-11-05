@@ -23,7 +23,19 @@ var dev_label: Label
 var status_panel: PanelContainer
 var panel_side := "left"
 var reserve_top_right := false
-var toast_timer := 0.0
+var _toast_box: VBoxContainer
+var _toast_queue: Array[String] = []
+var _toast_live: Array[Control] = []
+var _effect_box: HBoxContainer
+var _effect_chips: Dictionary = {}
+var _tooltip: PanelContainer
+var _tooltip_label: Label
+var _hover_ctl: Control
+var _hover_text: Callable
+var _hover_t := 0.0
+const TOOLTIP_DELAY := 0.4
+const TOAST_MAX := 3
+const TOAST_LIFE := 2.6
 var _panel_tween: Tween
 var _panel_cooldown := 0.0
 var _warning_pips: Array[Panel] = []
@@ -140,7 +152,7 @@ func _ready() -> void:
 		_hot_pips.append(hp)
 	hot_chip.visible = false
 
-	# 净答对（绿）
+	# 净答对（绿）——第二重要：中等高度
 	study_label = Label.new()
 	study_label.add_theme_font_size_override("font_size", 13)
 	study_label.text = "净答对 0.0/5"
@@ -148,23 +160,26 @@ func _ready() -> void:
 	study_bar = ProgressBar.new()
 	study_bar.min_value = 0
 	study_bar.max_value = 5
-	study_bar.custom_minimum_size = Vector2(238, 14)
+	study_bar.custom_minimum_size = Vector2(238, 12)
+	study_bar.add_theme_stylebox_override("background", _bar_bg())
 	study_bar.add_theme_stylebox_override("fill", _fill(UiTheme.COL_ACCENT))
 	vbox.add_child(study_bar)
 
-	# 空虚（红）
+	# 空虚 / 理智（红）——最重的一条，比其它两条高
 	emptiness_bar = ProgressBar.new()
 	emptiness_bar.min_value = 0
 	emptiness_bar.max_value = 100
-	emptiness_bar.custom_minimum_size = Vector2(238, 14)
+	emptiness_bar.custom_minimum_size = Vector2(238, 18)
+	emptiness_bar.add_theme_stylebox_override("background", _bar_bg())
 	emptiness_bar.add_theme_stylebox_override("fill", _fill(UiTheme.COL_RED))
 	vbox.add_child(emptiness_bar)
 
-	# 闪避（青）
+	# 闪避（青）——辅助信息，压成细条
 	dash_bar = ProgressBar.new()
 	dash_bar.min_value = 0
 	dash_bar.max_value = 100
-	dash_bar.custom_minimum_size = Vector2(238, 14)
+	dash_bar.custom_minimum_size = Vector2(238, 7)
+	dash_bar.add_theme_stylebox_override("background", _bar_bg())
 	dash_bar.add_theme_stylebox_override("fill", _fill(UiTheme.COL_CYAN))
 	vbox.add_child(dash_bar)
 
@@ -182,6 +197,14 @@ func _ready() -> void:
 	inventory_box.add_theme_constant_override("separation", 6)
 	bottom_box.add_child(inventory_box)
 
+	# C4：限时道具效果条（图标 + 竖向剩余条 + 秒数）
+	_effect_box = HBoxContainer.new()
+	_effect_box.add_theme_constant_override("separation", 4)
+	_effect_box.visible = false
+	_effect_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom_box.add_child(_effect_box)
+	bottom_box.move_child(_effect_box, 0)
+
 	prompt_chip = PanelContainer.new()
 	prompt_chip.add_theme_stylebox_override("normal", _chip_bg())
 	bottom_box.add_child(prompt_chip)
@@ -190,6 +213,32 @@ func _ready() -> void:
 	prompt_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	prompt_chip.add_child(prompt_label)
 	prompt_chip.visible = false
+
+	# C6：通知队列。最多同屏 3 条，从下往上堆叠；和底部交互提示分开，互不覆盖。
+	_toast_box = VBoxContainer.new()
+	_toast_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_toast_box.offset_left = 16.0
+	_toast_box.offset_top = -300.0
+	_toast_box.offset_right = 640.0
+	_toast_box.offset_bottom = -118.0
+	_toast_box.alignment = BoxContainer.ALIGNMENT_END
+	_toast_box.add_theme_constant_override("separation", 4)
+	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_toast_box)
+
+	# C5：悬停 0.4s 后显示的道具 Tooltip（跟随鼠标，自动贴边）
+	_tooltip = PanelContainer.new()
+	_tooltip.add_theme_stylebox_override("normal", UiTheme.panel_style(UiTheme.COL_PANEL_BORDER, Color(0.07, 0.09, 0.08, 0.97), 2))
+	_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tooltip.visible = false
+	_tooltip.z_index = 200
+	root.add_child(_tooltip)
+	_tooltip_label = Label.new()
+	_tooltip_label.add_theme_font_size_override("font_size", 13)
+	_tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tooltip_label.custom_minimum_size = Vector2(170, 0)
+	_tooltip_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tooltip.add_child(_tooltip_label)
 
 	task_panel = PanelContainer.new()
 	task_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -370,6 +419,16 @@ func _fill(c: Color) -> StyleBoxFlat:
 	sb.content_margin_bottom = 2
 	return sb
 
+
+## C3：进度条统一的暗底，让彩色填充的“重量”更明确。
+func _bar_bg() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.06, 0.07, 0.88)
+	sb.border_color = Color(0.20, 0.24, 0.22, 0.9)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(0)
+	return sb
+
 func _style_pip(pip: Panel, filled: bool) -> void:
 	var sb := StyleBoxFlat.new()
 	if filled:
@@ -510,6 +569,8 @@ func _refresh_inventory() -> void:
 				lock_lbl.text = "🔒"
 				lock_lbl.add_theme_font_size_override("font_size", 12)
 				row.add_child(lock_lbl)
+			_ignore_mouse_recursive(slot)
+			bind_tooltip(slot, func() -> String: return "未解锁\n升级背包容量后可用")
 			continue
 		if i < GameState.inventory.size():
 			var item_id: String = GameState.inventory_item_id(i)
@@ -540,6 +601,16 @@ func _refresh_inventory() -> void:
 			empty_lbl.add_theme_font_size_override("font_size", 13)
 			empty_lbl.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM)
 			row.add_child(empty_lbl)
+
+		# C5：悬停 0.4 秒后显示名称/描述；空格和未解锁格也给一句说明
+		_ignore_mouse_recursive(slot)
+		var tip_text := ""
+		if _slot_items[i] != "":
+			var d_tip: Dictionary = GameState.get_item_def(_slot_items[i])
+			tip_text = "%s\n%s" % [String(d_tip.get("name", _slot_items[i])), String(d_tip.get("desc", ""))]
+		else:
+			tip_text = "空格\n使用道具后自动填入"
+		bind_tooltip(slot, func() -> String: return tip_text)
 
 ## A8 拾取反馈：图标从地面飞到它所在的背包槽，落位时槽位闪一下。
 func fly_item(item_id: String, world_pos: Vector2) -> void:
@@ -617,12 +688,197 @@ func set_prompt(text: String) -> void:
 	prompt_chip.visible = text != ""
 
 func toast(text: String) -> void:
+	if text.is_empty():
+		return
+	# 连续重复的同一句不排队（比如连按空格提示“这一格没有道具”）
+	if not _toast_queue.is_empty() and _toast_queue[-1] == text:
+		return
+	for chip in _toast_live:
+		if is_instance_valid(chip) and String(chip.get_meta("text", "")) == text:
+			return
+	_toast_queue.append(text)
+	# 兼容旧断言/旧调用：prompt_label 仍保存最后一条通知文本，但通知本身走独立队列
 	prompt_label.text = text
-	prompt_chip.visible = true
-	toast_timer = 2.5
+	_pump_toasts()
+
+
+func _pump_toasts() -> void:
+	while _toast_live.size() < TOAST_MAX and not _toast_queue.is_empty():
+		var text: String = _toast_queue.pop_front()
+		_spawn_toast(text)
+
+
+func _spawn_toast(text: String) -> void:
+	if _toast_box == null or not is_instance_valid(_toast_box):
+		return
+	var chip := PanelContainer.new()
+	chip.add_theme_stylebox_override("normal", _chip_bg())
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	chip.set_meta("text", text)
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(lbl)
+	chip.modulate.a = 0.0
+	_toast_box.add_child(chip)
+	_toast_live.append(chip)
+	var tin := create_tween()
+	tin.tween_property(chip, "modulate:a", 1.0, 0.16)
+	# ignore_time_scale：顿帧/慢放时通知也照常计时
+	get_tree().create_timer(TOAST_LIFE, true, false, true).timeout.connect(
+		func() -> void: _expire_toast(chip))
+
+
+func _expire_toast(chip: Control) -> void:
+	if not is_instance_valid(chip):
+		return
+	_toast_live.erase(chip)
+	var tout := create_tween()
+	tout.tween_property(chip, "modulate:a", 0.0, 0.22)
+	tout.tween_callback(chip.queue_free)
+	_pump_toasts()
+
+
+# ---------------------------------------------------------------- C4 效果条
+
+func _sync_effects() -> void:
+	if _effect_box == null or not is_instance_valid(_effect_box):
+		return
+	var ids: Array = GameState.active_effects.keys()
+	for key in _effect_chips.keys():
+		if not GameState.active_effects.has(key):
+			var dead = _effect_chips[key]
+			if is_instance_valid(dead):
+				dead.queue_free()
+			_effect_chips.erase(key)
+	for key in ids:
+		if not _effect_chips.has(key):
+			_effect_chips[key] = _make_effect_chip(String(key))
+	for key in ids:
+		var chip = _effect_chips.get(key)
+		if chip == null or not is_instance_valid(chip):
+			continue
+		var e: Dictionary = GameState.active_effects[key]
+		var ratio := clampf(float(e.get("time", 0.0)) / maxf(0.01, float(e.get("max", 1.0))), 0.0, 1.0)
+		var bar: ProgressBar = chip.get_meta("bar")
+		var sec: Label = chip.get_meta("sec")
+		if bar != null and is_instance_valid(bar):
+			bar.value = ratio * 100.0
+		if sec != null and is_instance_valid(sec):
+			sec.text = "%ds" % maxi(0, ceili(float(e.get("time", 0.0))))
+	_effect_box.visible = not ids.is_empty()
+
+
+func _make_effect_chip(effect_id: String) -> Control:
+	var chip := PanelContainer.new()
+	chip.add_theme_stylebox_override("normal", _chip_bg())
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(row)
+	var icon := UiIcons.item(effect_id)
+	if icon != null:
+		var tr := TextureRect.new()
+		tr.custom_minimum_size = Vector2(14, 14)
+		tr.texture = icon
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(tr)
+	var lbl := Label.new()
+	var e: Dictionary = GameState.active_effects.get(effect_id, {})
+	lbl.text = String(e.get("label", effect_id))
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(lbl)
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(4, 16)
+	bar.show_percentage = false
+	bar.max_value = 100.0
+	bar.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
+	bar.add_theme_stylebox_override("background", _chip_bg())
+	bar.add_theme_stylebox_override("fill", _fill(UiTheme.COL_GOLD))
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(bar)
+	var sec := Label.new()
+	sec.add_theme_font_size_override("font_size", 11)
+	sec.add_theme_color_override("font_color", UiTheme.COL_GOLD)
+	sec.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(sec)
+	chip.set_meta("bar", bar)
+	chip.set_meta("sec", sec)
+	_effect_box.add_child(chip)
+	return chip
+
+
+# ---------------------------------------------------------------- C5 Tooltip
+
+func bind_tooltip(ctl: Control, text_provider: Callable) -> void:
+	if ctl == null or not is_instance_valid(ctl):
+		return
+	ctl.mouse_filter = Control.MOUSE_FILTER_STOP
+	ctl.mouse_entered.connect(func() -> void: _begin_hover(ctl, text_provider))
+	ctl.mouse_exited.connect(func() -> void: _end_hover(ctl))
+
+
+func _begin_hover(ctl: Control, text_provider: Callable) -> void:
+	_hover_ctl = ctl
+	_hover_text = text_provider
+	_hover_t = 0.0
+	if _tooltip != null:
+		_tooltip.visible = false
+
+
+func _end_hover(ctl: Control) -> void:
+	if _hover_ctl == ctl:
+		_hover_ctl = null
+		_hover_text = Callable()
+		if _tooltip != null:
+			_tooltip.visible = false
+
+
+func _sync_tooltip(delta: float) -> void:
+	if _tooltip == null or _tooltip_label == null:
+		return
+	if _hover_ctl == null or not is_instance_valid(_hover_ctl) or not _hover_ctl.is_visible_in_tree():
+		_hover_ctl = null
+		_tooltip.visible = false
+		return
+	_hover_t += delta
+	if _hover_t < TOOLTIP_DELAY:
+		return
+	var txt := ""
+	if _hover_text.is_valid():
+		txt = String(_hover_text.call())
+	if txt.is_empty():
+		_tooltip.visible = false
+		return
+	_tooltip_label.text = txt
+	_tooltip.visible = true
+	_tooltip.reset_size()
+	var vp := get_viewport().get_visible_rect().size
+	var mp := get_viewport().get_mouse_position()
+	var pos := mp + Vector2(16.0, 14.0)
+	pos.x = clampf(pos.x, 6.0, maxf(6.0, vp.x - _tooltip.size.x - 6.0))
+	pos.y = clampf(pos.y, 6.0, maxf(6.0, vp.y - _tooltip.size.y - 6.0))
+	_tooltip.position = pos
+
+
+## 让槽位内部的文字/图标不再吃鼠标事件，hover 才会落在槽位本身。
+func _ignore_mouse_recursive(node: Node) -> void:
+	for c in node.get_children():
+		if c is Control:
+			(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ignore_mouse_recursive(c)
 
 func _process(delta: float) -> void:
 	phase_label.text = GameState.get_phase_label()
+	_sync_effects()
+	_sync_tooltip(delta)
 	if dev_label != null:
 		dev_label.text = DevMode.status_text()
 		dev_label.visible = DevMode.enabled
@@ -640,11 +896,6 @@ func _process(delta: float) -> void:
 		var t := Time.get_ticks_msec() / 1000.0
 		var pulse := 0.55 + 0.45 * (0.5 + 0.5 * sin(t * 4.2))
 		_sanity_vignette.modulate.a = lerpf(_sanity_vignette.modulate.a, low * pulse, clampf(delta * 5.0, 0.0, 1.0))
-	if toast_timer > 0:
-		toast_timer -= delta
-		if toast_timer <= 0:
-			prompt_label.text = ""
-			prompt_chip.visible = false
 
 func _panel_rect() -> Rect2:
 	if status_panel == null or not is_instance_valid(status_panel):

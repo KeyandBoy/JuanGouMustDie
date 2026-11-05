@@ -153,6 +153,31 @@ func catalog_slot_loop(slot: String) -> bool:
 		return true
 	return bool(d.get("loop", true))
 
+## C1/C8：当前正在播的曲子信息，给标题画面/菜单做“曲名条”。
+func current_track_title() -> String:
+	var d := _entry_for_slot(current_key)
+	if d.is_empty():
+		return ""
+	return String(d.get("title", ""))
+
+func current_track_author() -> String:
+	var d := _entry_for_slot(current_key)
+	if d.is_empty():
+		return ""
+	var lic = d.get("license", {})
+	if lic is Dictionary:
+		return String(lic.get("author", ""))
+	return ""
+
+func current_track_credit() -> String:
+	var title := current_track_title()
+	if title.is_empty():
+		return ""
+	var author := current_track_author()
+	if author.is_empty():
+		return "♪ " + title
+	return "♪ %s — %s" % [title, author]
+
 func _entry_for_slot(slot: String) -> Dictionary:
 	var level: int = int(GameState.level)
 	for entry in _tracks:
