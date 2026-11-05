@@ -51,6 +51,16 @@ Music by Audionautix.com (Jason Shaw) — https://audionautix.com/
 《杀死比尔》原版警报受版权保护，本项目未使用其录音。
 
 ================================================================
+以下为 CC0 素材（Kenney，公共领域，可商用，无需署名）
+================================================================
+- assets/sfx/ui/ui_hover.ogg    "select_002"       by Kenney  https://kenney.nl/assets/interface-sounds
+- assets/sfx/ui/ui_click.ogg    "click_001"        by Kenney  https://kenney.nl/assets/interface-sounds
+- assets/sfx/ui/ui_confirm.ogg  "confirmation_001" by Kenney  https://kenney.nl/assets/interface-sounds
+许可：CC0 1.0（公共领域贡献），可商用、可修改、无需署名；
+本项目只做了峰值归一（-3dBFS）与 OGG 重编码。原始包授权见
+assets/sfx/ui/LICENSE_kenney_interface_sounds.txt。
+
+================================================================
 以下为非音频素材（一并登记，便于发布前核查授权）
 ================================================================
 

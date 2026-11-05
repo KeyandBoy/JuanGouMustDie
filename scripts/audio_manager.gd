@@ -37,6 +37,15 @@ const SFX_POOL_SIZE := 12
 const SFX_2D_POOL_SIZE := 8
 const SFX_MAX_SAME := 3
 
+## UI 三音（D7）：悬停 / 点击 / 确认，统一走 UI 总线。
+const UI_HOVER := "res://assets/sfx/ui/ui_hover.ogg"
+const UI_CLICK := "res://assets/sfx/ui/ui_click.ogg"
+const UI_CONFIRM := "res://assets/sfx/ui/ui_confirm.ogg"
+const UI_POOL_SIZE := 4
+const UI_HOVER_DB := -14.0
+const UI_CLICK_DB := -8.0
+const UI_CONFIRM_DB := -7.0
+
 var current_key := ""
 var master_volume := 100.0
 var music_volume := 100.0
@@ -56,6 +65,12 @@ var _sfx_cursor := 0
 var _sfx2d_cursor := 0
 var _sfx_counts: Dictionary = {}
 var _sfx_cache: Dictionary = {}
+
+## UI 音效（D7）
+var ui_sounds_enabled := true
+var _ui_players: Array[AudioStreamPlayer] = []
+var _ui_cursor := 0
+var _ui_prev_hover: Control = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -94,6 +109,13 @@ func _build_sfx_pool() -> void:
 		add_child(q)
 		q.finished.connect(_on_sfx_finished.bind(q))
 		_sfx2d_players.append(q)
+	for i in UI_POOL_SIZE:
+		var u := AudioStreamPlayer.new()
+		u.bus = BUS_UI
+		u.process_mode = Node.PROCESS_MODE_ALWAYS
+		u.volume_db = 0.0
+		add_child(u)
+		_ui_players.append(u)
 
 # ---------------------------------------------------------------- 曲库
 
@@ -200,6 +222,7 @@ func set_sfx_volume(v: float) -> void:
 # ---------------------------------------------------------------- BGM
 
 func _process(delta: float) -> void:
+	_ui_hover_tick()
 	_timer += delta
 	if _timer < CHECK_INTERVAL:
 		return
@@ -403,3 +426,61 @@ func _sfx_stream(path: String) -> AudioStream:
 ## 当前某个音效正在响的数量（调试 / 自测用）。
 func sfx_active_count(path: String) -> int:
 	return int(_sfx_counts.get(path, 0))
+
+# ---------------------------------------------------------------- UI 三音（D7）
+
+## 鼠标停到按钮上就响一声「悬停」。轮询比给每个 Button 连信号可靠：
+## 菜单里的按钮是运行时动态建的，连信号会漏，轮询不会。
+func _ui_hover_tick() -> void:
+	if not ui_sounds_enabled:
+		return
+	if _ui_prev_hover != null and not is_instance_valid(_ui_prev_hover):
+		_ui_prev_hover = null
+	var btn := _button_under_mouse()
+	if btn == _ui_prev_hover:
+		return
+	_ui_prev_hover = btn
+	if btn != null:
+		play_ui(UI_HOVER, UI_HOVER_DB)
+
+func _input(event: InputEvent) -> void:
+	if not ui_sounds_enabled:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _button_under_mouse() != null:
+			play_ui(UI_CLICK, UI_CLICK_DB)
+	elif event.is_action_pressed("ui_accept"):
+		var focused := get_viewport().gui_get_focus_owner() if get_viewport() != null else null
+		if focused is BaseButton and not (focused as BaseButton).disabled:
+			play_ui(UI_CONFIRM, UI_CONFIRM_DB)
+
+## 返回鼠标正下方的可用按钮；被遮罩挡住或 disabled 都不算。
+func _button_under_mouse() -> BaseButton:
+	var vp := get_viewport()
+	if vp == null:
+		return null
+	var c: Control = vp.gui_get_hovered_control()
+	var guard := 0
+	while c != null and guard < 8:
+		if c is BaseButton:
+			var b := c as BaseButton
+			return null if b.disabled else b
+		# 按钮内部的 Label/Icon 也要能算到按钮头上
+		c = c.get_parent_control()
+		guard += 1
+	return null
+
+## 播放 UI 音效（走 UI 总线，音量跟「音效音量」滑条）。
+func play_ui(path: String, volume_db := UI_CLICK_DB) -> bool:
+	if not ui_sounds_enabled or path.is_empty():
+		return false
+	var stream := _sfx_stream(path)
+	if stream == null:
+		return false
+	var p := _ui_players[_ui_cursor]
+	_ui_cursor = (_ui_cursor + 1) % _ui_players.size()
+	p.stop()
+	p.stream = stream
+	p.volume_db = volume_db
+	p.play()
+	return true
