@@ -2200,13 +2200,13 @@ func _show_menu() -> void:
 	_push_modal(menu_layer)
 	_build_menu_background(menu_layer)
 
-	# 右上角设置入口：纯代码绘制的齿轮，不依赖美术素材
+	# 右下角设置入口：圆形齿轮按钮（iOS 设置图标那种），不依赖美术素材
 	var gear := GearButton.new()
-	gear.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	gear.offset_left = -62.0
-	gear.offset_top = 16.0
-	gear.offset_right = -18.0
-	gear.offset_bottom = 60.0
+	gear.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	gear.offset_left = -72.0
+	gear.offset_top = -72.0
+	gear.offset_right = -20.0
+	gear.offset_bottom = -20.0
 	gear.pressed.connect(func(): SettingsUi.open(self))
 	menu_layer.add_child(gear)
 
@@ -2277,12 +2277,6 @@ func _show_menu() -> void:
 		menu_buttons.append(import_btn)
 
 	vbox.add_child(HSeparator.new())
-
-	var settings_row := Button.new()
-	settings_row.text = "设置（音量 / 画面 / 操作）"
-	settings_row.focus_mode = Control.FOCUS_NONE
-	settings_row.pressed.connect(func(): SettingsUi.open(self))
-	vbox.add_child(settings_row)
 
 	var tip := Label.new()
 	tip.text = "按 F 学习 · 通关后永久解锁下一层"

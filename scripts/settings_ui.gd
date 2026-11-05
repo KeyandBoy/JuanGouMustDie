@@ -25,16 +25,22 @@ var layer_ref: CanvasLayer
 var _content: VBoxContainer
 var _tab_buttons: Dictionary = {}
 var _current := "audio"
+var _prev_paused := false
 
+## 打开设置。会自动暂停游戏（从暂停菜单/主菜单打开时也能正确恢复）。
 static func open(main: Node) -> void:
 	if main == null or not is_instance_valid(main):
 		return
+	var tree := main.get_tree()
 	var layer := CanvasLayer.new()
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	main._push_modal(layer)
 	var ui := SettingsUi.new()
 	ui.main_ref = main
 	ui.layer_ref = layer
+	ui._prev_paused = tree.paused if tree != null else false
+	if tree != null:
+		tree.paused = true
 	layer.add_child(ui)
 
 func _ready() -> void:
@@ -280,6 +286,10 @@ func close() -> void:
 		main_ref._pop_modal(layer_ref)
 	else:
 		queue_free()
+	if main_ref != null and is_instance_valid(main_ref):
+		var tree := main_ref.get_tree()
+		if tree != null:
+			tree.paused = _prev_paused
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

@@ -59,9 +59,9 @@ func _ready() -> void:
 	dev_label = Label.new()
 	dev_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	dev_label.offset_left = -260
-	dev_label.offset_top = -30
-	dev_label.offset_right = -10
-	dev_label.offset_bottom = -8
+	dev_label.offset_top = -94
+	dev_label.offset_right = -12
+	dev_label.offset_bottom = -74
 	dev_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	dev_label.add_theme_font_size_override("font_size", 12)
 	dev_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2, 0.8))
@@ -207,9 +207,9 @@ func _ready() -> void:
 
 	skip_button = Button.new()
 	skip_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	skip_button.offset_left = -132.0
+	skip_button.offset_left = -196.0
 	skip_button.offset_top = -56.0
-	skip_button.offset_right = -12.0
+	skip_button.offset_right = -76.0
 	skip_button.offset_bottom = -20.0
 	skip_button.text = "跳过教学"
 	skip_button.focus_mode = Control.FOCUS_NONE
@@ -217,6 +217,21 @@ func _ready() -> void:
 	skip_button.visible = false
 	skip_button.pressed.connect(func(): skip_pressed.emit())
 	root.add_child(skip_button)
+
+	# —— 右下角：圆形设置按钮（iOS 设置图标那种）——
+	# 游戏内随时可开设置；打开时 SettingsUi 会暂停游戏。
+	var gear := GearButton.new()
+	gear.name = "SettingsGear"
+	gear.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	gear.offset_left = -68.0
+	gear.offset_top = -68.0
+	gear.offset_right = -16.0
+	gear.offset_bottom = -16.0
+	gear.pressed.connect(func():
+		var main_node := get_parent()
+		if main_node != null and main_node.has_method("_push_modal"):
+			SettingsUi.open(main_node))
+	root.add_child(gear)
 
 	_refresh_study()
 	_refresh_floor()
