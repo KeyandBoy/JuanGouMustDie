@@ -3,8 +3,8 @@
 - 更新时间：2026-11-06
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`46ed427`（视差修复；B12 条件化提交后更新）
-- 已推送 origin/main：`0d0dc2b`（C/D）；之后 EFG、B、视差修复与 B12 条件化均暂留本地，网络恢复后 `git -c http.proxy= -c https.proxy= push`。
+- 当前 HEAD：`84da42f`（B12 条件化 + 安全屋分层）
+- 已推送 origin/main：`0d0dc2b`（C/D）；之后的 EFG、B、视差修复与 B12 条件化均暂留本地，网络恢复后 `git -c http.proxy= -c https.proxy= push`。
 - 工作区：B12 条件化 + 安全屋分层正在收口；`tests/shot_*.png` 等仍是截图产物，不提交。
 - 另外：`parallax_bg.gd` 的视差公式修复 + 树影默认关闭已由 opencode 提交（见「本轮已完成」第一条）。
 
