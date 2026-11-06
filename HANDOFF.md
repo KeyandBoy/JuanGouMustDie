@@ -3,10 +3,10 @@
 - 更新时间：2026-11-06
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`664739b`（D8 脚步材质：Kenney CC0 真实采样 15 条）
-- 已推送 origin/main：`0d0dc2b`（C/D）；之后的 EFG、B、视差修复与 B12 条件化均暂留本地，网络恢复后 `git -c http.proxy= -c https.proxy= push`。
-- 工作区：B12 条件化 + 安全屋分层正在收口；`tests/shot_*.png` 等仍是截图产物，不提交。
-- 另外：`parallax_bg.gd` 的视差公式修复 + 树影默认关闭已由 opencode 提交（见「本轮已完成」第一条）。
+- 当前 HEAD：`9f58fbb`（Phase4 套间/环路 + 隐藏奖励 + 地图专项探针）
+- 已推送 origin/main：`1fbf102`（Phase1-3）；本次 Phase4 提交 `9f58fbb` 随本次收工一起 push。
+- 工作区：只剩 `tests/shot_*.png` 等截图产物未提交；另有另一窗口的 `scripts/intro.gd` / `art/cutscene` / `tools/manifests` 改动，**不要误提交**。
+- 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
 ## 最简用法（推荐）
 
@@ -19,12 +19,24 @@
 
 ## 当前目标
 
-B 组已收口并完成条件化：手电只在停电/低可视度出现，第 4 关随机跳闸；安全屋第 6 层起启用。
-C/D 组与 E/F/G 第一批也已完成；剩下的大件都需要单独立项：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
+大工程「连续卷轴大地图 + 房间区分度 + 探索感」的 **Phase 1~4 已完成并提交**：单张连通大地图、
+10 房型放大、死区相机、三态探索迷雾、小地图启用、房型专属家具、套间/环路 + 隐藏奖励。
+
+接下来是 **Phase 5 收尾**：只看真实手感做微调（装饰/课桌/敌人密度、房间辨识度），
+以及把 EFG 剩余大件逐个单独立项（E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、
+G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表）。
 D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点层**需等分轨素材。
 
 ## 本轮已完成
 
+- **连续卷轴大地图 Phase 1~4（2026-11-06，opencode，大工程）**：
+  - `school_map.gd`：10 房型（教室/实验室/图书/医务/办公/储物/广播/厕所/楼梯/大厅），每层保底教室+厕所；房间放大 2~3 倍、走廊 10~12 格；两行地砖图集（每房型 6 种地板图案 + 16 邻接墙砖）；课桌/敌人按面积；`big_items` 房型专属大件（碰撞 + 贴墙装饰 + 地毯）从 `art/furniture/` 贴图绘制。
+  - `main.gd`：相机固定 zoom 0.85（教程 1.45）+ 死区跟随（0.20/0.22）；小地图常开移到状态卡下方；敌人 7~16 按地图面积。
+  - `fog.gd`：三态遮罩（未探索纯黑 / 已探索压暗 0.58 / 当前整间亮），走廊按门到门切段点亮；删除 30 秒忘记机制；手电锥只在停电时开。
+  - `minimap.gd`：只画已探索房间/走廊段、按房型着色、楼梯/道具/答题点标记、敌人仅情报生效时显示。
+  - 套间：大房间 65% 概率掏「里间」（1 格墙 + 2 格开口 + 门），独立探索、固定当宝箱房、额外塞一件奖励；环路：8 房以上 50% 概率在同排相邻房之间多开 2 格通道。
+  - 关键坑：里间矩形在母房内部 → 所有「按点找房间」的函数必须倒序遍历；`_walkable_center` 必须传 `room_idx`；家具只能放 `_room_cell == 本房` 的格子。
+  - 测试：新增 `_map_probe` / `_big_probe` / `_nested_shot`；十二套全绿 + 两个新探针全 PASS；截图目视 `shot_world` / `shot_nested_parent` / `shot_nested_inside` / `shot_loop_passage`。
 - **D8 脚步材质（2026-11-06，opencode）**：
   - 素材：Kenney「Impact Sounds」（CC0）concrete/wood/carpet 各 5 条 → `assets/sfx/step/step_{tile,wood,carpet}_1..5.ogg`；峰值归一 -3dBFS、单声道 OGG，授权原件与 CREDITS 均已登记。
   - `play_footstep()` 5 变体随机；材质映射：教室/办公室/储物间=wood、安全屋(L6+)=carpet、楼梯及其余=tile。
@@ -146,21 +158,22 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 未提交改动
 
-无（B 组收口提交后清空；`stash@{0}` 已 pop）。若 `git status` 不干净，先看「下一步」与开发记录顶部最新条目，再决定提交。
+无（Phase4 提交后清空）。`tests/shot_*.png` 是截图产物、经常被重拍，故意不提交；
+另有可能来自另一窗口的 `scripts/intro.gd` / `art/cutscene/*` / `tools/manifests/*`，看一眼 `git status` 再决定。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
-2. **A10 接线**：音频窗口按 `Breath.state`（0 calm / 1 tense / 2 panic / 3 blind）或 `Breath.STREAM_SLOTS` 播放/停止循环；素材路径已预留 `assets/sfx/breath/breath_{tense,panic,blind}.ogg`，缺文件时逻辑不受影响。
-3. **A8 音效**：拾取「叮」在 `main._on_item_picked()` 里接 `AudioManager.play_sfx`（或专用 pickup 音效），动画已就位。
-4. **F5 情报共享**：一个敌人看到玩家后，同房间/相邻房间 2s 后进入怀疑；先把事件接到 `student.investigate()`。
-5. **D8 素材**：音频窗口补 `assets/sfx/step/step_{tile,wood,carpet}_{1..3}.ogg` 后玩家脚步自动生效；D6 的追逐节奏层仍需与 `chase_electro` 同 BPM 的分轨。
-6. 音乐侧剩余 5 条环境层与实机听感验收见 `CATALOG.md`（未变）。
-7. **git push 被代理阻塞的解法**：`git -c http.proxy= -c https.proxy= push`（本机 git 配了 127.0.0.1:7897，代理没开就连不上）。
-8. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
-9. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
-10. **EFG 剩余大件**：E1 模板插门、E6 SubViewport 小地图、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表——每项单独一轮，先确认再动。
+1. **Phase 5 手感微调（下一步优先）**：拿 `_big_probe` 输出的每间房课桌/家具数量，把装饰密度往「8~12 件」收、确认大教室里课桌不空、确认敌人 7~16 的曲线；觉得房间还不够好认时优先补「墙面特征」（黑板/画框/出口标识），不要加新系统。
+2. **套间/环路手感**：里间门口的「门」现在和普通门一样（E 开关）；如果玩家根本找不到，考虑给套间门加一点视觉提示（半开/门牌），但别破坏「探索才找到」的意图；环路门洞目前是墙上的 2 格缺口，可考虑加门框描边。
+3. **家具贴图是原型**：`art/furniture/README.md` 已写明来源与「授权未确认，发布前替换」；确认授权或自绘后按同名覆盖即可（代码按 rect 拉伸，尺寸可不同）。
+4. **EFG 剩余大件**（每项先确认再动）：E1 模板插门、E6 SubViewport 小地图（本轮小地图是 Control 直接画，需复核是否还要独立 Viewport）、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
+5. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
+6. **A10 / A8 接线**：音频窗口按 `Breath.state` 播放呼吸循环（`assets/sfx/breath/breath_{tense,panic,blind}.ogg` 已预留）；拾取「叮」在 `main._on_item_picked()` 接 `AudioManager.play_sfx`。
+7. **D6 追逐鼓点层**：仍需与 `chase_electro` 同 BPM 的分轨素材；D8 三套脚步采样已齐。
+8. **测试命令**：十二套（flow / _b / _fx / _settings / _c_ui / _d / _e / _f / _g / student→BAD_FRAMES=0 / tutorial / _stalker）+ 本轮新增 `_map_probe` / `_big_probe`；截图用 `screenshot.tscn`（非 headless），套间样张用 `_nested_shot.tscn`。
+9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+10. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -183,18 +196,30 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 测试状态
 
-2026-11-04 全绿（曲库化 + 字体切换后）：
+2026-11-06 全绿（连续大地图 Phase1-4 后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
-& $G --headless --path . --quit-after 20000 res://tests/tutorial_test.tscn   # TUTORIAL_TEST: ALL PASSED
-& $G --headless --path . --quit-after 8000 res://tests/flow_test.tscn        # FLOW_TEST: ALL PASSED
-& $G --headless --path . --quit-after 8000 res://tests/_stalkerprobe.tscn    # STALKER_PROBE: ALL PASSED
-& $G --headless --path . --quit-after 8000 res://tests/student_test.tscn     # BAD_FRAMES=0
-& $G --path . res://tests/screenshot.tscn                                    # exit 0，shot_* 全部重拍
+& $G --headless --path . --quit-after 15000 res://tests/flow_test.tscn        # FLOW_TEST: ALL PASSED
+& $G --headless --path . --quit-after 50000 res://tests/_stalkerprobe.tscn    # STALKER_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 20000 res://tests/student_test.tscn     # BAD_FRAMES=0
+& $G --headless --path . --quit-after 40000 res://tests/tutorial_test.tscn    # TUTORIAL_TEST: ALL PASSED
+& $G --headless --path . --quit-after 15000 res://tests/_fx_probe.tscn        # FX_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 15000 res://tests/_settings_probe.tscn  # SETTINGS_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 30000 res://tests/_c_ui_probe.tscn      # C_UI_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 30000 res://tests/_d_probe.tscn         # D_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 35000 res://tests/_e_probe.tscn         # E_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 30000 res://tests/_f_probe.tscn         # F_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 35000 res://tests/_g_probe.tscn         # G_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 30000 res://tests/_b_probe.tscn         # B_PROBE: ALL PASSED
+& $G --headless --path . --quit-after 60000 res://tests/_map_probe.tscn       # MAP_PROBE: ALL PASSED（地图/相机/迷雾/小地图/套间）
+& $G --headless --path . --quit-after 90000 res://tests/_big_probe.tscn       # BIG_PROBE seeds=8 failures=0（家具落位）
+& $G --path . --resolution 1280x720 res://tests/screenshot.tscn               # 重拍 shot_*.png
+& $G --path . --resolution 1280x720 res://tests/_nested_shot.tscn             # 套间三张样张
 ```
 
 > 注：Godot 测试进程有时会脱离控制台，管道里拿不到输出；最稳的读法是看 `%APPDATA%\Godot\app_userdata\卷狗必须死\logs\godot.log`（历史日志会归档成 `godot<时间戳>.log`，需逐个搜）。
+> 本轮踩过的坑：headless 视口只有几十像素 —— 一屏格数要按 `display/window/size/viewport_width` 算，死区断言按真实视口算。
 
 ## 环境
 
