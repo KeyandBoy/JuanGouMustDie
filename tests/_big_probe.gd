@@ -60,17 +60,16 @@ func _check_map(map, inst, verbose: bool) -> int:
 				print("  FAIL passage not walkable: ", pr)
 				bad += 1
 		pass_txt = _join(parts)
-	# 迷雾遮罩：母房要挖洞、门洞要单独一档
-	var zones: Array = inst.fog._ov_zones
+	# 迷雾遮罩：每个房间/门洞都要有自己的一档 alpha
 	if nest >= 0:
-		if not zones.has("r%d" % nest):
+		if inst.fog.zone_alpha("r%d" % nest) < 0.0:
 			print("  FAIL fog: no mask for nested room")
 			bad += 1
-		if not zones.has("r%d" % int(map.nested_parent)):
+		if inst.fog.zone_alpha("r%d" % int(map.nested_parent)) < 0.0:
 			print("  FAIL fog: no mask for nested parent")
 			bad += 1
 	for i in map.passage_rects.size():
-		if not zones.has("p%d" % i):
+		if inst.fog.zone_alpha("p%d" % i) < 0.0:
 			print("  FAIL fog: no mask for passage ", i)
 			bad += 1
 	if int(map.treasure_room_index) < 0:

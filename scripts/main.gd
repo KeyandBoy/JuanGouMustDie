@@ -16,8 +16,8 @@ const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "la
 const MINIMAP_ENABLED := true
 ## 镜头以房间中心为准，最多把镜头从房间中心往玩家方向拉这么多（视口半宽/半高的比例）
 const CAMERA_PLAYER_MAX_OFF := 0.26
-## 镜头边界比地图多放宽几格，避免最外圈房间被顶死在屏幕边上（外面露出的是深色背景）
-const CAMERA_LIMIT_MARGIN := 16.0
+## 镜头边界就用地图矩形（四周已经补了 MAP_PAD 格实体，不会露出空白）
+const CAMERA_LIMIT_MARGIN := 0.0
 
 # B12：第 4 关随机停电。间隔 8~16s，每次 0.3~1.0s，只闪一下不常驻。
 const BLACKOUT_GAP_MIN := 8.0
@@ -84,7 +84,6 @@ var end_panel_shown := false
 var study_hunt_timer := 0.0
 var mark_drift_timer := 0.0
 var fog: Node2D
-var parallax_bg: Node2D
 var tyrant: Node2D = null
 var tyrant_spawned := false
 var breath
@@ -121,7 +120,6 @@ var tutorial_questions: Array = []
 
 func _ready() -> void:
 	GameState.get_random_phase()
-	_setup_backdrop()
 	_build_world()
 	item_fx = ItemFx.new()
 	item_fx.player = player
@@ -130,21 +128,6 @@ func _ready() -> void:
 		_play_intro(true)
 	else:
 		_show_menu()
-
-## 地图之外的建筑背景（深色砖纹）：镜头放宽到地图边缘外时，不会露出死黑/纯色空白。
-func _setup_backdrop() -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "Backdrop"
-	layer.layer = -10
-	add_child(layer)
-	var rect := ColorRect.new()
-	rect.name = "Brick"
-	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat := ShaderMaterial.new()
-	mat.shader = load("res://shaders/backdrop_brick.gdshader")
-	rect.material = mat
-	layer.add_child(rect)
 
 func _is_test_run() -> bool:
 	for a in OS.get_cmdline_args():
@@ -250,11 +233,6 @@ func _build_world() -> void:
 	add_child(fog)
 	fog.setup(map, player)
 	_setup_lighting()
-
-	# B13：校园远景 2 层视差（窗外树影 + 远处楼体），z=-7 不挡角色
-	parallax_bg = load("res://scripts/parallax_bg.gd").new()
-	add_child(parallax_bg)
-	parallax_bg.setup(map, camera)
 
 	hud = load("res://scripts/hud.gd").new()
 	add_child(hud)
@@ -449,12 +427,28 @@ func _setup_minimap() -> void:
 	minimap = minimap_script.new()
 	hud.add_child(minimap)
 	minimap.setup(map, player)
-	minimap.anchor_left = 1.0
-	minimap.anchor_right = 1.0
-	minimap.offset_left = -196.0
-	minimap.offset_right = -12.0
-	minimap.offset_top = 164.0
-	minimap.offset_bottom = 290.0
+	# 贴左：挂在状态卡正下方（状态卡换边时跟着换，见 _layout_minimap）
+	minimap.anchor_left = 0.0
+	minimap.anchor_top = 0.0
+	minimap.anchor_right = 0.0
+	minimap.anchor_bottom = 0.0
+	minimap.offset_left = 0.0
+	minimap.offset_top = 0.0
+	minimap.offset_right = minimap.size.x
+	minimap.offset_bottom = minimap.size.y
+	minimap.position = Vector2(12.0, 164.0)
+
+## 小地图挂在状态卡正下方：卡片在哪一侧，小地图就跟到哪一侧。
+func _layout_minimap() -> void:
+	if minimap == null or not is_instance_valid(minimap) or hud == null or not is_instance_valid(hud):
+		return
+	var pos := Vector2(12.0, 164.0)
+	var pr: Rect2 = hud._panel_rect()
+	if pr.size.x > 10.0:
+		pos = Vector2(pr.position.x, pr.end.y + 8.0)
+	var vw: float = get_viewport().get_visible_rect().size.x
+	pos.x = clampf(pos.x, 8.0, maxf(8.0, vw - minimap.size.x - 8.0))
+	minimap.position = pos
 
 func _zoom_for_map() -> float:
 	if GameState.tutorial_active:
@@ -858,6 +852,7 @@ func _process(delta: float) -> void:
 	if transitioning or cutscene_active:
 		return
 	_camera_follow()
+	_layout_minimap()
 	map.explore_room_at(player.position)
 
 	var rs := GameState.run_state

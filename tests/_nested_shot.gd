@@ -47,6 +47,13 @@ func _ready() -> void:
 	print("INSIDE zone=", map.current_zone_at(np), " nested_explored=", map.explored[ni],
 		" parent_explored=", map.explored[pi], " nested_type=", map.room_types[ni])
 
+	if map.corridor_segments.size() > 0:
+		var cs: Vector2 = map.corridor_segments[0].get_center()
+		_move(inst, cs)
+		await get_tree().create_timer(0.45).timeout
+		await _shot("res://tests/shot_corridor_glow.png")
+		print("CORRIDOR zone=", map.current_zone_at(cs), " segs=", map.corridor_segments.size())
+
 	if map.passage_rects.size() > 0:
 		var rp: Vector2 = map.passage_rects[0].get_center()
 		_move(inst, rp)

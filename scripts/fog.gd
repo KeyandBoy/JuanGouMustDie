@@ -1,19 +1,22 @@
 extends Node2D
 
 const SMOKE_SHADER := preload("res://shaders/fog_smoke.gdshader")
+const MASK_SHADER := preload("res://shaders/fog_mask_soft.gdshader")
+
+const CELL := 20.0
 
 var map: Node2D
 var player: Node2D
 var halo: ColorRect
 
-## 探索三态遮罩（按「整间房 / 整段走廊」为单位，不是按半径）：
-##   未探索        → 纯黑（只留门框和墙）
-##   已探索、人不在 → 压暗（轮廓和家具还在，像记忆里的房间）
-##   当前所在      → 不遮，整间均匀亮
-## 未探索：非常暗，但仍能看出房间轮廓（不再是一整块死黑，避免看着像渲染 bug）
-const MASK_BLACK := Color(0.050, 0.058, 0.075, 0.86)
-const MASK_DIM := Color(0.024, 0.028, 0.040, 1.0)
-## 已探索、人不在：压暗但保留家具/地面轮廓（永久记住）
+## 探索三态（按「整间房 / 整段走廊」为单位）：
+##   未探索        → 很暗（但仍能看出地面/家具轮廓，不是一块死黑）
+##   已探索、人不在 → 压暗（像记忆里的房间）
+##   当前所在      → 不遮
+## 三态之间不是硬切：整张图按「每格 1 像素」烘一张遮罩纹理，
+## 再用模糊着色器 + 线性过滤把边界糊成柔和光晕（所以不会出现方块边）。
+const MASK_COLOR := Color(0.035, 0.042, 0.058)
+const UNEXPLORED_ALPHA := 0.86
 const DIM_ALPHA := 0.46
 
 const HALO_BY_LEVEL := {
@@ -31,9 +34,9 @@ var _halo_dark := false
 
 var _expl_version := -1
 var _zone := "__none__"
-var _ov_nodes: Array[ColorRect] = []
-var _ov_zones: Array[String] = []
-var _ov_black: Array[bool] = []
+var _mask: Sprite2D
+## zone -> 该区域的遮罩 alpha（0=当前区域，DIM=已探索，UNEXPLORED=未探索），测试会读它
+var _zone_alpha: Dictionary = {}
 
 var ambient: ColorRect
 var ambient_density := 0.0
@@ -44,6 +47,15 @@ var tutorial_mode := false
 
 func _ready() -> void:
 	z_index = 50
+	_mask = Sprite2D.new()
+	_mask.name = "ExploreMask"
+	_mask.centered = false
+	_mask.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var mmat := ShaderMaterial.new()
+	mmat.shader = MASK_SHADER
+	_mask.material = mmat
+	add_child(_mask)
+
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	add_child(layer)
@@ -86,12 +98,16 @@ func setup(p_map: Node2D, p_player: Node2D) -> void:
 func reset_forget() -> void:
 	_expl_version = -1
 	_zone = "__none__"
-	for n in _ov_nodes:
-		if is_instance_valid(n):
-			n.queue_free()
-	_ov_nodes.clear()
-	_ov_zones.clear()
-	_ov_black.clear()
+	_zone_alpha.clear()
+	if _mask != null:
+		_mask.texture = null
+		_mask.visible = false
+
+## 某个区域当前的遮罩 alpha（测试用）：0=当前区域，0.46=已探索，0.86=未探索，-1=未知区域。
+func zone_alpha(zone: String) -> float:
+	if _zone_alpha.has(zone):
+		return float(_zone_alpha[zone])
+	return -1.0
 
 func set_tyrant_active(active: bool, level: int) -> void:
 	ambient_target = 0.0
@@ -149,67 +165,78 @@ func _refresh_masks() -> void:
 		return
 	_expl_version = ver
 	_zone = zn
-	_rebuild_masks()
+	_rebuild_mask()
 
-func _rebuild_masks() -> void:
-	for n in _ov_nodes:
-		if is_instance_valid(n):
-			n.queue_free()
-	_ov_nodes.clear()
-	_ov_zones.clear()
-	_ov_black.clear()
-	if map == null:
+## 把「每格的三态 alpha」烘成一张小纹理，再放大铺满地图（模糊交给着色器）。
+func _rebuild_mask() -> void:
+	if map == null or _mask == null:
 		return
-	var rooms: Array = map.rooms
-	var hole := Rect2()
-	var parent := int(map.get("nested_parent"))
-	if parent >= 0 and parent < rooms.size():
-		hole = map.nested_rect
-	for i in rooms.size():
+	var gw := int(map.gw)
+	var gh := int(map.gh)
+	if gw <= 0 or gh <= 0:
+		return
+	var img := Image.create(gw, gh, false, Image.FORMAT_RGBA8)
+	img.fill(_col(UNEXPLORED_ALPHA))
+	_zone_alpha.clear()
+
+	for i in map.rooms.size():
 		var zone := "r%d" % i
-		var black := not bool(map.explored[i])
-		if i == parent and hole.size.x > 0.0:
-			_add_room_mask_with_hole(rooms[i], zone, black, hole)
-		else:
-			_add_mask(rooms[i], zone, black)
+		var a := DIM_ALPHA if bool(map.explored[i]) else UNEXPLORED_ALPHA
+		if zone == _zone:
+			a = 0.0
+		_zone_alpha[zone] = a
+		_fill_cells(img, map.rooms[i], a)
+
 	var segs: Array = map.corridor_segments
 	var cex: Array = map.corridor_explored
 	for i in segs.size():
+		var zone := "c%d" % i
 		var seen: bool = i < cex.size() and bool(cex[i])
-		_add_mask(segs[i], "c%d" % i, not seen)
+		var a := DIM_ALPHA if seen else UNEXPLORED_ALPHA
+		if zone == _zone:
+			a = 0.0
+		_zone_alpha[zone] = a
+		_fill_cells(img, segs[i], a)
+
 	# 环路门洞：单独一档，站在里面只亮门洞本身，不泄露两边房间
 	var prects: Array = map.passage_rects
 	for i in prects.size():
-		_add_mask(prects[i], "p%d" % i, not bool(map.passage_seen(i)))
+		var zone := "p%d" % i
+		var seen: bool = bool(map.passage_seen(i))
+		var a := DIM_ALPHA if seen else UNEXPLORED_ALPHA
+		if zone == _zone:
+			a = 0.0
+		_zone_alpha[zone] = a
+		_fill_cells(img, prects[i], a)
 
-## 母房带套间：遮罩要挖掉里间那块，否则里间会被母房的压暗层盖住。
-func _add_room_mask_with_hole(rect: Rect2, zone: String, black: bool, hole: Rect2) -> void:
-	var strips: Array[Rect2] = [
-		Rect2(rect.position.x, rect.position.y, rect.size.x, hole.position.y - rect.position.y),
-		Rect2(rect.position.x, hole.end.y, rect.size.x, rect.end.y - hole.end.y),
-		Rect2(rect.position.x, hole.position.y, hole.position.x - rect.position.x, hole.size.y),
-		Rect2(hole.end.x, hole.position.y, rect.end.x - hole.end.x, hole.size.y),
-	]
-	for s in strips:
-		if s.size.x > 0.5 and s.size.y > 0.5:
-			_add_mask(s, zone, black)
+	_mask.texture = ImageTexture.create_from_image(img)
+	_mask.centered = false
+	_mask.position = map.world_rect.position
+	_mask.scale = Vector2(CELL, CELL)
+	_mask.visible = true
 
-func _add_mask(rect: Rect2, zone: String, black: bool) -> void:
-	var r := ColorRect.new()
-	r.position = rect.position
-	r.size = rect.size
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	r.color = MASK_BLACK if black else Color(MASK_DIM.r, MASK_DIM.g, MASK_DIM.b, DIM_ALPHA)
-	r.visible = zone != _zone
-	add_child(r)
-	_ov_nodes.append(r)
-	_ov_zones.append(zone)
-	_ov_black.append(black)
+func _col(alpha: float) -> Color:
+	return Color(MASK_COLOR.r, MASK_COLOR.g, MASK_COLOR.b, alpha)
+
+## 把世界矩形换成「格」再整块填充（fill_rect 走 C++，比逐像素快很多）。
+func _fill_cells(img: Image, r: Rect2, alpha: float) -> void:
+	var x0 := int(round(r.position.x / CELL))
+	var y0 := int(round(r.position.y / CELL))
+	var w := int(round(r.size.x / CELL))
+	var h := int(round(r.size.y / CELL))
+	if w <= 0 or h <= 0:
+		return
+	x0 = clampi(x0, 0, img.get_width() - 1)
+	y0 = clampi(y0, 0, img.get_height() - 1)
+	w = mini(w, img.get_width() - x0)
+	h = mini(h, img.get_height() - y0)
+	if w <= 0 or h <= 0:
+		return
+	img.fill_rect(Rect2i(x0, y0, w, h), _col(alpha))
 
 func _hide_masks() -> void:
-	for n in _ov_nodes:
-		if is_instance_valid(n):
-			n.visible = false
+	if _mask != null:
+		_mask.visible = false
 
 ## 没落在任何矩形里（门缝、墙体缺口）时，取边缘最近的那块，避免闪黑。
 func _nearest_zone(p_map: Node2D, pos: Vector2) -> String:

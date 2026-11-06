@@ -30,7 +30,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 		_check(inst.map.explored[dark_i], "fog: entering reveals room", failures)
 
-	# 探索三态：未探索纯黑 / 已探索压暗 / 当前不遮（不再有「30 秒忘记」）
+	# 探索三态：未探索很暗 / 已探索压暗 / 当前不遮（不再有「30 秒忘记」）
 	var fog_i := -1
 	for i in inst.map.rooms.size():
 		var t: String = String(inst.map.room_types[i])
@@ -45,40 +45,36 @@ func _ready() -> void:
 		_check(inst.map.explored[fog_i], "fog: target room explored", failures)
 		var zn: String = inst.map.current_zone_at(inst.player.position)
 		_check(zn == "r%d" % fog_i, "fog: player zone is room (%s)" % zn, failures)
-		var mask_r: ColorRect = _mask_for(inst.fog, "r%d" % fog_i)
-		_check(mask_r != null and not mask_r.visible, "fog: current room unmasked", failures)
+		var a_cur: float = inst.fog.zone_alpha("r%d" % fog_i)
+		_check(a_cur >= 0.0 and a_cur <= 0.01, "fog: current room unmasked (a=%.2f)" % a_cur, failures)
+		_check(inst.fog._mask != null and inst.fog._mask.visible, "fog: soft mask sprite visible", failures)
 
 		# 走到走廊：房间压暗保留轮廓，当前走廊段不遮
-		var corridor_spot: Vector2 = inst.map.corridor_rect.get_center()
+		var corridor_spot: Vector2 = inst.map.corridor_segments[0].get_center()
 		inst.player.position = corridor_spot
 		inst.camera.reset_smoothing()
 		inst.camera.global_position = corridor_spot
 		await get_tree().create_timer(0.35).timeout
-		mask_r = _mask_for(inst.fog, "r%d" % fog_i)
-		_check(mask_r != null and mask_r.visible, "fog: explored room dims after leaving", failures)
-		if mask_r != null:
-			_check(mask_r.color.a > 0.05 and mask_r.color.a < 0.9,
-				"fog: dim alpha not opaque (%.2f)" % mask_r.color.a, failures)
+		var a_dim: float = inst.fog.zone_alpha("r%d" % fog_i)
+		_check(a_dim > 0.05 and a_dim < 0.9, "fog: explored room dims after leaving (a=%.2f)" % a_dim, failures)
 		var cz: String = inst.map.current_zone_at(inst.player.position)
 		_check(cz.begins_with("c"), "fog: corridor zone (%s)" % cz, failures)
-		var mask_c: ColorRect = _mask_for(inst.fog, cz)
-		_check(mask_c != null and not mask_c.visible, "fog: current corridor segment unmasked", failures)
+		var a_corr: float = inst.fog.zone_alpha(cz)
+		_check(a_corr >= 0.0 and a_corr <= 0.01, "fog: current corridor segment unmasked (a=%.2f)" % a_corr, failures)
 		_check(inst.map.corridor_segments.size() > 0, "fog: corridor split into %d segments" % inst.map.corridor_segments.size(), failures)
 
-		# 未探索的房间必须是纯黑
+		# 未探索的房间必须很暗
 		for i in inst.map.rooms.size():
 			if not inst.map.explored[i]:
-				var m: ColorRect = _mask_for(inst.fog, "r%d" % i)
-				if m != null:
-					_check(m.color.a >= 0.75 and m.color.get_luminance() < 0.12,
-				"fog: unexplored room stays dark (a=%.2f lum=%.3f)" % [m.color.a, m.color.get_luminance()], failures)
-					break
+				var a_un: float = inst.fog.zone_alpha("r%d" % i)
+				_check(a_un >= 0.75, "fog: unexplored room stays dark (a=%.2f)" % a_un, failures)
+				break
 
 		# 再走回去：房间恢复全亮
 		inst.player.position = inst.map.rooms[fog_i].get_center()
 		await get_tree().create_timer(0.35).timeout
-		mask_r = _mask_for(inst.fog, "r%d" % fog_i)
-		_check(mask_r != null and not mask_r.visible, "fog: re-entry unmasks room", failures)
+		var a_back: float = inst.fog.zone_alpha("r%d" % fog_i)
+		_check(a_back >= 0.0 and a_back <= 0.01, "fog: re-entry unmasks room (a=%.2f)" % a_back, failures)
 	GameState.level = 1
 
 	var qdesk: Dictionary = inst.map.desks[0]
@@ -303,11 +299,3 @@ func _check(cond: bool, label: String, failures: Array[String]) -> void:
 	else:
 		failures.append(label)
 		print("  FAIL: ", label)
-
-func _mask_for(fog, zone: String) -> ColorRect:
-	if fog == null:
-		return null
-	for i in fog._ov_zones.size():
-		if String(fog._ov_zones[i]) == zone:
-			return fog._ov_nodes[i]
-	return null

@@ -78,7 +78,7 @@ func _ready() -> void:
 	var screen_cells2: float = (vs.x / (20.0 * zoom)) if vs.x > 0.0 else 0.0
 	_check(screen_cells2 > 0.0, "viewport measured (%.0f px wide)" % vs.x, failures)
 
-	# --- 3. 三态迷雾 ---
+	# --- 3. 三态迷雾（柔和遮罩纹理）---
 	var fog_i := -1
 	for i in map.rooms.size():
 		var t: String = String(map.room_types[i])
@@ -91,21 +91,21 @@ func _ready() -> void:
 		for i in 4:
 			await get_tree().process_frame
 		_check(map.explored[fog_i], "entering reveals the room", failures)
-		var m: ColorRect = _mask_for(inst.fog, "r%d" % fog_i)
-		_check(m != null and not m.visible, "current room is unmasked (evenly lit)", failures)
-		inst.player.position = map.corridor_rect.get_center()
+		var a_cur: float = inst.fog.zone_alpha("r%d" % fog_i)
+		_check(a_cur >= 0.0 and a_cur <= 0.01, "current room is unmasked (a=%.2f)" % a_cur, failures)
+		_check(inst.fog._mask != null and inst.fog._mask.visible, "soft fog mask sprite exists", failures)
+		inst.player.position = map.corridor_segments[0].get_center()
 		inst.camera.reset_smoothing()
 		inst.camera.global_position = inst.player.position
 		await get_tree().create_timer(0.3).timeout
-		m = _mask_for(inst.fog, "r%d" % fog_i)
-		_check(m != null and m.visible and m.color.a > 0.05 and m.color.a < 0.9,
-			"explored room dims after leaving (a=%.2f)" % (m.color.a if m != null else -1.0), failures)
+		var a_dim: float = inst.fog.zone_alpha("r%d" % fog_i)
+		_check(a_dim > 0.05 and a_dim < 0.9, "explored room dims after leaving (a=%.2f)" % a_dim, failures)
 		var dark_ok := true
 		for i in map.rooms.size():
 			if map.explored[i] or i == int(map.nested_room_index):
 				continue
-			var dm: ColorRect = _mask_for(inst.fog, "r%d" % i)
-			if dm != null and (dm.color.a < 0.75 or dm.color.get_luminance() > 0.12):
+			var a_un: float = inst.fog.zone_alpha("r%d" % i)
+			if a_un >= 0.0 and a_un < 0.75:
 				dark_ok = false
 				break
 		_check(dark_ok, "unexplored rooms stay dark", failures)
@@ -141,11 +141,7 @@ func _ready() -> void:
 			_check(int(m2.treasure_room_index) == nest, "nested room is the hidden treasure room", failures)
 			_check(m2.is_connected_plan(), "nested room reachable (seed %d)" % [GameState.seed_value], failures)
 			var nz := "r%d" % nest
-			var has_mask := false
-			for z in inst.fog._ov_zones:
-				if String(z) == nz:
-					has_mask = true
-			_check(has_mask, "fog has its own mask for the nested room", failures)
+			_check(inst.fog.zone_alpha(nz) >= 0.0, "fog has its own mask for the nested room", failures)
 		if m2.passage_rects.size() > 0:
 			passage_seen += 1
 			for i in m2.passage_rects.size():
@@ -168,11 +164,3 @@ func _check(cond: bool, label: String, fails: Array[String]) -> void:
 	else:
 		fails.append(label)
 		print("  FAIL: ", label)
-
-func _mask_for(fog, zone: String) -> ColorRect:
-	if fog == null:
-		return null
-	for i in fog._ov_zones.size():
-		if String(fog._ov_zones[i]) == zone:
-			return fog._ov_nodes[i]
-	return null

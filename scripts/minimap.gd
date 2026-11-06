@@ -42,17 +42,18 @@ func _process(_delta: float) -> void:
 func _draw() -> void:
 	if map == null or player == null:
 		return
-	if map.world_rect.size.x <= 0.0 or map.world_rect.size.y <= 0.0:
+	var content: Rect2 = map.content_rect()
+	if content.size.x <= 0.0 or content.size.y <= 0.0:
 		return
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.055, 0.063, 0.086, 0.90))
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.227, 0.251, 0.329, 0.95), false, 1.5)
 	draw_rect(Rect2(Vector2(PAD - 3.0, PAD - 3.0), size - Vector2(PAD * 2.0, PAD * 2.0) + Vector2(6.0, 6.0)), Color(0.071, 0.078, 0.114, 0.8))
 
 	var avail := size - Vector2(PAD * 2.0, PAD * 2.0)
-	var sc: float = minf(avail.x / map.world_rect.size.x, avail.y / map.world_rect.size.y)
+	var sc: float = minf(avail.x / content.size.x, avail.y / content.size.y)
 	var off := Vector2(
-		(size.x - map.world_rect.size.x * sc) * 0.5,
-		(size.y - map.world_rect.size.y * sc) * 0.5
+		(size.x - content.size.x * sc) * 0.5,
+		(size.y - content.size.y * sc) * 0.5
 	)
 
 	# 已探索的走廊段（未探索的一律不画）
@@ -60,7 +61,7 @@ func _draw() -> void:
 		if i >= map.corridor_explored.size() or not map.corridor_explored[i]:
 			continue
 		var s: Rect2 = map.corridor_segments[i]
-		var sr := Rect2(off + (s.position - map.world_rect.position) * sc, s.size * sc)
+		var sr := Rect2(off + (s.position - content.position) * sc, s.size * sc)
 		draw_rect(sr, Color(0.86, 0.89, 0.84))
 
 	# 走过的环路门洞（没走过就跟墙一样不画）
@@ -68,7 +69,7 @@ func _draw() -> void:
 		if i < map.passage_owner.size() and not map.passage_seen(i):
 			continue
 		var ps: Rect2 = map.passage_rects[i]
-		var psr := Rect2(off + (ps.position - map.world_rect.position) * sc, ps.size * sc)
+		var psr := Rect2(off + (ps.position - content.position) * sc, ps.size * sc)
 		draw_rect(psr, Color(0.86, 0.89, 0.84))
 
 	# 已探索的房间：按房型着色
@@ -78,7 +79,7 @@ func _draw() -> void:
 			continue
 		seen_any = true
 		var r: Rect2 = map.rooms[i]
-		var rr := Rect2(off + (r.position - map.world_rect.position) * sc, r.size * sc)
+		var rr := Rect2(off + (r.position - content.position) * sc, r.size * sc)
 		var col := Color(0.46, 0.76, 0.42)
 		var t: String = String(map.room_types[i])
 		if map.type_defs.has(t):
@@ -103,7 +104,7 @@ func _draw() -> void:
 					break
 			if not known:
 				continue
-			var dr := Rect2(off + (r.position - map.world_rect.position) * sc, r.size * sc)
+			var dr := Rect2(off + (r.position - content.position) * sc, r.size * sc)
 			draw_rect(dr, Color(0.30, 0.20, 0.09, 0.95))
 
 	# 敌人只在「巡查情报」生效时显示
@@ -112,21 +113,21 @@ func _draw() -> void:
 			for s in get_tree().get_nodes_in_group(group):
 				if not (s is Node2D):
 					continue
-				var sp: Vector2 = off + (s.position - map.world_rect.position) * sc
+				var sp: Vector2 = off + (s.position - content.position) * sc
 				var path = s.get("path")
 				if path is PackedVector2Array:
 					for j in range(path.size() - 1):
-						var a: Vector2 = off + (path[j] - map.world_rect.position) * sc
-						var b: Vector2 = off + (path[j + 1] - map.world_rect.position) * sc
+						var a: Vector2 = off + (path[j] - content.position) * sc
+						var b: Vector2 = off + (path[j + 1] - content.position) * sc
 						draw_line(a, b, Color(0.95, 0.35, 0.35, 0.55), 1.0)
 				draw_circle(sp, 3.5, Color(0.95, 0.20, 0.20))
 
 	for dpos in _discovered.keys():
-		var hp: Vector2 = off + (Vector2(dpos) - map.world_rect.position) * sc
+		var hp: Vector2 = off + (Vector2(dpos) - content.position) * sc
 		draw_rect(Rect2(hp - Vector2(2.0, 2.0), Vector2(4.0, 4.0)), Color(0.98, 0.82, 0.25))
 
 	# 玩家：位置 + 朝向
-	var p: Vector2 = off + (player.position - map.world_rect.position) * sc
+	var p: Vector2 = off + (player.position - content.position) * sc
 	var fd = player.get("face_dir")
 	if fd is Vector2 and (fd as Vector2).length_squared() > 0.001:
 		var v: Vector2 = (fd as Vector2).normalized()

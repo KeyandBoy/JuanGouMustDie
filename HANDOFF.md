@@ -29,6 +29,12 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **验收第二轮修正（2026-11-06，opencode）**：
+  - 小地图改挂**左侧状态卡正下方**（`main._layout_minimap()` 每帧跟随状态卡，卡片换边也跟着换）。
+  - 探索遮罩重写：整张图按「每格 1 像素」烘一张三态遮罩纹理 + `shaders/fog_mask_soft.gdshader` 3×3 帐篷模糊，房间/走廊边界变成约 2 格宽的柔和光晕，不再是硬边方块；测试改读 `fog.zone_alpha(zone)`。
+  - 删除假的「视差楼体剪影」（`parallax_bg.gd` 与 `backdrop_brick` 着色器都删了）：读参考项目 `PixelGame-Public-master` 后确认他们地图外就是**纯色相机底色**（`Camera.main.backgroundColor = (24,20,37)`），没有任何视差假剪影；假剪影的视差位移会飘进房间变成「跟着主角走的黑条」。
+  - 地图四周补 20 格实心砖墙（`school_map.MAP_PAD` + `_pad_map()` + 图集深色砖纹），镜头贴边时看到的是墙体；镜头边界改回 `world_rect`；小地图改用 `content_rect()` 计算比例。
+  - 参考项目另外两处值得记住的写法：相机是「跟玩家 + 鼠标方向 look-ahead + `Lerp(1/damp*dt)` + `Mathf.Floor` 像素对齐 + 边界 `Clamp`」；小地图是**第二台相机**而不是 UI 手绘（本作目前仍是 Control 自绘，够用）。
 - **验收反馈修正（2026-11-06，opencode）**：
   - 镜头改「房间居中」：目标 = 当前房间/走廊段中心，只在玩家偏离超过 26% 视口半宽时拉回（`zone_center_at` + `CAMERA_PLAYER_MAX_OFF`），边界放宽 16 格让最外圈房间也能居中；`DEAD_ZONE_*` 已删除。
   - 房间再放大（教室 34~46 格宽、进深 22~30，最小房型 ≥24 格），`zoom 0.85 → 0.95`，课桌上限 18；最大的房间也仍能整间入镜。

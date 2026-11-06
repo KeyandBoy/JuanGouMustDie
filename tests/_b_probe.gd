@@ -41,11 +41,9 @@ func _ready() -> void:
 		_check(not torch.visible and torch.energy < 0.05, "b12: torch off in normal light")
 
 	# B13 视差：节点存在、层号 -7、跟随相机
-	_check(inst.parallax_bg != null, "b13: parallax node exists")
-	if inst.parallax_bg != null:
-		_check(inst.parallax_bg.z_index == -7, "b13: parallax z=-7")
-		await get_tree().create_timer(0.2).timeout
-		_check(inst.parallax_bg._cam_pos != Vector2.INF, "b13: parallax tracks camera")
+	# B13：原来的「远景楼体剪影」视差已删除（视差位移会飘进房间变成黑条）。
+	# 现在地图外的区域由 school_map 的 MAP_PAD 实心砖墙承担，不再画假剪影。
+	_check(inst.get("parallax_bg") == null, "b13: fake parallax silhouettes removed")
 
 	# B12 敌人红眼：普通关即使追击也不亮
 	GameState.level = 4

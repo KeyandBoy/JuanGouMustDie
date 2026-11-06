@@ -49,6 +49,10 @@ var corridor_rect := Rect2()
 var tail_corridor_rect := Rect2()
 var is_l_shape := false
 
+## 地图四周补的「建筑实体」实心格数：镜头把最外圈房间摆到屏幕正中时，
+## 露出来的是砖墙而不是纯色空白（参考项目用的是纯色相机底色，这里用瓦片更贴合本作画风）。
+const MAP_PAD := 20
+
 ## 走廊按「门到门 / 路口到路口」切段，探索按整段点亮（和房间同一套逻辑）。
 var corridor_segments: Array[Rect2] = []
 var corridor_explored: Array[bool] = []
@@ -307,6 +311,9 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	for i in rooms.size():
 		if room_types[i] == "stair":
 			stair_rects.append(rooms[i])
+
+	# 四周补一圈建筑实体（实心砖墙），这样镜头贴边时看到的是墙，而不是空白
+	_pad_map(MAP_PAD)
 
 	var hall_i := room_types.find("hall")
 	if hall_i < 0:
@@ -922,6 +929,61 @@ func _carve_loop_passage() -> void:
 	passage_owner.append(ia)
 	passage_other.append(ib)
 
+## 把整张图整体平移到右下 pad 格，并在四周补满实心（建筑实体）。
+## 参考项目 PixelGame 的做法是「相机底色 = 纯色，地图外什么都不画」；
+## 本作因为房间要居中、镜头会贴到地图边，所以把「外面」补成实心砖墙，视觉上更像教学楼内部。
+func _pad_map(pad: int) -> void:
+	if pad <= 0 or gw <= 0:
+		return
+	var off := Vector2(pad * CELL, pad * CELL)
+	var ngw := gw + pad * 2
+	var ngh := gh + pad * 2
+	var ngrid := PackedByteArray()
+	ngrid.resize(ngw * ngh)
+	ngrid.fill(SOLID)
+	var nroom := PackedInt32Array()
+	nroom.resize(ngw * ngh)
+	nroom.fill(-1)
+	for y in gh:
+		for x in gw:
+			ngrid[(y + pad) * ngw + (x + pad)] = grid[y * gw + x]
+			nroom[(y + pad) * ngw + (x + pad)] = _room_cell[y * gw + x]
+	grid = ngrid
+	_room_cell = nroom
+	gw = ngw
+	gh = ngh
+	world_rect = Rect2(0, 0, gw * CELL, gh * CELL)
+	for i in rooms.size():
+		rooms[i] = Rect2(rooms[i].position + off, rooms[i].size)
+	corridor_rect = Rect2(corridor_rect.position + off, corridor_rect.size)
+	tail_corridor_rect = Rect2(tail_corridor_rect.position + off, tail_corridor_rect.size)
+	for i in doors.size():
+		doors[i]["pos"] = Vector2(doors[i]["pos"]) + off
+	for i in windows.size():
+		var wr: Rect2 = windows[i]["rect"]
+		windows[i]["rect"] = Rect2(wr.position + off, wr.size)
+	for i in stair_rects.size():
+		stair_rects[i] = Rect2(stair_rects[i].position + off, stair_rects[i].size)
+	for i in passage_rects.size():
+		passage_rects[i] = Rect2(passage_rects[i].position + off, passage_rects[i].size)
+	if nested_rect.size.x > 0.0:
+		nested_rect = Rect2(nested_rect.position + off, nested_rect.size)
+	exit_pos += off
+
+## 实际内容（房间 + 走廊段）的包围盒：小地图用它，避免把四周补的实体留白算进去。
+func content_rect() -> Rect2:
+	var r := Rect2()
+	var first := true
+	for room in rooms:
+		r = room if first else r.merge(room)
+		first = false
+	for seg in corridor_segments:
+		r = seg if first else r.merge(seg)
+		first = false
+	if first:
+		return world_rect
+	return r
+
 func _build_walls() -> void:
 	var near := PackedByteArray()
 	near.resize(grid.size())
@@ -995,6 +1057,8 @@ func _build_tiles() -> void:
 		var wb: Color = type_defs[TYPE_ORDER[i]]["wall"] if i < TYPE_ORDER.size() else CORRIDOR_WALL
 		for mask in 16:
 			_paint_wall_tile(img, i * 16 + mask, 1, wb, mask)
+	# 最后一列：地图外的「建筑实体」深色砖纹（不是纯黑，避免看着像一块黑幕）
+	_paint_solid_tile(img, solid_col, 1, Color(0.145, 0.155, 0.185))
 
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(c, c)
@@ -1172,6 +1236,22 @@ func _paint_wall_tile(img: Image, col: int, row: int, base: Color, mask: int) ->
 		img.fill_rect(Rect2i(ox, oy + c - 1, c, 1), WALL_EDGE_COLOR)
 	if mask & 8 == 0:
 		img.fill_rect(Rect2i(ox, oy, 1, c), WALL_EDGE_COLOR)
+
+## 地图外的建筑实体砖纹：比墙砖暗、比纯黑亮一点，能看出是「墙体」而不是黑幕。
+func _paint_solid_tile(img: Image, col: int, row: int, base: Color) -> void:
+	var c := int(CELL)
+	var ox := col * c
+	var oy := row * c
+	img.fill_rect(Rect2i(ox, oy, c, c), base)
+	var mortar := base.darkened(0.25)
+	var bh := c / 4
+	for k in range(1, 4):
+		img.fill_rect(Rect2i(ox, oy + k * bh - 1, c, 1), mortar)
+	for k in 4:
+		var off := 0 if k % 2 == 0 else c / 2
+		var sx := ox + off + c / 2
+		if sx < ox + c:
+			img.fill_rect(Rect2i(sx, oy + k * bh, 1, bh), mortar)
 
 ## 墙格属于哪一侧：优先取相邻地板所属房型，否则用走廊色。
 func _wall_slot_at(x: int, y: int, tindex: Dictionary, corr_slot: int) -> int:
