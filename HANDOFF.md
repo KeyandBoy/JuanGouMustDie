@@ -3,8 +3,8 @@
 - 更新时间：2026-11-06
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`efb48f9`（验收反馈：房间居中镜头 + 房间再放大 + 迷雾不再死黑 + 小地图收小）
-- 已推送 origin/main：`efb48f9`
+- 当前 HEAD：`37c62d1`（小地图挂左侧 / 探索遮罩柔和光晕 / 删除假视差剪影）
+- 已推送 origin/main：`37c62d1`
 - 工作区：只剩 `tests/shot_*.png` 等截图产物未提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
@@ -232,7 +232,9 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 ```
 
 > 注：Godot 测试进程有时会脱离控制台，管道里拿不到输出；最稳的读法是看 `%APPDATA%\Godot\app_userdata\卷狗必须死\logs\godot.log`（历史日志会归档成 `godot<时间戳>.log`，需逐个搜）。
-> 本轮踩过的坑：headless 视口只有几十像素 —— 一屏格数要按 `display/window/size/viewport_width` 算，死区断言按真实视口算。
+> 本轮踩过的坑：headless 视口只有几十像素 —— 一屏格数要按 `display/window/size/viewport_width` 算。
+> 探索遮罩现在是「纹理 + 着色器」，断言请用 `fog.zone_alpha(zone)`，不要再找 ColorRect。
+> 套间/走廊样张用 `tests/_nested_shot.tscn`（输出 shot_nested_parent / shot_nested_inside / shot_corridor_glow / shot_loop_passage）。
 
 ## 环境
 
