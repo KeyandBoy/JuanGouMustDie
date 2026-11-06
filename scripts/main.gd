@@ -2755,12 +2755,7 @@ func _on_level_card_pressed(lv: int) -> void:
 	_close_all_modals()
 	menu_layer = null
 	_start_level(lv)
-	if not bool(GameState.story_flags.get("dlg_tutorial", false)):
-		GameState.story_flags["dlg_tutorial"] = true
-		var ui := show_dialogue(DialogueDb.tutorial())
-		if ui != null:
-			ui.finished.connect(func(): _maybe_show_level_dialogue(lv), CONNECT_ONE_SHOT)
-			return
+	# 系统操作说明只在新手关出现（见 tutorial.gd 第 1 步），关卡里只放剧情提示
 	_maybe_show_level_dialogue(lv)
 
 func show_dialogue(data: DialogueData, pause_game := true) -> Control:

@@ -93,6 +93,8 @@ func _enter_step() -> void:
 			_hud_task("任务 1/7 · 跟着黄色标记走（WASD）")
 			marker = _classroom_point()
 			_say([
+				{"speaker": "系统", "text": "WASD 移动，Shift 闪避，F 学习/答题，E 开门。"},
+				{"speaker": "系统", "text": "R/T/Y 使用背包道具，ESC 暂停。活下去，然后往上爬。"},
 				{"speaker": "广播", "text": "喂。"},
 				{"speaker": "广播", "text": "听得到吗？"},
 				{"speaker": "广播", "text": "你是谁？怎么来到这儿的？"},
