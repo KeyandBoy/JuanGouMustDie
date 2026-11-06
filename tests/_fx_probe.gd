@@ -49,18 +49,18 @@ func _ready() -> void:
 		"map: room_roles aligned (%d/%d)" % [inst.map.room_roles.size(), inst.map.rooms.size()])
 	_check(inst.map.room_roles.has("deep"), "map: has a deep room")
 	var safe_i: int = inst.map.safe_room_index
-	_check(safe_i >= 0, "map: safe room assigned (idx=%d)" % safe_i)
-	if safe_i >= 0:
-		_check(not inst.map.study_allowed_at(inst.map.rooms[safe_i].get_center()),
+	_check(safe_i == -1, "map: no safe room in levels 1-5 (idx=%d)" % safe_i)
+	# 模拟第 6 层：安全屋机制仍要可用
+	var old_level: int = GameState.level
+	GameState.level = 6
+	inst.map._compute_roles(true)
+	var safe6: int = inst.map.safe_room_index
+	_check(safe6 >= 0, "map: safe room returns from level 6 (idx=%d)" % safe6)
+	if safe6 >= 0:
+		_check(not inst.map.study_allowed_at(inst.map.rooms[safe6].get_center()),
 			"map: safe room blocks study")
-		var outside := -1
-		for i in inst.map.rooms.size():
-			if i != safe_i:
-				outside = i
-				break
-		if outside >= 0:
-			_check(inst.map.study_allowed_at(inst.map.rooms[outside].get_center()),
-				"map: other rooms still allow study")
+	GameState.level = old_level
+	inst.map._compute_roles(true)
 
 	# --- 答对：色闪层 + 绿色飘字 ---
 	var before := 0

@@ -8,6 +8,8 @@ signal door_slam
 const DOOR_SCRIPT := preload("res://scripts/door.gd")
 
 const CELL := 20.0
+## 安全屋从第 6 层开始启用；前五层是教学/基础层，不给喘息点。
+const SAFE_ROOM_MIN_LEVEL := 6
 const WALL_EXT := 1
 const WALL_INT := 1
 const DOOR_W := 2
@@ -497,7 +499,6 @@ func _compute_roles(allow_safe := true) -> void:
 			entry_i = i
 	if entry_i >= 0:
 		entry_room_index = entry_i
-		room_roles[entry_i] = "entry"
 		if entry_i < explored.size():
 			explored[entry_i] = true
 		exit_pos = _walkable_center(rooms[entry_i])
@@ -510,7 +511,7 @@ func _compute_roles(allow_safe := true) -> void:
 		var boss_i := -1
 		var boss_d := -1
 		for i in rooms.size():
-			if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry":
+			if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index:
 				continue
 			if room_depth[i] > boss_d:
 				boss_d = room_depth[i]
@@ -523,31 +524,32 @@ func _compute_roles(allow_safe := true) -> void:
 	if not allow_safe:
 		return
 
-	# 安全屋：纵深 33%~62% 里最接近 47% 的一间，排除楼梯/大厅/入口/Boss
-	var best := -1
-	var best_score := 1.0e9
-	for i in rooms.size():
-		if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry" or room_roles[i] == "boss":
-			continue
-		if room_depth[i] < 0:
-			continue
-		var r := float(room_depth[i]) / float(maxd)
-		if r < 0.33 or r > 0.62:
-			continue
-		var score := absf(r - 0.47)
-		if score < best_score:
-			best_score = score
-			best = i
-	if best >= 0:
-		room_roles[best] = "safe"
-		safe_room_index = best
-		room_names[best] = "安全屋（禁止答题）"
+	# 安全屋：从第 6 层起才启用；前五层不出现，保持基础关卡的压迫感
+	if GameState.level >= SAFE_ROOM_MIN_LEVEL:
+		var best := -1
+		var best_score := 1.0e9
+		for i in rooms.size():
+			if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index or room_roles[i] == "boss":
+				continue
+			if room_depth[i] < 0:
+				continue
+			var r := float(room_depth[i]) / float(maxd)
+			if r < 0.33 or r > 0.62:
+				continue
+			var score := absf(r - 0.47)
+			if score < best_score:
+				best_score = score
+				best = i
+		if best >= 0:
+			room_roles[best] = "safe"
+			safe_room_index = best
+			room_names[best] = "安全屋（禁止答题）"
 
 	# E4：宝箱房 = 不在主路上的最深支路房
 	var tre_i := -1
 	var tre_d := -1
 	for i in rooms.size():
-		if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry" or room_roles[i] == "safe" or room_roles[i] == "boss":
+		if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index or room_roles[i] == "safe" or room_roles[i] == "boss":
 			continue
 		if main_path_rooms.has(i):
 			continue
@@ -556,7 +558,7 @@ func _compute_roles(allow_safe := true) -> void:
 			tre_i = i
 	if tre_i < 0:
 		for i in rooms.size():
-			if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "entry" or room_roles[i] == "safe" or room_roles[i] == "boss":
+			if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index or room_roles[i] == "safe" or room_roles[i] == "boss":
 				continue
 			tre_i = i
 			break

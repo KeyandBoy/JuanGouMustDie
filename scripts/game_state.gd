@@ -136,6 +136,8 @@ var tyrant_active := false
 var cutscene_active := false
 var game_cleared := false
 var intel_reveal_timer := 0.0
+## 运行时黑暗状态（停电 / 电闸未开 / 开发者关灯）。不存档，由 main 每帧汇总。
+var dark_vision := false
 ## G11：答错攒残页，5 张换 1 个提示符（答题时排除一个错误项）。
 var residual_pages := 0
 var hint_tokens := 0
@@ -193,6 +195,7 @@ func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"])
 	wrong_questions.clear()
 	residual_pages = 0
 	hint_tokens = 0
+	dark_vision = false
 	tyrant_intro_seen = false
 	tyrant_active = false
 	cutscene_active = false
@@ -230,6 +233,7 @@ func begin_next_level() -> void:
 	wrong_questions.clear()
 	residual_pages = 0
 	hint_tokens = 0
+	dark_vision = false
 	tyrant_active = false
 	cutscene_active = false
 	intel_reveal_timer = 0.0

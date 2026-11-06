@@ -63,6 +63,7 @@ func _ready() -> void:
 	add_child(torch)
 	torch.set_facing(face_dir)
 
+
 func _physics_process(delta: float) -> void:
 	if stun_timer > 0.0:
 		stun_timer -= delta
@@ -135,6 +136,8 @@ func clear_item_buffs() -> void:
 	dash_charge_mult = 1.0
 
 func _process(delta: float) -> void:
+	if torch != null:
+		torch.set_active(GameState.dark_vision)
 	if sprite == null:
 		return
 	if stun_timer > 0.0:

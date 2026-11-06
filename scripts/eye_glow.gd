@@ -31,8 +31,7 @@ func _process(_delta: float) -> void:
 
 
 func _factor() -> float:
-	var dark := GameState.level >= 2 or bool(GameState.story_flags.get("blackout", false))
-	if not dark:
+	if not GameState.dark_vision:
 		return 0.0
 	var parent := get_parent()
 	if parent == null:

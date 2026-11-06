@@ -12,16 +12,36 @@ const LENGTH := 128.0
 const TEX_SIZE := 256
 
 var energy_base := 0.72
+var active := false
+var _fade: Tween
 
 
 func _ready() -> void:
 	texture = _make_cone()
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	color = Color(1.0, 0.90, 0.72)
-	energy = energy_base
+	energy = 0.0
+	visible = false
 	texture_scale = 1.05
 	blend_mode = Light2D.BLEND_MODE_ADD
 	shadow_enabled = false
+
+
+## B12：只有停电/低可视度时才点亮；普通关保持熄灭。
+func set_active(on: bool) -> void:
+	if on == active:
+		return
+	active = on
+	if _fade != null and _fade.is_valid():
+		_fade.kill()
+	if on:
+		visible = true
+		_fade = create_tween()
+		_fade.tween_property(self, "energy", energy_base, 0.2)
+	else:
+		_fade = create_tween()
+		_fade.tween_property(self, "energy", 0.0, 0.3)
+		_fade.tween_callback(func() -> void: visible = false)
 
 
 func set_facing(dir: Vector2) -> void:
@@ -31,6 +51,10 @@ func set_facing(dir: Vector2) -> void:
 
 
 func _process(_delta: float) -> void:
+	if not active:
+		return
+	if _fade != null and _fade.is_valid():
+		return
 	# 轻微呼吸，避免光锥像贴纸一样死板
 	energy = energy_base * (0.94 + 0.06 * sin(Time.get_ticks_msec() * 0.004))
 

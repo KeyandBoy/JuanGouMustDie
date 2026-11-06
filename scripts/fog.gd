@@ -23,6 +23,7 @@ const HALO_BY_LEVEL := {
 var halo_clear := 160.0
 var halo_fade := 300.0
 var _halo_level := -1
+var _halo_dark := false
 
 var _forget: Array[float] = []
 var _away: Array[float] = []
@@ -118,6 +119,16 @@ func _process(delta: float) -> void:
 		var vs: Vector2 = get_viewport().get_visible_rect().size
 		mat.set_shader_parameter("resolution", vs)
 		mat.set_shader_parameter("center", player.get_global_transform_with_canvas().origin / vs)
+		# B12：只有黑暗状态才启用锥形可视区，方向跟着玩家朝向
+		var dark: bool = GameState.dark_vision
+		mat.set_shader_parameter("cone_on", 1.0 if dark else 0.0)
+		var fd = player.get("face_dir")
+		if fd is Vector2:
+			var v: Vector2 = fd
+			if v.length_squared() > 0.001:
+				mat.set_shader_parameter("cone_dir", v.normalized())
+		mat.set_shader_parameter("cone_length", 260.0)
+		mat.set_shader_parameter("cone_half_angle", 0.42)
 
 func _update_forget(delta: float) -> void:
 	if map == null or player == null or not is_instance_valid(player):
@@ -214,16 +225,20 @@ func _update_ambient(delta: float) -> void:
 
 func _apply_halo() -> void:
 	var lv: int = clampi(GameState.level, 1, 5)
-	if lv == _halo_level:
+	var dark: bool = GameState.dark_vision
+	if lv == _halo_level and dark == _halo_dark and _halo_level >= 0:
 		return
 	_halo_level = lv
+	_halo_dark = dark
 	var r: Vector2 = HALO_BY_LEVEL[lv]
-	halo_clear = r.x
-	halo_fade = r.y
+	var mul := 0.55 if dark else 1.0
+	halo_clear = r.x * mul
+	halo_fade = r.y * (0.62 if dark else 1.0)
 	if halo != null:
 		var mat := halo.material as ShaderMaterial
 		mat.set_shader_parameter("clear_radius", halo_clear)
 		mat.set_shader_parameter("fade_radius", halo_fade)
+		mat.set_shader_parameter("max_alpha", 0.985 if dark else 0.96)
 
 func _is_forgettable(index: int) -> bool:
 	if index < 0 or index >= map.room_types.size():

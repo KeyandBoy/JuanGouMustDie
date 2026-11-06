@@ -1,11 +1,11 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-05
+- 更新时间：2026-11-06
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`777db7f`（B 组收口；C/D + E/F/G 第一批在其前面）
-- 已推送 origin/main：`2bba794`（C 组）；之后的 D/E/F/G/B 提交因 GitHub 连接被重置暂留本地，恢复后 `git -c http.proxy= -c https.proxy= push`。
-- 工作区：C 组 UI 已改完待提交；别的会话仍有未提交改动（`scripts/main.gd`、`scripts/player.gd`、`scripts/school_map.gd`、`tests/_b_probe.gd`、`tests/_e_probe.gd`、`tests/_fx_probe.gd`、`tests/shot_*.png` 等），不是本轮产物。
+- 当前 HEAD：`46ed427`（视差修复；B12 条件化提交后更新）
+- 已推送 origin/main：`0d0dc2b`（C/D）；之后 EFG、B、视差修复与 B12 条件化均暂留本地，网络恢复后 `git -c http.proxy= -c https.proxy= push`。
+- 工作区：B12 条件化 + 安全屋分层正在收口；`tests/shot_*.png` 等仍是截图产物，不提交。
 - 另外：`parallax_bg.gd` 的视差公式修复 + 树影默认关闭已由 opencode 提交（见「本轮已完成」第一条）。
 
 ## 最简用法（推荐）
@@ -19,12 +19,19 @@
 
 ## 当前目标
 
-B 组已收口（B12 手电/红眼、B13 视差完成，`stash` 已清空）；C/D 组与 E/F/G 第一批也已完成。
-剩下的大件都需要单独立项：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
+B 组已收口并完成条件化：手电只在停电/低可视度出现，第 4 关随机跳闸；安全屋第 6 层起启用。
+C/D 组与 E/F/G 第一批也已完成；剩下的大件都需要单独立项：E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
 D8 的三套脚步采样、D6 的同 BPM 追逐鼓点层仍需音频窗口补素材。
 
 ## 本轮已完成
 
+- **B12 条件化 + 安全屋分层（2026-11-06）**：
+  - 手电只在 `GameState.dark_vision`（停电/剧情 blackout/开发者关灯）时亮，普通关默认熄灭。
+  - `fog.gdshader` 增加锥形可视区（24°/260px）；停电时圆形视野缩至 55%、雾气 alpha 提高，手电外几乎全黑。
+  - 红眼只在黑暗状态亮，且仍只出现在手电/圆形视野内。
+  - 第 4 关随机停电：间隔 8~16s、每次 0.3~1.0s 后恢复；停电关走廊灯、压暗世界、首次提示。
+  - 安全屋改为第 6 层起启用（`SAFE_ROOM_MIN_LEVEL=6`），前五层没有安全屋。
+  - 测试：`_b_probe` / `_fx_probe` / `_e_probe` 已更新；十二套全绿；`tests/_b_shot.tscn` 输出停电样张。
 - **修复「黑色球状图层跟着主角跑」（2026-11-05，opencode）**：
   - 病根是 B13 视差 `parallax_bg.gd`：`off = -cam*f` 写反了（应为 `+cam*(1-f)`），树影以 1.16 倍相机速度漂移，看着就黏在主角身上；首帧 `_cam_pos = INF` 还会画出退化图形。
   - 已改公式、初始化相机位置、加 `is_nan` 保护；因窗外是纯黑，树冠/枝影用 `SHOW_TREES = false` 默认关闭（要开改 true，且窗外必须有亮部）。

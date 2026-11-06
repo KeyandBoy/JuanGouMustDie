@@ -15,12 +15,18 @@ const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
 const MINIMAP_ENABLED := false
 
+# B12：第 4 关随机停电。间隔 8~16s，每次 0.3~1.0s，只闪一下不常驻。
+const BLACKOUT_GAP_MIN := 8.0
+const BLACKOUT_GAP_MAX := 16.0
+const BLACKOUT_DUR_MIN := 0.3
+const BLACKOUT_DUR_MAX := 1.0
+
 # C13：死亡界面随机小贴士（和关卡台词分开，短、可执行）
 const DEATH_TIPS: Array[String] = [
 	"被追时先拐进侧房再关门，直线跑只会把动静带大。",
 	"咖啡的 8 秒加速够穿过一条走廊，别提前喝。",
 	"答错会制造动静，连错时先停手听一听。",
-	"安全屋能回理智，但每层只有一次。",
+	"前五层没有安全屋，理智只能靠答对和道具。",
 	"暴君怕烟雾和臭气，折叠椅只能拖延两秒。",
 	"深夜楼的视野很小，贴着墙走比在走廊中间安全。",
 	"关门能挡住追击者，但也会挡住你自己的退路。",
@@ -41,6 +47,12 @@ var level_lights: Node2D
 var _light_tex: Texture2D
 var _light_time := 0.0
 var _lights_on := true
+var _world_base_color := Color(0.78, 0.82, 0.92)
+var _blackout_active := false
+var _blackout_left := 0.0
+var _blackout_next := 1.0e9
+var _blackout_toast_shown := false
+var _last_dark := false
 var _dialogue_prev_paused := false
 var quiz: CanvasLayer
 var camera: Camera2D
@@ -281,6 +293,7 @@ func _setup_lighting() -> void:
 		world_modulate.name = "WorldLight"
 		add_child(world_modulate)
 	world_modulate.color = Color(0.95, 0.97, 1.0) if GameState.tutorial_active else Color(0.78, 0.82, 0.92)
+	_world_base_color = world_modulate.color
 	if level_lights != null and is_instance_valid(level_lights):
 		level_lights.queue_free()
 	level_lights = Node2D.new()
@@ -349,19 +362,49 @@ func _update_breath() -> void:
 			uneasy = true
 	if not chased and tyrant_spawned and bool(GameState.tyrant_active):
 		chased = true
-	var dark := (not _lights_on) or bool(GameState.story_flags.get("blackout", false))
-	breath.set_sources(chased, uneasy, dark)
+	breath.set_sources(chased, uneasy, GameState.dark_vision)
 	DevMode.breath_label = breath.status_text()
+
+## B12：第 4 关随机停电；未来关卡可用 story_flags["blackout"] 做“拉电闸前一直黑”。
+func _update_blackout(delta: float) -> void:
+	var permanent := bool(GameState.story_flags.get("blackout", false))
+	var running := GameState.run_state == GameState.RunState.EXPLORING or GameState.run_state == GameState.RunState.QUIZ
+	var can_flicker := GameState.level == 4 and not permanent and running and not transitioning and not cutscene_active
+	if not can_flicker:
+		_blackout_active = false
+		_blackout_left = 0.0
+	elif _blackout_active:
+		_blackout_left -= delta
+		if _blackout_left <= 0.0:
+			_blackout_active = false
+			_blackout_next = randf_range(BLACKOUT_GAP_MIN, BLACKOUT_GAP_MAX)
+	else:
+		_blackout_next -= delta
+		if _blackout_next <= 0.0:
+			_blackout_active = true
+			_blackout_left = randf_range(BLACKOUT_DUR_MIN, BLACKOUT_DUR_MAX)
+			if not _blackout_toast_shown:
+				_blackout_toast_shown = true
+				if hud != null:
+					hud.toast("啪——灯灭了。借着手电的光看清脚下")
+	var dark := _blackout_active or permanent or not _lights_on
+	if dark != _last_dark:
+		_last_dark = dark
+		_apply_lighting_visibility()
+
 
 func _apply_lighting_visibility() -> void:
 	var on := true
 	if DevMode.enabled and not DevMode.lighting:
 		on = false
 	_lights_on = on
+	var dark := _blackout_active or bool(GameState.story_flags.get("blackout", false))
+	GameState.dark_vision = dark or not on
 	if world_modulate != null:
 		world_modulate.visible = on
+		world_modulate.color = Color(0.24, 0.27, 0.34) if dark else _world_base_color
 	if level_lights != null:
-		level_lights.visible = on
+		level_lights.visible = on and not dark
 
 func _update_lights(delta: float) -> void:
 	if DevMode.enabled and DevMode.lighting != _lights_on:
@@ -419,6 +462,15 @@ func _setup_level(p_spawn_random := false) -> void:
 	GameState.wrong_questions.clear()
 	GameState.residual_pages = 0
 	GameState.hint_tokens = 0
+	GameState.dark_vision = false
+	GameState.story_flags.erase("blackout")
+	_blackout_active = false
+	_blackout_left = 0.0
+	_blackout_next = randf_range(5.0, 10.0) if GameState.level == 4 else 1.0e9
+	_blackout_toast_shown = false
+	_last_dark = false
+	_apply_lighting_visibility()
+	_last_dark = GameState.dark_vision
 	_footstep_accum = 0.0
 	_footstep_last = Vector2.INF
 	emptiness_timer = 0.0
@@ -729,6 +781,7 @@ func _on_item_full(item_id: String) -> void:
 
 func _process(delta: float) -> void:
 	_update_lights(delta)
+	_update_blackout(delta)
 	_update_breath()
 	_update_footsteps()
 	_update_lingering_items(delta)

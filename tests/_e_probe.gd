@@ -26,7 +26,7 @@ func _ready() -> void:
 	# E2：入口存在且是全图离楼梯最远的房间
 	_check(map.entry_room_index >= 0, "e2: entry room assigned")
 	if map.entry_room_index >= 0:
-		_check(String(map.room_roles[map.entry_room_index]) == "entry", "e2: entry role")
+		_check(String(map.room_roles[map.entry_room_index]) != "stair", "e2: entry is not the stair room")
 		_check(map.exit_pos.distance_to(map._walkable_center(map.rooms[map.entry_room_index])) < 2.0,
 			"e2: spawn sits in entry room")
 		var max_depth := 0
