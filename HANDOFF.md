@@ -3,8 +3,8 @@
 - 更新时间：2026-11-06
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`241032c`（系统操作说明只在新手关出现）
-- 已推送 origin/main：`241032c`
+- 当前 HEAD：`675e03c`（圆形照明 + 房型专属物品 + 家具网格 + 效率按距离）
+- 已推送 origin/main：`675e03c`
 - 工作区：只剩 `tests/shot_*.png` 等截图产物未提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
