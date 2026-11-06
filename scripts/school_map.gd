@@ -16,7 +16,17 @@ const DOOR_W := 2
 const SOLID := 0
 const FLOOR := 1
 
+## 房型全集（顺序 = 地砖图集的列序，别乱改）。
+const TYPE_ORDER := [
+	"classroom", "lab", "library", "medical", "office",
+	"storage", "broadcast", "toilet", "stair", "hall",
+]
+const CORRIDOR_TYPE := "corridor"
+## 地板图案种类：0 棋格 / 1 砖 / 2 木地板 / 3 纯色 / 4 污渍 / 5 裂纹
+const FLOOR_VARIANTS := 6
+
 const CORRIDOR_COLOR := Color(0.88, 0.90, 0.86)
+const CORRIDOR_WALL := Color(0.66, 0.69, 0.73)
 const WALL_COLOR := Color(0.70, 0.73, 0.78)
 const WALL_EDGE_COLOR := Color(0.27, 0.30, 0.35)
 const WALL_TOP_COLOR := Color(0.94, 0.96, 0.98)
@@ -39,6 +49,12 @@ var corridor_rect := Rect2()
 var tail_corridor_rect := Rect2()
 var is_l_shape := false
 
+## 走廊按「门到门 / 路口到路口」切段，探索按整段点亮（和房间同一套逻辑）。
+var corridor_segments: Array[Rect2] = []
+var corridor_explored: Array[bool] = []
+## 探索状态版本号：fog / minimap 靠它判断要不要重建遮罩。
+var exploration_version := 0
+
 var grid := PackedByteArray()
 var gw := 0
 var gh := 0
@@ -50,6 +66,12 @@ var closed_door_rects: Array[Rect2] = []
 var furniture := PackedByteArray()
 var reserved := PackedByteArray()
 var box_rects: Array[Rect2] = []
+
+## 房型专属大件家具（贴图，见 art/furniture/README.md）：
+##   sprite=贴图名、rect=世界矩形、room=房间下标、solid=是否挡路、decal=是否贴在墙上的装饰
+var big_items: Array[Dictionary] = []
+var big_rects: Array[Rect2] = []
+var _tex_cache: Dictionary = {}
 
 var nav_points := PackedVector2Array()
 var nav_links: Array = []
@@ -80,13 +102,19 @@ class WallShadow:
 		for r in rects:
 			draw_rect(Rect2(r.position + Vector2(3.0, 4.0), r.size), Color(0.0, 0.0, 0.0, 0.13))
 
+## 房型元数据：weight=出现权重（hall 固定占北排第一间）、w_min/w_max=房间宽度（格），
+## color=地板底色、wall=墙砖底色、eff=答题效率倍率、desk=每 60 格放几张课桌的分母（0=不放）。
 var type_defs: Dictionary = {
-	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.96, 0.86, 0.57), "w_min": 12, "w_max": 16, "eff": 1.0},
-	"office": {"name": "办公室", "weight": 2, "color": Color(0.80, 0.90, 0.74), "w_min": 9, "w_max": 12, "eff": 1.4},
-	"storage": {"name": "储物间", "weight": 2, "color": Color(0.89, 0.78, 0.60), "w_min": 8, "w_max": 10, "eff": 1.2},
-	"toilet": {"name": "厕所", "weight": 2, "color": Color(0.68, 0.89, 0.91), "w_min": 9, "w_max": 12, "eff": 0.6},
-	"stair": {"name": "楼梯间", "weight": 1, "color": Color(0.86, 0.88, 0.91), "w_min": 9, "w_max": 11, "eff": 0.6},
-	"hall": {"name": "大厅楼梯", "weight": 0, "color": Color(0.97, 0.82, 0.47), "w_min": 16, "w_max": 21, "eff": 0.8},
+	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.93, 0.83, 0.56), "wall": Color(0.87, 0.82, 0.70), "w_min": 26, "w_max": 36, "eff": 1.0, "desk": 55.0},
+	"lab":       {"name": "实验室",   "weight": 3, "color": Color(0.85, 0.90, 0.93), "wall": Color(0.79, 0.86, 0.91), "w_min": 24, "w_max": 34, "eff": 1.5, "desk": 78.0},
+	"library":   {"name": "图书室",   "weight": 3, "color": Color(0.82, 0.68, 0.48), "wall": Color(0.78, 0.70, 0.58), "w_min": 22, "w_max": 30, "eff": 1.25, "desk": 72.0},
+	"medical":   {"name": "医务室",   "weight": 2, "color": Color(0.85, 0.93, 0.89), "wall": Color(0.82, 0.90, 0.88), "w_min": 20, "w_max": 28, "eff": 1.3, "desk": 95.0},
+	"office":    {"name": "办公室",   "weight": 3, "color": Color(0.75, 0.83, 0.87), "wall": Color(0.73, 0.80, 0.85), "w_min": 18, "w_max": 26, "eff": 1.4, "desk": 85.0},
+	"storage":   {"name": "储物间",   "weight": 2, "color": Color(0.75, 0.79, 0.68), "wall": Color(0.70, 0.75, 0.68), "w_min": 15, "w_max": 20, "eff": 1.2, "desk": 110.0},
+	"broadcast": {"name": "广播室",   "weight": 1, "color": Color(0.67, 0.60, 0.76), "wall": Color(0.63, 0.57, 0.72), "w_min": 15, "w_max": 20, "eff": 1.6, "desk": 120.0},
+	"toilet":    {"name": "厕所",     "weight": 2, "color": Color(0.62, 0.83, 0.89), "wall": Color(0.66, 0.85, 0.91), "w_min": 13, "w_max": 17, "eff": 0.6, "desk": 999.0},
+	"stair":     {"name": "楼梯间",   "weight": 1, "color": Color(0.81, 0.83, 0.86), "wall": Color(0.76, 0.79, 0.83), "w_min": 15, "w_max": 20, "eff": 0.6, "desk": 999.0},
+	"hall":      {"name": "大厅楼梯", "weight": 0, "color": Color(0.95, 0.81, 0.52), "wall": Color(0.91, 0.81, 0.63), "w_min": 24, "w_max": 32, "eff": 0.8, "desk": 150.0},
 }
 
 func generate(p_seed: int, room_count: int = 0) -> void:
@@ -98,9 +126,9 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	if room_count > 0:
 		n = clampi(room_count, 6, 10)
 
-	var cw := rng.randi_range(6, 8)
-	var rd_n := rng.randi_range(12, 15)
-	var rd_s := rng.randi_range(12, 15)
+	var cw := rng.randi_range(10, 12)
+	var rd_n := rng.randi_range(18, 24)
+	var rd_s := rng.randi_range(18, 24)
 
 	is_l_shape = n >= 7 and rng.randf() < 0.35
 	var n_tail := 0
@@ -125,10 +153,12 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	for i in n_tail:
 		tail_types.append(_pick_type())
 	_ensure_stair(north_types, south_types, tail_types)
+	# 保底房型：每层至少 1 间普通教室 + 1 间厕所（楼梯/大厅不让动）
+	_ensure_floor_types(north_types, south_types, tail_types)
 
 	var tw := 0
 	if is_l_shape:
-		tw = rng.randi_range(12, 14)
+		tw = cw
 
 	var min_n := 2 * WALL_EXT + (n_north - 1) * WALL_INT + _width_sum(north_types, true)
 	var min_s := 2 * WALL_EXT + (n_south - 1) * WALL_INT + _width_sum(south_types, true)
@@ -170,7 +200,7 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	var tail_end := y_s_start
 	if is_l_shape:
 		for i in n_tail:
-			tail_h.append(rng.randi_range(11, 14))
+			tail_h.append(rng.randi_range(16, 22))
 		for i in n_tail:
 			tail_end += tail_h[i]
 			if i < n_tail - 1:
@@ -274,6 +304,7 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	_build_collision()
 	_build_nav()
 	_build_doors()
+	_build_corridor_segments()
 	_build_tiles()
 	_compute_roles(true)
 	_spawn_furniture()
@@ -341,6 +372,7 @@ func generate_tutorial() -> void:
 	_build_collision()
 	_build_nav()
 	_build_doors()
+	_build_corridor_segments()
 	_build_tiles()
 	_spawn_furniture()
 	_build_astar()
@@ -363,6 +395,8 @@ func _reset() -> void:
 	main_path_rooms.clear()
 	desks.clear()
 	decor_items.clear()
+	big_items.clear()
+	big_rects.clear()
 	wall_rects.clear()
 	doors.clear()
 	windows.clear()
@@ -386,6 +420,9 @@ func _reset() -> void:
 	world_rect = Rect2()
 	corridor_rect = Rect2()
 	tail_corridor_rect = Rect2()
+	corridor_segments.clear()
+	corridor_explored.clear()
+	exploration_version += 1
 	exit_pos = Vector2.ZERO
 	is_l_shape = false
 
@@ -639,6 +676,27 @@ func _ensure_stair(north: Array[String], south: Array[String], tail: Array[Strin
 		idx = (idx + 1) % g.size()
 	g[idx] = "stair"
 
+## 保底房型：每层至少各 1 间。hall / stair 是骨架，不许被顶掉。
+func _ensure_floor_types(north: Array[String], south: Array[String], tail: Array[String]) -> void:
+	_ensure_one_of(north, south, tail, "classroom")
+	_ensure_one_of(north, south, tail, "toilet")
+
+func _ensure_one_of(north: Array[String], south: Array[String], tail: Array[String], want: String) -> void:
+	var groups: Array = [north, south, tail]
+	for g in groups:
+		if g.has(want):
+			return
+	var slots: Array = []
+	for g in groups:
+		for j in g.size():
+			var cur: String = String(g[j])
+			if cur != "hall" and cur != "stair":
+				slots.append([g, j])
+	if slots.is_empty():
+		return
+	var s: Array = slots[rng.randi_range(0, slots.size() - 1)]
+	s[0][s[1]] = want
+
 func _width_sum(types: Array[String], use_min: bool) -> int:
 	var s := 0
 	for t in types:
@@ -724,39 +782,37 @@ func _build_walls() -> void:
 			wall_rects.append(Rect2(x * CELL, y * CELL, w * CELL, h * CELL))
 
 func _build_tiles() -> void:
-	var type_order := ["classroom", "office", "storage", "toilet", "stair", "hall"]
 	var c := int(CELL)
-	var cols := 16
-	var img := Image.create(cols * c, c * 3, false, Image.FORMAT_RGBA8)
+	var slots := TYPE_ORDER.size() + 1  # +走廊
+	var cols := maxi(slots * FLOOR_VARIANTS, slots * 16) + 1  # +1 列纯黑实心砖
+	var solid_col := cols - 1
+	var img := Image.create(cols * c, c * 2, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.12, 0.13, 0.16))
-	for row in 2:
-		for i in type_order.size():
-			var base: Color = type_defs[type_order[i]]["color"]
-			var col := base.lightened(0.05) if row == 0 else base.darkened(0.04)
-			img.fill_rect(Rect2i(i * c, row * c, c, c), col)
-		var cc := CORRIDOR_COLOR.lightened(0.05) if row == 0 else CORRIDOR_COLOR.darkened(0.04)
-		img.fill_rect(Rect2i(type_order.size() * c, row * c, c, c), cc)
-	img.fill_rect(Rect2i((type_order.size() + 1) * c, 0, c, c), Color(0.12, 0.13, 0.16))
-	for mask in 16:
-		var ox := mask * c
-		var oy := 2 * c
-		img.fill_rect(Rect2i(ox, oy, c, c), WALL_COLOR)
-		if mask & 1 == 0:
-			img.fill_rect(Rect2i(ox, oy, c, 1), WALL_EDGE_COLOR)
-			img.fill_rect(Rect2i(ox + 1, oy + 1, c - 2, 2), WALL_TOP_COLOR)
-		if mask & 2 == 0:
-			img.fill_rect(Rect2i(ox + c - 1, oy, 1, c), WALL_EDGE_COLOR)
-		if mask & 4 == 0:
-			img.fill_rect(Rect2i(ox, oy + c - 1, c, 1), WALL_EDGE_COLOR)
-		if mask & 8 == 0:
-			img.fill_rect(Rect2i(ox, oy, 1, c), WALL_EDGE_COLOR)
+
+	# 第 0 行：地板（每个房型 FLOOR_VARIANTS 种图案）
+	for i in TYPE_ORDER.size():
+		var base: Color = type_defs[TYPE_ORDER[i]]["color"]
+		var pat := _floor_pat(TYPE_ORDER[i])
+		for v in FLOOR_VARIANTS:
+			_paint_floor_tile(img, i * FLOOR_VARIANTS + v, 0, base, v, level_seed + i * 977 + v * 31)
+	for v in FLOOR_VARIANTS:
+		_paint_floor_tile(img, TYPE_ORDER.size() * FLOOR_VARIANTS + v, 0, CORRIDOR_COLOR, v, level_seed + 4242 + v * 31)
+	# 走廊没被选中的图案位也填上走廊色，避免取到黑格
+	for cx in range(TYPE_ORDER.size() * FLOOR_VARIANTS + FLOOR_VARIANTS, cols):
+		img.fill_rect(Rect2i(cx * c, 0, c, c), CORRIDOR_COLOR)
+
+	# 第 1 行：墙砖（每个房型 16 种邻接遮罩）
+	for i in slots:
+		var wb: Color = type_defs[TYPE_ORDER[i]]["wall"] if i < TYPE_ORDER.size() else CORRIDOR_WALL
+		for mask in 16:
+			_paint_wall_tile(img, i * 16 + mask, 1, wb, mask)
 
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(c, c)
 	var src := TileSetAtlasSource.new()
 	src.texture = ImageTexture.create_from_image(img)
 	src.texture_region_size = Vector2i(c, c)
-	for row in 3:
+	for row in 2:
 		for cx in range(cols):
 			src.create_tile(Vector2i(cx, row))
 	ts.add_source(src, 0)
@@ -788,28 +844,25 @@ func _build_tiles() -> void:
 	holder.add_child(_wall_layer)
 
 	var type_index := {}
-	for i in type_order.size():
-		type_index[type_order[i]] = i
-	var corridor_col := type_order.size()
+	for i in TYPE_ORDER.size():
+		type_index[TYPE_ORDER[i]] = i
+	var corridor_slot := TYPE_ORDER.size()
 	for y in gh:
 		for x in gw:
 			var i := y * gw + x
 			var cell := Vector2i(x, y)
 			if grid[i] != FLOOR:
-				_wall_layer.set_cell(cell, 0, Vector2i(corridor_col + 1, 0))
+				_wall_layer.set_cell(cell, 0, Vector2i(solid_col, 1))
 				continue
 			var ri := _room_cell[i]
+			var slot := corridor_slot
 			if ri >= 0:
-				var r: Rect2 = rooms[ri]
-				var row := ((x - int(r.position.x / CELL)) / 2 + (y - int(r.position.y / CELL)) / 2) % 2
-				_floor_layer.set_cell(cell, 0, Vector2i(int(type_index[room_types[ri]]), row))
-			else:
-				var origin: Vector2 = corridor_rect.position
-				var p := Vector2((x + 0.5) * CELL, (y + 0.5) * CELL)
-				if tail_corridor_rect.size.y > 0.0 and tail_corridor_rect.has_point(p):
-					origin = tail_corridor_rect.position
-				var row := ((x - int(origin.x / CELL)) / 2 + (y - int(origin.y / CELL)) / 2) % 2
-				_floor_layer.set_cell(cell, 0, Vector2i(corridor_col, row))
+				slot = int(type_index[room_types[ri]])
+			var pat := _floor_pat(TYPE_ORDER[slot] if slot < TYPE_ORDER.size() else CORRIDOR_TYPE)
+			var h := (x * 73856093) ^ (y * 19349663) ^ (level_seed * 83492791) ^ (slot * 668265263)
+			h = h & 0x7fffffff
+			var v: int = int(pat[h % pat.size()])
+			_floor_layer.set_cell(cell, 0, Vector2i(slot * FLOOR_VARIANTS + v, 0))
 	for r in wall_rects:
 		for y in range(int(r.position.y / CELL), int(r.end.y / CELL)):
 			for x in range(int(r.position.x / CELL), int(r.end.x / CELL)):
@@ -822,7 +875,131 @@ func _build_tiles() -> void:
 					mask |= 4
 				if x > 0 and grid[y * gw + x - 1] != FLOOR:
 					mask |= 8
-				_wall_layer.set_cell(Vector2i(x, y), 0, Vector2i(mask, 2))
+				var wslot := _wall_slot_at(x, y, type_index, corridor_slot)
+				_wall_layer.set_cell(Vector2i(x, y), 0, Vector2i(wslot * 16 + mask, 1))
+
+## 每种房型允许的地板图案（见 FLOOR_VARIANTS 注释）。
+func _floor_pat(t: String) -> Array:
+	match t:
+		"classroom", "library":
+			return [2, 2, 3, 4, 5]
+		"lab", "medical", "office", "toilet":
+			return [0, 0, 1, 3, 4]
+		"storage", "broadcast":
+			return [1, 3, 4, 5]
+		"stair":
+			return [1, 3, 5]
+		"hall":
+			return [0, 2, 3, 4]
+	return [0, 1, 3, 4]
+
+func _paint_floor_tile(img: Image, col: int, row: int, base: Color, variant: int, seed_v: int) -> void:
+	var c := int(CELL)
+	var ox := col * c
+	var oy := row * c
+	var r := RandomNumberGenerator.new()
+	r.seed = seed_v
+	match variant:
+		0:  # 棋格瓷砖
+			var alt := base.darkened(0.07)
+			for gy in 2:
+				for gx in 2:
+					var shade: Color = base if (gx + gy) % 2 == 0 else alt
+					img.fill_rect(Rect2i(ox + gx * c / 2, oy + gy * c / 2, c / 2, c / 2), shade)
+			img.fill_rect(Rect2i(ox, oy + c / 2 - 1, c, 2), base.darkened(0.20))
+			img.fill_rect(Rect2i(ox + c / 2 - 1, oy, 2, c), base.darkened(0.20))
+		1:  # 砖墙/小方砖
+			img.fill_rect(Rect2i(ox, oy, c, c), base)
+			var mortar := base.darkened(0.24)
+			var bh := c / 4
+			for k in range(1, 4):
+				img.fill_rect(Rect2i(ox, oy + k * bh - 1, c, 2), mortar)
+			for k in 4:
+				var off := 0 if k % 2 == 0 else c / 2
+				for b in 2:
+					var sx := ox + off + b * (c / 2)
+					if sx > ox and sx < ox + c:
+						img.fill_rect(Rect2i(sx, oy + k * bh, 1, bh), mortar)
+		2:  # 木地板
+			var ph := c / 4
+			for k in 4:
+				var shade: Color = base.lightened(0.05) if k % 2 == 0 else base.darkened(0.05)
+				img.fill_rect(Rect2i(ox, oy + k * ph, c, ph), shade)
+			for k in range(1, 4):
+				img.fill_rect(Rect2i(ox, oy + k * ph - 1, c, 1), base.darkened(0.30))
+			for k in 2:
+				var sx := ox + int(r.randi_range(4, c - 5))
+				var sy := oy + (k * 2 + (1 if k == 1 else 0)) * ph
+				if sy + ph * 2 <= oy + c:
+					img.fill_rect(Rect2i(sx, sy, 1, ph * 2), base.darkened(0.26))
+		3:  # 纯色 + 细噪点
+			img.fill_rect(Rect2i(ox, oy, c, c), base)
+			for n in 14:
+				var px := int(r.randi_range(0, c - 1))
+				var py := int(r.randi_range(0, c - 1))
+				img.set_pixel(ox + px, oy + py, base.darkened(0.11))
+		4:  # 污渍/水渍
+			img.fill_rect(Rect2i(ox, oy, c, c), base)
+			var cx := r.randf_range(5.0, float(c) - 5.0)
+			var cy := r.randf_range(5.0, float(c) - 5.0)
+			var rx := r.randf_range(3.5, 8.0)
+			var ry := rx * r.randf_range(0.5, 0.9)
+			for y in c:
+				for x in c:
+					var dx := (float(x) - cx) / rx
+					var dy := (float(y) - cy) / ry
+					if dx * dx + dy * dy <= 1.0:
+						img.set_pixel(ox + x, oy + y, base.darkened(0.17))
+		5:  # 裂纹
+			img.fill_rect(Rect2i(ox, oy, c, c), base)
+			var px := r.randf_range(3.0, float(c) - 3.0)
+			var crack := base.darkened(0.36)
+			for y in c:
+				px = clampf(px + r.randf_range(-2.2, 2.2), 1.0, float(c) - 2.0)
+				if y > 3 and r.randf() < 0.18:
+					continue
+				img.set_pixel(ox + int(px), oy + y, crack)
+
+func _paint_wall_tile(img: Image, col: int, row: int, base: Color, mask: int) -> void:
+	var c := int(CELL)
+	var ox := col * c
+	var oy := row * c
+	img.fill_rect(Rect2i(ox, oy, c, c), base)
+	var mortar := base.darkened(0.17)
+	var bh := c / 4
+	for k in range(1, 4):
+		img.fill_rect(Rect2i(ox, oy + k * bh - 1, c, 1), mortar)
+	for k in 4:
+		var off := 0 if k % 2 == 0 else c / 2
+		var sx := ox + off + c / 2
+		if sx < ox + c:
+			img.fill_rect(Rect2i(sx, oy + k * bh, 1, bh), mortar)
+	if mask & 1 == 0:
+		img.fill_rect(Rect2i(ox, oy, c, 1), WALL_EDGE_COLOR)
+		img.fill_rect(Rect2i(ox + 1, oy + 1, c - 2, 2), WALL_TOP_COLOR)
+	if mask & 2 == 0:
+		img.fill_rect(Rect2i(ox + c - 1, oy, 1, c), WALL_EDGE_COLOR)
+	if mask & 4 == 0:
+		img.fill_rect(Rect2i(ox, oy + c - 1, c, 1), WALL_EDGE_COLOR)
+	if mask & 8 == 0:
+		img.fill_rect(Rect2i(ox, oy, 1, c), WALL_EDGE_COLOR)
+
+## 墙格属于哪一侧：优先取相邻地板所属房型，否则用走廊色。
+func _wall_slot_at(x: int, y: int, tindex: Dictionary, corr_slot: int) -> int:
+	var offs := [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
+	for o in offs:
+		var nx: int = x + o.x
+		var ny: int = y + o.y
+		if nx < 0 or ny < 0 or nx >= gw or ny >= gh:
+			continue
+		var i := ny * gw + nx
+		if grid[i] != FLOOR:
+			continue
+		var ri := _room_cell[i]
+		if ri >= 0 and tindex.has(room_types[ri]):
+			return int(tindex[room_types[ri]])
+		return corr_slot
+	return corr_slot
 
 func _build_collision() -> void:
 	var body := StaticBody2D.new()
@@ -962,6 +1139,11 @@ func _spawn_furniture() -> void:
 		_reserve_cells(d["pos"], 2)
 	_reserve_cells(exit_pos, 2)
 
+	# 大件优先占位（挡路的先定），课桌/箱子再绕开它们
+	big_items.clear()
+	big_rects.clear()
+	_spawn_big_items()
+
 	for i in rooms.size():
 		var t := room_types[i]
 		var eff: float = type_defs[t]["eff"]
@@ -975,16 +1157,15 @@ func _spawn_furniture() -> void:
 			"safe":
 				eff = 0.0
 		var count := 0
-		match t:
-			"classroom":
-				count = rng.randi_range(3, 5)
-			"office":
-				count = rng.randi_range(2, 3)
-			"storage":
-				count = rng.randi_range(1, 2)
-			"hall":
-				count = rng.randi_range(1, 2)
-			"toilet":
+		if role != "safe":
+			# 课桌按房间面积配（分母越小越密），大教室自然摆得更多
+			var dens: float = float(type_defs[t].get("desk", 999.0))
+			var room_rect: Rect2 = rooms[i]
+			var area_cells := int(room_rect.size.x / CELL) * int(room_rect.size.y / CELL)
+			count = clampi(int(float(area_cells) / dens), 0, 14)
+			if t == "toilet":
+				count = 1
+			if count == 0 and dens < 900.0:
 				count = 1
 		if role == "safe":
 			count = 0
@@ -995,7 +1176,7 @@ func _spawn_furniture() -> void:
 			_mark_furniture(rect)
 			desks.append({"pos": rect.get_center(), "rect": rect, "room": i, "efficiency": eff, "occupied": false})
 		if t == "storage":
-			for j in rng.randi_range(2, 3):
+			for j in rng.randi_range(3, 6):
 				var br := _pick_box_rect(rooms[i])
 				if br.size.x <= 0.0:
 					break
@@ -1004,6 +1185,241 @@ func _spawn_furniture() -> void:
 	_build_box_collision()
 	_spawn_decor()
 
+## 房型专属大件（贴图家具）：靠墙摆放，solid 的挡路并参与碰撞。
+## 房间不够大就自动少放；摆放位置用确定性 rng，失败会重试几次。
+func _spawn_big_items() -> void:
+	for i in rooms.size():
+		var t := String(room_types[i])
+		var role: String = room_roles[i] if i < room_roles.size() else "normal"
+		if role == "safe" or t == "stair":
+			continue
+		var r: Rect2 = rooms[i]
+		var cells_w := int(round(r.size.x / CELL))
+		var cells_h := int(round(r.size.y / CELL))
+		for def in _big_plan(t):
+			var wc := int(def.get("w", 2))
+			var hc := int(def.get("h", 2))
+			if bool(def.get("decal", false)):
+				hc = 1
+			if cells_w < wc + 2 or cells_h < hc + 2:
+				continue
+			var count := int(def.get("count", 1))
+			for k in count:
+				for attempt in 8:
+					if _place_big(i, def):
+						break
+
+## 每种房型的大件清单：sprite=贴图名、w/h=占格数、side=靠哪面墙(n/s/w/e/c=居中)、
+## count=数量、decal=贴墙装饰(不挡路)、floor=贴地件(地毯，画在最底层)。
+## 贴图真实图案（见 art/furniture/README.md）：
+##   shelf_*=书架、cab_*=双门衣柜/柜、locker=木梯、stool_*=小木桌、desk_office2=素面木桌、
+##   chair_*=桌子、desk_small=小桌、crate_stack=点唱机/机器、wardrobe=布帘隔间、
+##   plant_*/barrel/canister/box_*=盆栽、poster_c=风景画、poster_d/fence/clock=空画框、
+##   rug_*=地毯、bed_*=病床、bed_head=床头板。
+func _big_plan(t: String) -> Array:
+	match t:
+		"classroom":
+			return [
+				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "w", "count": 1},
+				{"sprite": "shelf_wide", "w": 3, "h": 2, "side": "s", "count": 1},
+				{"sprite": "stool_b", "w": 1, "h": 1, "side": "n", "count": 1},
+				{"sprite": "poster_c", "w": 2, "h": 1, "side": "n", "decal": true, "solid": false},
+			]
+		"lab":
+			return [
+				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "n", "count": 1},
+				{"sprite": "desk_small", "w": 2, "h": 1, "side": "s", "count": 2},
+				{"sprite": "locker", "w": 2, "h": 3, "side": "e", "count": 1},
+				{"sprite": "crate_stack", "w": 1, "h": 2, "side": "w", "count": 1},
+				{"sprite": "plant_pot", "w": 1, "h": 1, "side": "w", "count": 1},
+				{"sprite": "poster_c", "w": 2, "h": 1, "side": "s", "decal": true, "solid": false},
+			]
+		"library":
+			return [
+				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "w", "count": 1},
+				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "e", "count": 1},
+				{"sprite": "shelf_wide", "w": 3, "h": 2, "side": "n", "count": 1},
+				{"sprite": "stool_a", "w": 1, "h": 1, "side": "s", "count": 2},
+				{"sprite": "rug_b", "w": 4, "h": 3, "side": "c", "floor": true, "solid": false},
+				{"sprite": "poster_d", "w": 1, "h": 2, "side": "s", "decal": true, "solid": false},
+			]
+		"medical":
+			return [
+				{"sprite": "bed_a", "w": 2, "h": 2, "side": "w", "count": 1},
+				{"sprite": "bed_b", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "bed_head", "w": 1, "h": 2, "side": "n", "count": 2},
+				{"sprite": "wardrobe", "w": 2, "h": 2, "side": "s", "count": 1},
+				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "s", "count": 1},
+				{"sprite": "plant_pot2", "w": 1, "h": 1, "side": "n", "count": 1},
+				{"sprite": "fence", "w": 1, "h": 1, "side": "n", "decal": true, "solid": false},
+			]
+		"office":
+			return [
+				{"sprite": "desk_office2", "w": 3, "h": 3, "side": "w", "count": 1},
+				{"sprite": "chair_a", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "cab_tall", "w": 2, "h": 3, "side": "n", "count": 1},
+				{"sprite": "chair_b", "w": 2, "h": 2, "side": "s", "count": 1},
+				{"sprite": "poster_c", "w": 2, "h": 1, "side": "s", "decal": true, "solid": false},
+			]
+		"storage":
+			return [
+				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "w", "count": 1},
+				{"sprite": "cab_short", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "locker", "w": 2, "h": 3, "side": "n", "count": 1},
+				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "s", "count": 1},
+				{"sprite": "stool_a", "w": 1, "h": 1, "side": "s", "count": 2},
+				{"sprite": "rug_d", "w": 3, "h": 2, "side": "c", "floor": true, "solid": false},
+				{"sprite": "fence", "w": 1, "h": 1, "side": "n", "decal": true, "solid": false},
+			]
+		"broadcast":
+			return [
+				{"sprite": "crate_stack", "w": 1, "h": 2, "side": "n", "count": 1},
+				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "s", "count": 1},
+				{"sprite": "wardrobe2", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "w", "count": 1},
+				{"sprite": "clock", "w": 1, "h": 1, "side": "s", "decal": true, "solid": false},
+			]
+		"toilet":
+			return [
+				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "w", "count": 1},
+				{"sprite": "cab_short", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "stool_b", "w": 1, "h": 1, "side": "n", "count": 1},
+				{"sprite": "poster_d", "w": 1, "h": 1, "side": "s", "decal": true, "solid": false},
+			]
+		"hall":
+			return [
+				{"sprite": "plant_pot", "w": 1, "h": 1, "side": "e", "count": 2},
+				{"sprite": "plant_pot2", "w": 1, "h": 1, "side": "w", "count": 1},
+				{"sprite": "poster_d", "w": 1, "h": 2, "side": "s", "decal": true, "solid": false},
+				{"sprite": "rug_a", "w": 4, "h": 3, "side": "c", "floor": true, "solid": false},
+			]
+	return []
+
+func _place_big(room_idx: int, def: Dictionary) -> bool:
+	var r: Rect2 = rooms[room_idx]
+	var wc := int(def.get("w", 2))
+	var hc := int(def.get("h", 2))
+	var side := String(def.get("side", "n"))
+	var decal := bool(def.get("decal", false))
+	var floor_item := bool(def.get("floor", false))
+	var solid := bool(def.get("solid", not (decal or floor_item))) and not decal and not floor_item
+	var x0 := int(round(r.position.x / CELL))
+	var y0 := int(round(r.position.y / CELL))
+	var cw := int(round(r.size.x / CELL))
+	var ch := int(round(r.size.y / CELL))
+	var rect := Rect2()
+	if decal:
+		# 墙饰优先放指定那面墙，被门/窗挡了就换面，实在没地方就放弃
+		var sides := [side, "n", "s", "w", "e"]
+		var ok := false
+		for s in sides:
+			rect = _decal_rect(r, String(s), wc, hc)
+			if _decal_ok(rect):
+				ok = true
+				break
+		if not ok:
+			return false
+	else:
+		var cx := x0
+		var cy := y0
+		if floor_item or side == "c":
+			cx = x0 + int((cw - wc) / 2.0)
+			cy = y0 + int((ch - hc) / 2.0)
+			# 贴地件（地毯）不挡路：只要格子是地板、没被实心家具占了就行，
+			# 导航点/门的预留格可以压过去（导航点只是 AI 路点，不影响画面）。
+			if not _cells_free_floor(cx, cy, wc, hc):
+				return false
+		else:
+			match side:
+				"n":
+					cy = y0
+					cx = x0 + rng.randi_range(0, maxi(0, cw - wc))
+				"s":
+					cy = y0 + maxi(0, ch - hc)
+					cx = x0 + rng.randi_range(0, maxi(0, cw - wc))
+				"w":
+					cx = x0
+					cy = y0 + rng.randi_range(0, maxi(0, ch - hc))
+				"e":
+					cx = x0 + maxi(0, cw - wc)
+					cy = y0 + rng.randi_range(0, maxi(0, ch - hc))
+			if not _cells_free(cx, cy, wc, hc):
+				return false
+		rect = Rect2(cx * CELL, cy * CELL, wc * CELL, hc * CELL)
+	big_items.append({
+		"sprite": String(def.get("sprite", "")),
+		"rect": rect,
+		"room": room_idx,
+		"solid": solid,
+		"decal": decal,
+		"floor": floor_item,
+	})
+	if solid:
+		big_rects.append(rect)
+		_mark_furniture(rect)
+	return true
+
+## 贴墙装饰的矩形：压在墙那一侧，不占可行走格。
+func _decal_rect(r: Rect2, side: String, wc: int, hc: int) -> Rect2:
+	var w := wc * CELL
+	match side:
+		"s":
+			return Rect2(r.position.x + (r.size.x - w) * 0.5, r.end.y - CELL * 0.62, w, CELL * 1.25)
+		"w":
+			return Rect2(r.position.x - CELL * 0.62, r.position.y + (r.size.y - hc * CELL) * 0.5, CELL * 1.25, hc * CELL)
+		"e":
+			return Rect2(r.end.x - CELL * 0.63, r.position.y + (r.size.y - hc * CELL) * 0.5, CELL * 1.25, hc * CELL)
+	return Rect2(r.position.x + (r.size.x - w) * 0.5, r.position.y - CELL * 0.62, w, CELL * 1.25)
+
+## 装饰不能压到门和窗。
+func _decal_ok(rect: Rect2) -> bool:
+	for d in doors:
+		if rect.grow(CELL * 0.8).has_point(d["pos"]):
+			return false
+	for w in windows:
+		if rect.grow(2.0).intersects(w["rect"]):
+			return false
+	return true
+
+func _big_texture(name: String) -> Texture2D:
+	if _tex_cache.has(name):
+		return _tex_cache[name]
+	var tex: Texture2D = null
+	var path := "res://art/furniture/%s.png" % name
+	if ResourceLoader.exists(path):
+		tex = load(path)
+	_tex_cache[name] = tex
+	return tex
+
+## 贴地件（地毯）：画在最底层，压在地板上、被所有东西盖住。
+func _draw_big_floor() -> void:
+	for it in big_items:
+		if not bool(it.get("floor", false)):
+			continue
+		_draw_big_one(it, Color(0.94, 0.95, 1.0, 0.92))
+
+## 实体大件 + 贴墙装饰。
+func _draw_big() -> void:
+	var tint := Color(0.90, 0.93, 1.0, 1.0)
+	for it in big_items:
+		if bool(it.get("floor", false)) or bool(it.get("decal", false)):
+			continue
+		var rect: Rect2 = it["rect"]
+		draw_rect(Rect2(rect.position + Vector2(2.0, 3.0), rect.size), Color(0.0, 0.0, 0.0, 0.14))
+		_draw_big_one(it, tint)
+	for it in big_items:
+		if bool(it.get("decal", false)):
+			_draw_big_one(it, Color(0.96, 0.97, 1.0, 0.95))
+
+func _draw_big_one(it: Dictionary, tint: Color) -> void:
+	var tex := _big_texture(String(it.get("sprite", "")))
+	var rect: Rect2 = it["rect"]
+	if tex != null:
+		draw_texture_rect(tex, rect, false, tint)
+	else:
+		draw_rect(rect, Color(0.62, 0.66, 0.74, 0.9))
+		draw_rect(rect, Color(0.36, 0.40, 0.48), false, 1.5)
+
 func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
 	var x0 := int(round(r.position.x / CELL)) + 1
 	var x1 := int(round(r.end.x / CELL)) - 1
@@ -1011,7 +1427,7 @@ func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
 	var y1 := int(round(r.end.y / CELL)) - 1
 	if x1 - x0 < 2 or y1 - y0 < 1:
 		return Rect2()
-	for attempt in 70:
+	for attempt in 160:
 		var cx := rng.randi_range(x0, x1 - 2)
 		var cy := rng.randi_range(y0, y1 - 1)
 		if not _cells_free(cx, cy, 2, 1):
@@ -1026,6 +1442,11 @@ func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
 				break
 		if ok:
 			for br in box_rects:
+				if rect.grow(CELL * 0.5).intersects(br):
+					ok = false
+					break
+		if ok:
+			for br in big_rects:
 				if rect.grow(CELL * 0.5).intersects(br):
 					ok = false
 					break
@@ -1057,6 +1478,11 @@ func _pick_box_rect(r: Rect2) -> Rect2:
 					ok = false
 					break
 		if ok:
+			for br in big_rects:
+				if rect.grow(CELL * 0.25).intersects(br):
+					ok = false
+					break
+		if ok:
 			return rect
 	return Rect2()
 
@@ -1083,7 +1509,7 @@ func _spawn_decor() -> void:
 		var kinds: Array[String] = _decor_kinds(t)
 		var placed := 0
 		var attempts := 0
-		while placed < target and attempts < 140:
+		while placed < target and attempts < 320:
 			attempts += 1
 			var cx := rng.randi_range(x0, x1 - 1)
 			var cy := rng.randi_range(y0, y1 - 1)
@@ -1111,33 +1537,39 @@ func _spawn_decor() -> void:
 	queue_redraw()
 
 func _decor_target(t: String, r: Rect2) -> int:
-	var base := 6
+	var base := 8
 	match t:
 		"classroom":
+			base = 10
+		"lab", "library", "medical", "office":
 			base = 9
-		"office":
+		"storage", "hall":
 			base = 8
-		"storage":
-			base = 7
-		"hall":
+		"toilet", "broadcast":
 			base = 6
-		"toilet":
-			base = 4
 	var area := r.size.x * r.size.y
-	if area > 26000.0:
+	if area > 30000.0:
 		base += 2
-	if area < 9000.0:
+	elif area < 8000.0:
 		base -= 2
-	return clampi(base, 3, 12)
+	return clampi(base, 4, 12)
 
 func _decor_kinds(t: String) -> Array[String]:
 	match t:
 		"classroom":
-			return ["poster", "bin", "books", "paper", "chair"]
+			return ["poster", "bin", "books", "paper", "chair", "chalk"]
+		"lab":
+			return ["poster", "bin", "paper", "puddle", "books"]
+		"library":
+			return ["books", "paper", "chair", "poster"]
+		"medical":
+			return ["paper", "bin", "poster", "puddle"]
 		"office":
 			return ["poster", "bin", "books", "paper"]
 		"storage":
 			return ["bin", "books", "paper", "chair"]
+		"broadcast":
+			return ["paper", "bin", "books"]
 		"hall":
 			return ["poster", "bin", "chair", "paper"]
 		"toilet":
@@ -1162,6 +1594,16 @@ func _draw_decor() -> void:
 				_decor_chair(p, f)
 			"puddle":
 				_decor_puddle(p)
+			"chalk":
+				_decor_chalk(p, f)
+
+## 粉笔灰/碎粉笔头：纯地面小件，不挡路
+func _decor_chalk(p: Vector2, f: float) -> void:
+	for k in 3:
+		var off := Vector2(-5.0 * f + float(k) * 4.0 * f, float(k) * 1.6 - 1.0)
+		var w := 4.0 - float(k) * 0.6
+		draw_rect(Rect2(p + off, Vector2(w, 1.6)), Color(0.96, 0.96, 0.93, 0.9))
+	draw_circle(p + Vector2(3.0 * f, 2.0), 3.0, Color(0.93, 0.93, 0.90, 0.28))
 
 func _decor_poster(p: Vector2, f: float) -> void:
 	var w := 10.0
@@ -1228,6 +1670,17 @@ func _cells_free(cx: int, cy: int, w: int, h: int) -> bool:
 				return false
 	return true
 
+## 松一点的版本：只看地板和实心家具（给贴地件用，预留格可以压）。
+func _cells_free_floor(cx: int, cy: int, w: int, h: int) -> bool:
+	for y in range(cy, cy + h):
+		for x in range(cx, cx + w):
+			if x < 0 or y < 0 or x >= gw or y >= gh:
+				return false
+			var i := y * gw + x
+			if grid[i] != FLOOR or furniture[i] == 1:
+				return false
+	return true
+
 func _mark_furniture(rect: Rect2) -> void:
 	_astar_dirty = true
 	var cx0 := int(round(rect.position.x / CELL))
@@ -1248,14 +1701,19 @@ func _reserve_cells(p: Vector2, radius: int) -> void:
 				reserved[y * gw + x] = 1
 
 func _build_box_collision() -> void:
-	if box_rects.is_empty():
+	var rects: Array[Rect2] = []
+	rects.append_array(box_rects)
+	for it in big_items:
+		if bool(it.get("solid", false)):
+			rects.append(it["rect"])
+	if rects.is_empty():
 		return
 	var body := StaticBody2D.new()
 	body.name = "Furniture"
 	body.collision_layer = 1
 	body.collision_mask = 0
 	add_child(body)
-	for r in box_rects:
+	for r in rects:
 		var shape := CollisionShape2D.new()
 		var rs := RectangleShape2D.new()
 		rs.size = r.size
@@ -1607,14 +2065,93 @@ func is_connected_plan() -> bool:
 			return false
 	return true
 
+## 把走廊切成「门到门 / 路口到路口」的段落，探索按整段点亮。
+func _build_corridor_segments() -> void:
+	corridor_segments.clear()
+	corridor_explored.clear()
+	if corridor_rect.size.x > CELL and corridor_rect.size.y > 0.0:
+		var xs: Array[float] = []
+		for d in doors:
+			var p: Vector2 = d["pos"]
+			if p.y >= corridor_rect.position.y - CELL and p.y <= corridor_rect.end.y + CELL:
+				xs.append(p.x)
+		xs.sort()
+		var splits: Array[float] = [corridor_rect.position.x]
+		for i in range(1, xs.size()):
+			var m: float = (xs[i - 1] + xs[i]) * 0.5
+			if m - splits[splits.size() - 1] > CELL * 0.8:
+				splits.append(m)
+		if corridor_rect.end.x - splits[splits.size() - 1] > 1.0:
+			splits.append(corridor_rect.end.x)
+		for i in range(splits.size() - 1):
+			var w: float = splits[i + 1] - splits[i]
+			if w < 4.0:
+				continue
+			corridor_segments.append(Rect2(splits[i], corridor_rect.position.y, w, corridor_rect.size.y))
+			corridor_explored.append(false)
+	if tail_corridor_rect.size.y > CELL and tail_corridor_rect.size.x > 0.0:
+		var ys: Array[float] = []
+		for d in doors:
+			var p: Vector2 = d["pos"]
+			if p.x >= tail_corridor_rect.position.x - CELL and p.x <= tail_corridor_rect.end.x + CELL:
+				ys.append(p.y)
+		ys.sort()
+		var ysplits: Array[float] = [tail_corridor_rect.position.y]
+		for i in range(1, ys.size()):
+			var m: float = (ys[i - 1] + ys[i]) * 0.5
+			if m - ysplits[ysplits.size() - 1] > CELL * 0.8:
+				ysplits.append(m)
+		if tail_corridor_rect.end.y - ysplits[ysplits.size() - 1] > 1.0:
+			ysplits.append(tail_corridor_rect.end.y)
+		for i in range(ysplits.size() - 1):
+			var h: float = ysplits[i + 1] - ysplits[i]
+			if h < 4.0:
+				continue
+			corridor_segments.append(Rect2(tail_corridor_rect.position.x, ysplits[i], tail_corridor_rect.size.x, h))
+			corridor_explored.append(false)
+	exploration_version += 1
+
+## 走廊整段点亮：站在哪一段就把那一段永久揭开。
+func explore_corridor_at(pos: Vector2) -> bool:
+	for i in corridor_segments.size():
+		if corridor_segments[i].has_point(pos):
+			if not corridor_explored[i]:
+				corridor_explored[i] = true
+				exploration_version += 1
+				return true
+			return false
+	return false
+
 func explore_room_at(pos: Vector2) -> int:
+	explore_corridor_at(pos)
 	for i in rooms.size():
 		if rooms[i].has_point(pos):
 			if not explored[i]:
 				explored[i] = true
+				exploration_version += 1
 				room_entered.emit(i)
 			return i
 	return -1
+
+## 该点所在区域是否已点亮（房间或走廊段）。
+func is_explored_at(pos: Vector2) -> bool:
+	for i in rooms.size():
+		if rooms[i].has_point(pos):
+			return explored[i]
+	for i in corridor_segments.size():
+		if corridor_segments[i].has_point(pos):
+			return corridor_explored[i]
+	return true
+
+## 当前所在区域的标识（用于判断「当前房间/当前段」）。
+func current_zone_at(pos: Vector2) -> String:
+	for i in rooms.size():
+		if rooms[i].has_point(pos):
+			return "r%d" % i
+	for i in corridor_segments.size():
+		if corridor_segments[i].has_point(pos):
+			return "c%d" % i
+	return ""
 
 func room_index_at(pos: Vector2) -> int:
 	for i in rooms.size():
@@ -1625,9 +2162,11 @@ func room_index_at(pos: Vector2) -> int:
 func _draw() -> void:
 	if gw <= 0:
 		return
+	_draw_big_floor()
 	for i in rooms.size():
 		_room_decor(i)
 	_draw_decor()
+	_draw_big()
 
 	for w in windows:
 		_window(w)

@@ -6,11 +6,13 @@ var map: Node2D
 var player: Node2D
 var halo: ColorRect
 
-var forget_after := 30.0
-var forget_ramp := 5.0
-var forget_clear_time := 1.5
-var forget_max_alpha := 0.55
-var forget_color := Color(0.42, 0.44, 0.47)
+## 探索三态遮罩（按「整间房 / 整段走廊」为单位，不是按半径）：
+##   未探索        → 纯黑（只留门框和墙）
+##   已探索、人不在 → 压暗（轮廓和家具还在，像记忆里的房间）
+##   当前所在      → 不遮，整间均匀亮
+const MASK_BLACK := Color(0.010, 0.012, 0.018, 1.0)
+const MASK_DIM := Color(0.024, 0.028, 0.040, 1.0)
+const DIM_ALPHA := 0.58
 
 const HALO_BY_LEVEL := {
 	1: Vector2(160.0, 300.0),
@@ -25,10 +27,12 @@ var halo_fade := 300.0
 var _halo_level := -1
 var _halo_dark := false
 
-var _forget: Array[float] = []
-var _away: Array[float] = []
-var _inside := -1
-var _smoke: Array[ColorRect] = []
+var _expl_version := -1
+var _zone := "__none__"
+var _ov_nodes: Array[ColorRect] = []
+var _ov_zones: Array[String] = []
+var _ov_black: Array[bool] = []
+
 var ambient: ColorRect
 var ambient_density := 0.0
 var ambient_target := 0.0
@@ -76,20 +80,16 @@ func setup(p_map: Node2D, p_player: Node2D) -> void:
 	player = p_player
 	reset_forget()
 
+## 重建探索遮罩（旧名字保留，main.gd 换层时会调）。
 func reset_forget() -> void:
-	_forget.clear()
-	_away.clear()
-	_inside = -1
-	if map != null:
-		for i in map.rooms.size():
-			_forget.append(0.0)
-			_away.append(0.0)
-	_rebuild_smoke()
-
-func forget_amount(index: int) -> float:
-	if index < 0 or index >= _forget.size():
-		return 0.0
-	return _forget[index]
+	_expl_version = -1
+	_zone = "__none__"
+	for n in _ov_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	_ov_nodes.clear()
+	_ov_zones.clear()
+	_ov_black.clear()
 
 func set_tyrant_active(active: bool, level: int) -> void:
 	ambient_target = 0.0
@@ -104,8 +104,9 @@ func _process(delta: float) -> void:
 			halo.visible = false
 		if ambient != null:
 			ambient.visible = false
+		_hide_masks()
 		return
-	_update_forget(delta)
+	_refresh_masks()
 	_apply_halo()
 	_update_ambient(delta)
 	_update_flicker(delta)
@@ -113,87 +114,96 @@ func _process(delta: float) -> void:
 		if halo != null:
 			halo.visible = false
 		return
+	# 手电光晕只在「停电 / 低能见度」事件里开；平时整间均匀亮，不做主角周围光晕
+	var dark: bool = GameState.dark_vision
 	if halo != null:
-		halo.visible = true
+		halo.visible = dark
 		var mat := halo.material as ShaderMaterial
-		var vs: Vector2 = get_viewport().get_visible_rect().size
-		mat.set_shader_parameter("resolution", vs)
-		mat.set_shader_parameter("center", player.get_global_transform_with_canvas().origin / vs)
-		# B12：只有黑暗状态才启用锥形可视区，方向跟着玩家朝向
-		var dark: bool = GameState.dark_vision
-		mat.set_shader_parameter("cone_on", 1.0 if dark else 0.0)
-		var fd = player.get("face_dir")
-		if fd is Vector2:
-			var v: Vector2 = fd
-			if v.length_squared() > 0.001:
-				mat.set_shader_parameter("cone_dir", v.normalized())
-		mat.set_shader_parameter("cone_length", 260.0)
-		mat.set_shader_parameter("cone_half_angle", 0.42)
-
-func _update_forget(delta: float) -> void:
-	if map == null or player == null or not is_instance_valid(player):
-		return
-	if _forget.size() != map.rooms.size():
-		reset_forget()
-	_inside = map.room_index_at(player.position)
-	var enabled: bool = GameState.level >= 2
-	for i in map.rooms.size():
-		if not enabled or not _is_forgettable(i):
-			_away[i] = 0.0
-			_forget[i] = maxf(0.0, _forget[i] - delta / forget_clear_time)
-			continue
-		if i == _inside:
-			_away[i] = 0.0
-			_forget[i] = maxf(0.0, _forget[i] - delta / forget_clear_time)
-		elif map.explored[i]:
-			_away[i] += delta
-			_forget[i] = clampf((_away[i] - forget_after) / forget_ramp, 0.0, 1.0)
+		if not dark:
+			mat.set_shader_parameter("cone_on", 0.0)
 		else:
-			_away[i] = 0.0
-			_forget[i] = 0.0
-	_update_smoke()
+			var vs: Vector2 = get_viewport().get_visible_rect().size
+			mat.set_shader_parameter("resolution", vs)
+			mat.set_shader_parameter("center", player.get_global_transform_with_canvas().origin / vs)
+			mat.set_shader_parameter("cone_on", 1.0)
+			var fd = player.get("face_dir")
+			if fd is Vector2:
+				var v: Vector2 = fd
+				if v.length_squared() > 0.001:
+					mat.set_shader_parameter("cone_dir", v.normalized())
+			mat.set_shader_parameter("cone_length", 260.0)
+			mat.set_shader_parameter("cone_half_angle", 0.42)
 
-func _rebuild_smoke() -> void:
-	for node in _smoke:
-		node.queue_free()
-	_smoke.clear()
+func _refresh_masks() -> void:
+	if map == null or not is_instance_valid(map):
+		return
+	var ver := int(map.get("exploration_version"))
+	var zn := ""
+	if player != null and is_instance_valid(player) and map.has_method("current_zone_at"):
+		zn = map.current_zone_at(player.position)
+		if zn == "":
+			zn = _nearest_zone(map, player.position)
+	if ver == _expl_version and zn == _zone:
+		return
+	_expl_version = ver
+	_zone = zn
+	_rebuild_masks()
+
+func _rebuild_masks() -> void:
+	for n in _ov_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	_ov_nodes.clear()
+	_ov_zones.clear()
+	_ov_black.clear()
 	if map == null:
 		return
-	for i in map.rooms.size():
-		var r: Rect2 = map.rooms[i]
-		var rect := ColorRect.new()
-		rect.position = r.position
-		rect.size = r.size
-		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var mat := ShaderMaterial.new()
-		mat.shader = SMOKE_SHADER
-		mat.set_shader_parameter("seed", float(i) * 13.7 + 2.0)
-		mat.set_shader_parameter("room_size", r.size)
-		rect.material = mat
-		rect.visible = false
-		add_child(rect)
-		_smoke.append(rect)
+	var rooms: Array = map.rooms
+	for i in rooms.size():
+		_add_mask(rooms[i], "r%d" % i, not bool(map.explored[i]))
+	var segs: Array = map.corridor_segments
+	var cex: Array = map.corridor_explored
+	for i in segs.size():
+		var seen: bool = i < cex.size() and bool(cex[i])
+		_add_mask(segs[i], "c%d" % i, not seen)
 
-func _update_smoke() -> void:
-	if map == null or _smoke.size() != map.rooms.size():
-		return
-	for i in map.rooms.size():
-		var rect := _smoke[i]
-		var mat := rect.material as ShaderMaterial
-		if not map.explored[i]:
-			rect.visible = true
-			mat.set_shader_parameter("solid", 1.0)
-			mat.set_shader_parameter("density", 1.0)
-			mat.set_shader_parameter("wisp", 0.0)
-			mat.set_shader_parameter("fog_color", Color(0.02, 0.02, 0.03, 1.0))
-		elif i < _forget.size() and _forget[i] > 0.02:
-			rect.visible = true
-			mat.set_shader_parameter("solid", 0.0)
-			mat.set_shader_parameter("density", forget_max_alpha * 1.2 * _forget[i])
-			mat.set_shader_parameter("wisp", 0.65)
-			mat.set_shader_parameter("fog_color", Color(0.47, 0.48, 0.5, 1.0))
-		else:
-			rect.visible = false
+func _add_mask(rect: Rect2, zone: String, black: bool) -> void:
+	var r := ColorRect.new()
+	r.position = rect.position
+	r.size = rect.size
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.color = MASK_BLACK if black else Color(MASK_DIM.r, MASK_DIM.g, MASK_DIM.b, DIM_ALPHA)
+	r.visible = zone != _zone
+	add_child(r)
+	_ov_nodes.append(r)
+	_ov_zones.append(zone)
+	_ov_black.append(black)
+
+func _hide_masks() -> void:
+	for n in _ov_nodes:
+		if is_instance_valid(n):
+			n.visible = false
+
+## 没落在任何矩形里（门缝、墙体缺口）时，取边缘最近的那块，避免闪黑。
+func _nearest_zone(p_map: Node2D, pos: Vector2) -> String:
+	var best := ""
+	var bd := INF
+	for i in p_map.rooms.size():
+		var d := _rect_dist(p_map.rooms[i], pos)
+		if d < bd:
+			bd = d
+			best = "r%d" % i
+	for i in p_map.corridor_segments.size():
+		var d := _rect_dist(p_map.corridor_segments[i], pos)
+		if d < bd:
+			bd = d
+			best = "c%d" % i
+	return best
+
+func _rect_dist(r: Rect2, p: Vector2) -> float:
+	var dx := maxf(maxf(r.position.x - p.x, p.x - r.end.x), 0.0)
+	var dy := maxf(maxf(r.position.y - p.y, p.y - r.end.y), 0.0)
+	return sqrt(dx * dx + dy * dy)
 
 func _update_flicker(delta: float) -> void:
 	if flicker == null:
@@ -239,9 +249,3 @@ func _apply_halo() -> void:
 		mat.set_shader_parameter("clear_radius", halo_clear)
 		mat.set_shader_parameter("fade_radius", halo_fade)
 		mat.set_shader_parameter("max_alpha", 0.985 if dark else 0.96)
-
-func _is_forgettable(index: int) -> bool:
-	if index < 0 or index >= map.room_types.size():
-		return false
-	var t: String = String(map.room_types[index])
-	return t != "hall" and t != "stair" and t != "corridor"

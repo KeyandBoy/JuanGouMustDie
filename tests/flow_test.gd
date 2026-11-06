@@ -419,7 +419,7 @@ func _ready() -> void:
 	_check(GameState.level == 1, "level select returns to level 1 (%d)" % GameState.level, failures)
 	_check(is_equal_approx(inst.fog.halo_clear, 160.0), "level 1 halo full (%.0f)" % inst.fog.halo_clear, failures)
 	var students := get_tree().get_nodes_in_group("students")
-	_check(students.size() == 7, "7 students spawned (%d)" % students.size(), failures)
+	_check(students.size() >= 7, "students spawned by area (%d)" % students.size(), failures)
 	_check(inst.map.rooms.size() > 0, "map rooms after start (%d)" % inst.map.rooms.size(), failures)
 	_check(inst.map.is_connected_plan(), "start-level plan connected", failures)
 	_check(inst.player.position.distance_to(inst.map.exit_pos) > 1.0, "spawn: random room, not hall", failures)
@@ -462,7 +462,8 @@ func _ready() -> void:
 	inst._apply_lighting_visibility()
 	_check(inst.world_modulate.visible, "lighting: dev toggle restores lights", failures)
 	DevMode.lighting = light_dev
-	_check(inst.minimap == null and inst.minimap_script != null and inst.has_method("_setup_minimap"), "minimap: ui disabled, interface kept", failures)
+	_check(inst.minimap != null and inst.minimap_script != null and inst.minimap.visible,
+		"minimap: enabled and shown", failures)
 
 	var desk_ok := true
 	for d in inst.map.desks:

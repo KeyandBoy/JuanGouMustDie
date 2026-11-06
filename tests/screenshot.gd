@@ -223,8 +223,6 @@ func _ready() -> void:
 
 	GameState.warnings = 0
 	GameState.set_level(2)
-	inst.fog.forget_after = 0.05
-	inst.fog.forget_ramp = 0.2
 	var fi := -1
 	for i in inst.map.rooms.size():
 		var t := String(inst.map.room_types[i])
@@ -244,7 +242,7 @@ func _ready() -> void:
 		inst.camera.global_position = spot
 		await get_tree().create_timer(0.6).timeout
 		_save(inst, "res://tests/shot_forget.png")
-		print("FORGET room=", fi, " type=", inst.map.room_types[fi], " amount=", inst.fog.forget_amount(fi), " player=", inst.player.position)
+		print("EXPLORE room=", fi, " type=", inst.map.room_types[fi], " zone=", inst.map.current_zone_at(inst.player.position), " player=", inst.player.position)
 
 	GameState.warnings = 0
 	var n0 = get_tree().get_nodes_in_group("students")[0]

@@ -30,38 +30,55 @@ func _ready() -> void:
 		await get_tree().process_frame
 		_check(inst.map.explored[dark_i], "fog: entering reveals room", failures)
 
-	inst.fog.forget_after = 0.15
-	inst.fog.forget_ramp = 0.05
-	inst.fog.forget_clear_time = 0.05
-	var forget_i := -1
+	# 探索三态：未探索纯黑 / 已探索压暗 / 当前不遮（不再有「30 秒忘记」）
+	var fog_i := -1
 	for i in inst.map.rooms.size():
-		var t := String(inst.map.room_types[i])
-		if t != "hall" and t != "stair" and t != "corridor":
-			forget_i = i
+		var t: String = String(inst.map.room_types[i])
+		if t != "hall" and t != "stair":
+			fog_i = i
 			break
-	_check(forget_i >= 0, "forget: normal room found", failures)
-	if forget_i >= 0:
-		inst.player.position = inst.map.rooms[forget_i].get_center()
-		await get_tree().process_frame
-		await get_tree().process_frame
-		_check(inst.map.explored[forget_i], "forget: target room explored", failures)
+	_check(fog_i >= 0, "fog: normal room found", failures)
+	if fog_i >= 0:
+		inst.player.position = inst.map.rooms[fog_i].get_center()
+		for k in 4:
+			await get_tree().process_frame
+		_check(inst.map.explored[fog_i], "fog: target room explored", failures)
+		var zn: String = inst.map.current_zone_at(inst.player.position)
+		_check(zn == "r%d" % fog_i, "fog: player zone is room (%s)" % zn, failures)
+		var mask_r: ColorRect = _mask_for(inst.fog, "r%d" % fog_i)
+		_check(mask_r != null and not mask_r.visible, "fog: current room unmasked", failures)
+
+		# 走到走廊：房间压暗保留轮廓，当前走廊段不遮
 		var corridor_spot: Vector2 = inst.map.corridor_rect.get_center()
 		inst.player.position = corridor_spot
 		inst.camera.reset_smoothing()
 		inst.camera.global_position = corridor_spot
-		GameState.level = 1
-		await get_tree().create_timer(0.4).timeout
-		_check(inst.fog.forget_amount(forget_i) < 0.01, "forget: level 1 never fogs (%.2f)" % inst.fog.forget_amount(forget_i), failures)
-		GameState.level = 2
-		await get_tree().create_timer(0.4).timeout
-		_check(inst.fog.forget_amount(forget_i) > 0.9, "forget: level 2 room fogs after leaving (%.2f)" % inst.fog.forget_amount(forget_i), failures)
-		inst.player.position = inst.map.rooms[forget_i].get_center()
-		await get_tree().create_timer(0.3).timeout
-		_check(inst.fog.forget_amount(forget_i) < 0.05, "forget: re-entry clears fog (%.2f)" % inst.fog.forget_amount(forget_i), failures)
+		await get_tree().create_timer(0.35).timeout
+		mask_r = _mask_for(inst.fog, "r%d" % fog_i)
+		_check(mask_r != null and mask_r.visible, "fog: explored room dims after leaving", failures)
+		if mask_r != null:
+			_check(mask_r.color.a > 0.05 and mask_r.color.a < 0.9,
+				"fog: dim alpha not opaque (%.2f)" % mask_r.color.a, failures)
+		var cz: String = inst.map.current_zone_at(inst.player.position)
+		_check(cz.begins_with("c"), "fog: corridor zone (%s)" % cz, failures)
+		var mask_c: ColorRect = _mask_for(inst.fog, cz)
+		_check(mask_c != null and not mask_c.visible, "fog: current corridor segment unmasked", failures)
+		_check(inst.map.corridor_segments.size() > 0, "fog: corridor split into %d segments" % inst.map.corridor_segments.size(), failures)
+
+		# 未探索的房间必须是纯黑
+		for i in inst.map.rooms.size():
+			if not inst.map.explored[i]:
+				var m: ColorRect = _mask_for(inst.fog, "r%d" % i)
+				if m != null:
+					_check(m.color.a >= 0.99, "fog: unexplored room opaque (%.2f)" % m.color.a, failures)
+					break
+
+		# 再走回去：房间恢复全亮
+		inst.player.position = inst.map.rooms[fog_i].get_center()
+		await get_tree().create_timer(0.35).timeout
+		mask_r = _mask_for(inst.fog, "r%d" % fog_i)
+		_check(mask_r != null and not mask_r.visible, "fog: re-entry unmasks room", failures)
 	GameState.level = 1
-	inst.fog.forget_after = 30.0
-	inst.fog.forget_ramp = 5.0
-	inst.fog.forget_clear_time = 1.5
 
 	var qdesk: Dictionary = inst.map.desks[0]
 	var dpos: Vector2 = qdesk["pos"]
@@ -269,3 +286,11 @@ func _check(cond: bool, label: String, failures: Array[String]) -> void:
 	else:
 		failures.append(label)
 		print("  FAIL: ", label)
+
+func _mask_for(fog, zone: String) -> ColorRect:
+	if fog == null:
+		return null
+	for i in fog._ov_zones.size():
+		if String(fog._ov_zones[i]) == zone:
+			return fog._ov_nodes[i]
+	return null

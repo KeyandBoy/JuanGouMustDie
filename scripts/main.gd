@@ -13,7 +13,10 @@ const L_INTRO := 60
 
 const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
-const MINIMAP_ENABLED := false
+const MINIMAP_ENABLED := true
+## 死区跟随：屏幕中间这块矩形里镜头不动（占视口比例）。
+const DEAD_ZONE_X := 0.20
+const DEAD_ZONE_Y := 0.22
 
 # B12：第 4 关随机停电。间隔 8~16s，每次 0.3~1.0s，只闪一下不常驻。
 const BLACKOUT_GAP_MIN := 8.0
@@ -433,14 +436,14 @@ func _setup_minimap() -> void:
 	minimap.anchor_right = 1.0
 	minimap.offset_left = -212.0
 	minimap.offset_right = -12.0
-	minimap.offset_top = 8.0
-	minimap.offset_bottom = 148.0
-	hud.reserve_top_right = true
+	minimap.offset_top = 164.0
+	minimap.offset_bottom = 304.0
 
 func _zoom_for_map() -> float:
 	if GameState.tutorial_active:
 		return 1.45
-	return clampf(1.375 - 0.0625 * float(map.rooms.size()), 0.72, 1.0)
+	# 连续大地图：固定缩放，一屏约 70~85 格（CELL=20 → 0.85）
+	return 0.85
 
 func _apply_camera_limits() -> void:
 	if map.world_rect.size.x <= 0.0:
@@ -449,6 +452,23 @@ func _apply_camera_limits() -> void:
 	camera.limit_right = int(map.world_rect.end.x)
 	camera.limit_top = int(map.world_rect.position.y)
 	camera.limit_bottom = int(map.world_rect.end.y)
+
+## 死区跟随：角色在屏幕中间一块矩形内自由移动，碰到边缘镜头才平滑滚动。
+func _camera_follow() -> void:
+	if camera == null or player == null or not is_instance_valid(player):
+		return
+	var vs := get_viewport().get_visible_rect().size
+	var zx := maxf(camera.zoom.x, 0.01)
+	var zy := maxf(camera.zoom.y, 0.01)
+	var dz := Vector2(vs.x * 0.5 / zx * DEAD_ZONE_X, vs.y * 0.5 / zy * DEAD_ZONE_Y)
+	var p: Vector2 = player.global_position
+	var t: Vector2 = camera.global_position
+	var d := p - t
+	if absf(d.x) > dz.x:
+		t.x += d.x - signf(d.x) * dz.x
+	if absf(d.y) > dz.y:
+		t.y += d.y - signf(d.y) * dz.y
+	camera.global_position = t
 
 func _setup_level(p_spawn_random := false) -> void:
 	_close_all_modals()
@@ -628,7 +648,10 @@ func _spawn_students() -> void:
 	for s in get_tree().get_nodes_in_group("students"):
 		s.queue_free()
 	if map.rooms.is_empty(): return
-	var count: int = 7 + (GameState.level - 1)
+	# 按地图面积加成：以旧图（约 3000 格）为基准，每多 1200 格多 1 个，上限 16
+	var area_cells: int = map.gw * map.gh
+	var count: int = 7 + (GameState.level - 1) + clampi(int((area_cells - 3000) / 1200.0), 0, 6)
+	count = clampi(count, 7, 16)
 	var spots: Array[Vector2] = map.spawn_points(count, true)
 	var roles: Array[String] = ["student", "student", "student", "juan", "juan", "teacher", "guard"]
 	roles.shuffle()
@@ -794,7 +817,7 @@ func _process(delta: float) -> void:
 		menu_music_label.text = _menu_info_text()
 	if transitioning or cutscene_active:
 		return
-	camera.global_position = player.global_position
+	_camera_follow()
 	map.explore_room_at(player.position)
 
 	var rs := GameState.run_state
