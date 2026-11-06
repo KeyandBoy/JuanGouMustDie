@@ -388,6 +388,9 @@ func generate_tutorial() -> void:
 	_build_nav()
 	_build_doors()
 	_build_corridor_segments()
+	# 教程关整图可见：走廊段也全部点亮（否则小地图只画房间、不画走廊）
+	for k in corridor_explored.size():
+		corridor_explored[k] = true
 	_build_tiles()
 	_spawn_furniture()
 	_build_astar()
