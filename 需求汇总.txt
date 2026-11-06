@@ -424,7 +424,7 @@
 - 已落地：**D4 → D1 → D2 → D3**（顺序有依赖：目录先定，总线是地基）
 - 关键约定：D1 的 1.5s 只给循环 BGM；一次性短句用 0.25s，否则 11 秒胜利曲被淡入吃掉一大截
 - D3 不照搬 gun/melee：本作无枪械，`gun` 留空目录备用，`melee` 并入 `impact`
-- 待做：D5 环境层、D6 叠鼓点（需先测 BPM + 做分轨）、D8 脚步材质
+- 待做：D6 叠鼓点（需先测 BPM + 做分轨）；D5 环境层、D7 UI 三音、D8 脚步材质已落地
 - 音量面板：主音量 / 音乐音量 / **音效音量** 三条滑条，均走总线并持久化到 ConfigFile
 - D7 已落地（2026-11-05）：UI 三音用 Kenney Interface Sounds（CC0，无需署名），悬停/点击/确认统一走 UI 总线；**明确不用程序合成，一律找现成素材**
 
@@ -498,8 +498,9 @@
 - D1~D4、D7 原本已完成：双轨交叉淡入、12+8 音效池同名限 3、分类目录、五条总线、UI 三音
 - D5 环境音：新增 Ambience 独立播放器，L2~L5 探索/答题循环 broadcast_noise（-27dB、2s 淡入），菜单/过场/教学关自动关闭
 - D6 暴君压迫层：新增 Pressure 播放器，tyrant_active 时用 amb_tyrant_drone 以 -19dB 垫在 tyrant_dread 下（1.8s 淡入/2.5s 淡出）；曲库状态改 active，CATALOG.md 重新生成
-- D8 脚步接口：AudioManager.play_footstep(material, pos, running)，约定 step_<tile|wood|carpet>_<1..3>.ogg；缺文件静音；main 按移动距离和房间类型触发
-- 仍缺素材：真正的同 BPM 追逐鼓点层、三套脚步采样（等音频窗口）
+- D8 脚步接口：AudioManager.play_footstep(material, pos, running)，约定 step_<tile|wood|carpet>_<1..5>.ogg；main 按移动距离和房间类型触发
+- D8 已落地（2026-11-06）：Kenney Impact Sounds（CC0）15 条真实采样，concrete→tile / wood / carpet 各 5 变体；安全屋=L6+ 铺地毯
+- 仍缺素材：真正的同 BPM 追逐鼓点层（D6）
 - 验证：八套测试全绿；新增 tests/_d_probe.tscn
 
 【E/F/G 批次（2026-11-05）】
