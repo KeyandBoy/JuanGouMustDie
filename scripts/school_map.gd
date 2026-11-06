@@ -77,6 +77,17 @@ var nav_points := PackedVector2Array()
 var nav_links: Array = []
 var nav_is_corridor: Array[bool] = []
 
+## 套间（里间）：在大房间里掏出来的独立小房间，只有一道 2 格开口；
+## 探索/迷雾/命名都按独立房间处理，默认当宝箱房 = 隐藏奖励。
+var nested_room_index := -1
+var nested_rect := Rect2()
+var nested_parent := -1
+
+## 环路：同排相邻两间房之间额外开的一道 2 格通道（跑图/甩追击者用）。
+var passage_rects: Array[Rect2] = []
+var passage_owner: Array[int] = []
+var passage_other: Array[int] = []
+
 ## 房间角色（替代「主路/支路」）：stair / hall / safe / deep / normal
 ## depth = 到楼梯房的距离，用来做风险梯度，不依赖「入口/出口」概念。
 var room_roles: Array[String] = []
@@ -289,6 +300,10 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 			if wy1 > wy0 + 2:
 				windows.append({"rect": Rect2((tail_x0 - WALL_EXT) * CELL + 2.0, wy0 * CELL, 16.0, (wy1 - wy0) * CELL), "axis": "v"})
 
+	# 套间 + 环路：必须在 _build_walls 之前开凿，墙/碰撞才会跟着重算
+	_carve_nested_room()
+	_carve_loop_passage()
+
 	for i in rooms.size():
 		if room_types[i] == "stair":
 			stair_rects.append(rooms[i])
@@ -296,7 +311,7 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	var hall_i := room_types.find("hall")
 	if hall_i < 0:
 		hall_i = 0
-	exit_pos = _walkable_center(rooms[hall_i])
+	exit_pos = _walkable_center(rooms[hall_i], hall_i)
 	if hall_i >= 0 and hall_i < explored.size():
 		explored[hall_i] = true
 
@@ -367,7 +382,7 @@ func generate_tutorial() -> void:
 			})
 			windows.append({"rect": Rect2(r.position.x + 3 * CELL, (gh - 2) * CELL + 2.0, r.size.x - 6 * CELL, 16.0), "axis": "h"})
 	stair_rects.append(rooms[2])
-	exit_pos = _walkable_center(rooms[0])
+	exit_pos = _walkable_center(rooms[0], 0)
 	_build_walls()
 	_build_collision()
 	_build_nav()
@@ -406,6 +421,12 @@ func _reset() -> void:
 	furniture = PackedByteArray()
 	reserved = PackedByteArray()
 	box_rects.clear()
+	nested_room_index = -1
+	nested_rect = Rect2()
+	nested_parent = -1
+	passage_rects.clear()
+	passage_owner.clear()
+	passage_other.clear()
 	nav_points = PackedVector2Array()
 	nav_links.clear()
 	nav_is_corridor.clear()
@@ -484,7 +505,7 @@ func _compute_roles(allow_safe := true) -> void:
 		# 兜底：房内没有导航点时取最近的一个，避免整层没有深度
 		var best := -1
 		var bd := INF
-		var ac := _walkable_center(rooms[anchor])
+		var ac := _walkable_center(rooms[anchor], anchor)
 		for i in n:
 			var d := nav_points[i].distance_to(ac)
 			if d < bd:
@@ -538,7 +559,7 @@ func _compute_roles(allow_safe := true) -> void:
 		entry_room_index = entry_i
 		if entry_i < explored.size():
 			explored[entry_i] = true
-		exit_pos = _walkable_center(rooms[entry_i])
+		exit_pos = _walkable_center(rooms[entry_i], entry_i)
 
 	# E3：沿导航图从入口往楼梯走下坡，记录主路房间（其余是支路）
 	main_path_rooms = _trace_main_path(entry_i, n, dist)
@@ -549,6 +570,8 @@ func _compute_roles(allow_safe := true) -> void:
 		var boss_d := -1
 		for i in rooms.size():
 			if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index:
+				continue
+			if i == nested_room_index:
 				continue
 			if room_depth[i] > boss_d:
 				boss_d = room_depth[i]
@@ -568,6 +591,8 @@ func _compute_roles(allow_safe := true) -> void:
 		for i in rooms.size():
 			if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index or room_roles[i] == "boss":
 				continue
+			if i == nested_room_index:
+				continue
 			if room_depth[i] < 0:
 				continue
 			var r := float(room_depth[i]) / float(maxd)
@@ -577,10 +602,32 @@ func _compute_roles(allow_safe := true) -> void:
 			if score < best_score:
 				best_score = score
 				best = i
+		# 兜底：没有落在中段比率的房间时，取最接近 0.47 的那间，
+		# 保证第 6 层起一定有安全屋（房间数少、套间占位时也能出）
+		if best < 0:
+			for i in rooms.size():
+				if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index:
+					continue
+				if i == nested_room_index or room_roles[i] == "boss":
+					continue
+				if room_depth[i] <= 0:
+					continue
+				var r2 := float(room_depth[i]) / float(maxd)
+				var score2 := absf(r2 - 0.47)
+				if score2 < best_score:
+					best_score = score2
+					best = i
 		if best >= 0:
 			room_roles[best] = "safe"
 			safe_room_index = best
 			room_names[best] = "安全屋（禁止答题）"
+
+	# 套间（里间）= 隐藏奖励：直接当宝箱房，不再按主路/深度挑
+	if nested_room_index >= 0 and nested_room_index < rooms.size():
+		treasure_room_index = nested_room_index
+		room_roles[nested_room_index] = "treasure"
+		room_names[nested_room_index] = "密室（宝箱）"
+		return
 
 	# E4：宝箱房 = 不在主路上的最深支路房
 	var tre_i := -1
@@ -732,6 +779,145 @@ func _carve_rect(x0: int, y0: int, x1: int, y1: int) -> void:
 	for y in range(maxi(0, y0), mini(gh, y1)):
 		for x in range(maxi(0, x0), mini(gw, x1)):
 			grid[y * gw + x] = FLOOR
+
+## 套间（里间）：挑一间够大的南北向房间，在里面掏一个独立小房间，
+## 只留一道 2 格宽的开口；里间会作为独立房间追加到 rooms/doors 末尾
+## （两个数组必须等长且同序，_build_nav 按索引取 doors[i]）。
+func _carve_nested_room() -> void:
+	if rooms.size() < 7:
+		return
+	if rng.randf() > 0.65:
+		return
+	var best := -1
+	var best_area := 0
+	for i in rooms.size():
+		var t: String = room_types[i]
+		if t == "hall" or t == "stair":
+			continue
+		if i >= doors.size() or String(doors[i].get("axis", "h")) != "h":
+			continue
+		var rr: Rect2 = rooms[i]
+		var cw0 := int(round(rr.size.x / CELL))
+		var ch0 := int(round(rr.size.y / CELL))
+		if cw0 < 22 or ch0 < 16:
+			continue
+		var area := cw0 * ch0
+		if area > best_area:
+			best_area = area
+			best = i
+	if best < 0:
+		return
+
+	var r: Rect2 = rooms[best]
+	var rx := int(round(r.position.x / CELL))
+	var ry := int(round(r.position.y / CELL))
+	var cw := int(round(r.size.x / CELL))
+	var ch := int(round(r.size.y / CELL))
+	var wi := clampi(int(round(cw / 3.0)), 8, 14)
+	var hi := clampi(int(round(ch / 2.0)), 6, 11)
+	wi = mini(wi, cw - 4)
+	hi = mini(hi, ch - 5)
+	if wi < 7 or hi < 5:
+		return
+
+	var ix := rx + int((cw - wi) / 2)
+	var door_dir := float(doors[best].get("dir", -1.0))
+	# 门在房间下墙（dir=-1）→ 里间贴上部；门在上墙（dir=1）→ 里间贴下部
+	var iy := ry + 1
+	var open_below := true
+	if door_dir > 0.0:
+		iy = ry + ch - 1 - hi
+		open_below = false
+	if ix - 1 < 0 or iy - 1 < 0 or ix + wi >= gw or iy + hi >= gh:
+		return
+
+	# 先把里间连外墙一起填实心，再掏里间地板 + 开口
+	for y in range(iy - 1, iy + hi + 1):
+		for x in range(ix - 1, ix + wi + 1):
+			grid[y * gw + x] = SOLID
+			_room_cell[y * gw + x] = -1
+	for y in range(iy, iy + hi):
+		for x in range(ix, ix + wi):
+			grid[y * gw + x] = FLOOR
+	var ox := ix + 1 + rng.randi_range(0, maxi(0, wi - 3))
+	var oy := iy + hi if open_below else iy - 1
+	for k in DOOR_W:
+		grid[oy * gw + ox + k] = FLOOR
+		_room_cell[oy * gw + ox + k] = -1
+
+	var idx := rooms.size()
+	var inner := Rect2(ix * CELL, iy * CELL, wi * CELL, hi * CELL)
+	rooms.append(inner)
+	var itype := _pick_nested_type()
+	room_types.append(itype)
+	room_names.append(String(type_defs[itype]["name"]))
+	explored.append(false)
+	for y in range(iy, iy + hi):
+		for x in range(ix, ix + wi):
+			_room_cell[y * gw + x] = idx
+	nested_room_index = idx
+	nested_rect = inner
+	nested_parent = best
+	doors.append({
+		"pos": Vector2((ox + DOOR_W * 0.5) * CELL, (oy + 0.5) * CELL),
+		"axis": "h",
+		"dir": -1.0 if open_below else 1.0,
+		"width": DOOR_W * CELL,
+	})
+
+func _pick_nested_type() -> String:
+	var pool: Array[String] = ["storage", "library", "office", "lab", "medical", "broadcast", "classroom"]
+	return pool[rng.randi_range(0, pool.size() - 1)]
+
+## 环路：同排相邻两间房之间多开一道 2 格通道（不新增房间，只多一条逃生路线）。
+func _carve_loop_passage() -> void:
+	if rooms.size() < 8:
+		return
+	if rng.randf() > 0.5:
+		return
+	var pairs: Array = []
+	for i in rooms.size():
+		if room_types[i] == "hall" or i == nested_room_index:
+			continue
+		for j in range(i + 1, rooms.size()):
+			if room_types[j] == "hall" or j == nested_room_index:
+				continue
+			var a: Rect2 = rooms[i]
+			var b: Rect2 = rooms[j]
+			if absf(a.position.y - b.position.y) > 1.0 or absf(a.size.y - b.size.y) > 1.0:
+				continue
+			var gap := b.position.x - a.end.x
+			if gap < CELL - 1.0 or gap > CELL + 1.0:
+				continue
+			if a.size.x < CELL * 12.0 or b.size.x < CELL * 12.0:
+				continue
+			pairs.append([i, j])
+	if pairs.is_empty():
+		return
+	var pair: Array = pairs[rng.randi_range(0, pairs.size() - 1)]
+	var ia := int(pair[0])
+	var ib := int(pair[1])
+	var ra: Rect2 = rooms[ia]
+	var wall_x := int(round(ra.end.x / CELL))
+	var y0 := int(round(ra.position.y / CELL)) + 2
+	var y1 := int(round(ra.end.y / CELL)) - 3
+	if y1 - y0 < 4:
+		return
+	var gy := rng.randi_range(y0, y1)
+	for k in DOOR_W + 2:
+		var cy := gy - 1 + k
+		if wall_x < 0 or cy < 0 or wall_x >= gw or cy >= gh:
+			return
+		if grid[cy * gw + wall_x] == FLOOR:
+			return
+	for k in DOOR_W:
+		var cy2 := gy + k
+		grid[cy2 * gw + wall_x] = FLOOR
+		# 门洞地面跟着 A 房的地板图案走，不像走廊
+		_room_cell[cy2 * gw + wall_x] = ia
+	passage_rects.append(Rect2(wall_x * CELL, gy * CELL, CELL, DOOR_W * CELL))
+	passage_owner.append(ia)
+	passage_other.append(ib)
 
 func _build_walls() -> void:
 	var near := PackedByteArray()
@@ -1018,7 +1204,7 @@ func _build_nav() -> void:
 	for i in rooms.size():
 		var d: Vector2 = doors[i]["pos"]
 		var di := _add_nav_point(d, true)
-		var c := _walkable_center(rooms[i])
+		var c := _walkable_center(rooms[i], i)
 		var ci := _add_nav_point(c, false)
 		_link(di, ci)
 		door_nodes.append(di)
@@ -1170,14 +1356,14 @@ func _spawn_furniture() -> void:
 		if role == "safe":
 			count = 0
 		for j in count:
-			var rect := _pick_desk_rect(rooms[i], t == "hall")
+			var rect := _pick_desk_rect(i, t == "hall")
 			if rect.size.x <= 0.0:
 				break
 			_mark_furniture(rect)
 			desks.append({"pos": rect.get_center(), "rect": rect, "room": i, "efficiency": eff, "occupied": false})
 		if t == "storage":
 			for j in rng.randi_range(3, 6):
-				var br := _pick_box_rect(rooms[i])
+				var br := _pick_box_rect(i)
 				if br.size.x <= 0.0:
 					break
 				_mark_furniture(br)
@@ -1327,7 +1513,7 @@ func _place_big(room_idx: int, def: Dictionary) -> bool:
 			cy = y0 + int((ch - hc) / 2.0)
 			# 贴地件（地毯）不挡路：只要格子是地板、没被实心家具占了就行，
 			# 导航点/门的预留格可以压过去（导航点只是 AI 路点，不影响画面）。
-			if not _cells_free_floor(cx, cy, wc, hc):
+			if not _cells_free_floor(cx, cy, wc, hc, room_idx):
 				return false
 		else:
 			match side:
@@ -1343,7 +1529,7 @@ func _place_big(room_idx: int, def: Dictionary) -> bool:
 				"e":
 					cx = x0 + maxi(0, cw - wc)
 					cy = y0 + rng.randi_range(0, maxi(0, ch - hc))
-			if not _cells_free(cx, cy, wc, hc):
+			if not _cells_free(cx, cy, wc, hc, room_idx):
 				return false
 		rect = Rect2(cx * CELL, cy * CELL, wc * CELL, hc * CELL)
 	big_items.append({
@@ -1420,7 +1606,8 @@ func _draw_big_one(it: Dictionary, tint: Color) -> void:
 		draw_rect(rect, Color(0.62, 0.66, 0.74, 0.9))
 		draw_rect(rect, Color(0.36, 0.40, 0.48), false, 1.5)
 
-func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
+func _pick_desk_rect(room_i: int, avoid_center: bool) -> Rect2:
+	var r: Rect2 = rooms[room_i]
 	var x0 := int(round(r.position.x / CELL)) + 1
 	var x1 := int(round(r.end.x / CELL)) - 1
 	var y0 := int(round(r.position.y / CELL)) + 1
@@ -1430,7 +1617,7 @@ func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
 	for attempt in 160:
 		var cx := rng.randi_range(x0, x1 - 2)
 		var cy := rng.randi_range(y0, y1 - 1)
-		if not _cells_free(cx, cy, 2, 1):
+		if not _cells_free(cx, cy, 2, 1, room_i):
 			continue
 		var rect := Rect2(cx * CELL, cy * CELL, 2.0 * CELL, CELL)
 		if avoid_center and rect.get_center().distance_to(exit_pos) < CELL * 3.0:
@@ -1454,7 +1641,8 @@ func _pick_desk_rect(r: Rect2, avoid_center: bool) -> Rect2:
 			return rect
 	return Rect2()
 
-func _pick_box_rect(r: Rect2) -> Rect2:
+func _pick_box_rect(room_i: int) -> Rect2:
+	var r: Rect2 = rooms[room_i]
 	var x0 := int(round(r.position.x / CELL)) + 1
 	var x1 := int(round(r.end.x / CELL)) - 1
 	var y0 := int(round(r.position.y / CELL)) + 1
@@ -1464,7 +1652,7 @@ func _pick_box_rect(r: Rect2) -> Rect2:
 	for attempt in 60:
 		var cx := rng.randi_range(x0, x1 - 1)
 		var cy := rng.randi_range(y0, y1 - 1)
-		if not _cells_free(cx, cy, 1, 1):
+		if not _cells_free(cx, cy, 1, 1, room_i):
 			continue
 		var rect := Rect2(cx * CELL, cy * CELL, CELL, CELL)
 		var ok := true
@@ -1660,7 +1848,7 @@ func _decor_puddle(p: Vector2) -> void:
 	draw_circle(Vector2(-1.0, -1.0), 3.0, Color(0.62, 0.80, 0.90, 0.16))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-func _cells_free(cx: int, cy: int, w: int, h: int) -> bool:
+func _cells_free(cx: int, cy: int, w: int, h: int, room_i := -1) -> bool:
 	for y in range(cy, cy + h):
 		for x in range(cx, cx + w):
 			if x < 0 or y < 0 or x >= gw or y >= gh:
@@ -1668,16 +1856,20 @@ func _cells_free(cx: int, cy: int, w: int, h: int) -> bool:
 			var i := y * gw + x
 			if grid[i] != FLOOR or reserved[i] == 1 or furniture[i] == 1:
 				return false
+			if room_i >= 0 and _room_cell[i] != room_i:
+				return false
 	return true
 
 ## 松一点的版本：只看地板和实心家具（给贴地件用，预留格可以压）。
-func _cells_free_floor(cx: int, cy: int, w: int, h: int) -> bool:
+func _cells_free_floor(cx: int, cy: int, w: int, h: int, room_i := -1) -> bool:
 	for y in range(cy, cy + h):
 		for x in range(cx, cx + w):
 			if x < 0 or y < 0 or x >= gw or y >= gh:
 				return false
 			var i := y * gw + x
 			if grid[i] != FLOOR or furniture[i] == 1:
+				return false
+			if room_i >= 0 and _room_cell[i] != room_i:
 				return false
 	return true
 
@@ -1721,9 +1913,11 @@ func _build_box_collision() -> void:
 		shape.position = r.get_center()
 		body.add_child(shape)
 
-func _walkable_center(r: Rect2) -> Vector2:
+## 房间中心（可走格）。room_idx >= 0 时只在「本房间自己的格子」里找，
+## 避免套间的里间抢走母房的中心点。
+func _walkable_center(r: Rect2, room_idx := -1) -> Vector2:
 	var c := r.get_center()
-	if is_walkable(c):
+	if is_walkable(c) and (room_idx < 0 or _cell_room(c) == room_idx):
 		return c
 	var best := c
 	var bd := INF
@@ -1732,11 +1926,22 @@ func _walkable_center(r: Rect2) -> Vector2:
 			var p := Vector2((gx + 0.5) * CELL, (gy + 0.5) * CELL)
 			if not is_walkable(p):
 				continue
+			if room_idx >= 0 and _cell_room(p) != room_idx:
+				continue
 			var d := p.distance_to(c)
 			if d < bd:
 				bd = d
 				best = p
 	return best
+
+func _cell_room(p: Vector2) -> int:
+	if p.x < 0.0 or p.y < 0.0:
+		return -1
+	var cx := int(p.x / CELL)
+	var cy := int(p.y / CELL)
+	if cx >= gw or cy >= gh or _room_cell.is_empty():
+		return -1
+	return _room_cell[cy * gw + cx]
 
 func is_walkable(pos: Vector2) -> bool:
 	if pos.x < 0.0 or pos.y < 0.0:
@@ -2029,7 +2234,7 @@ func random_room_center(allow_hall: bool = true) -> Vector2:
 	while not allow_hall and room_types[idx] == "hall" and guard < 12:
 		idx = rng.randi_range(0, rooms.size() - 1)
 		guard += 1
-	return _walkable_center(rooms[idx])
+	return _walkable_center(rooms[idx], idx)
 
 func spawn_points(count: int, corridor_only: bool = true) -> Array[Vector2]:
 	var pool: Array[int] = []
@@ -2057,7 +2262,7 @@ func is_connected_plan() -> bool:
 	if rooms.is_empty() or nav_points.is_empty():
 		return false
 	for i in rooms.size():
-		var p := _walkable_center(rooms[i])
+		var p := _walkable_center(rooms[i], i)
 		var path := find_path(exit_pos, p)
 		if path.is_empty():
 			return false
@@ -2124,20 +2329,42 @@ func explore_corridor_at(pos: Vector2) -> bool:
 
 func explore_room_at(pos: Vector2) -> int:
 	explore_corridor_at(pos)
-	for i in rooms.size():
+	# 倒序遍历：套间的里间矩形套在母房矩形内部，必须优先命中里间
+	for i in range(rooms.size() - 1, -1, -1):
 		if rooms[i].has_point(pos):
 			if not explored[i]:
 				explored[i] = true
 				exploration_version += 1
 				room_entered.emit(i)
 			return i
+	# 环路门洞不算任何一间房（不然隔着门洞就能点亮对面）
 	return -1
 
-## 该点所在区域是否已点亮（房间或走廊段）。
+## 该点所在的环路门洞下标（-1 = 不在门洞里）。
+func passage_index_at(pos: Vector2) -> int:
+	for i in passage_rects.size():
+		if passage_rects[i].has_point(pos):
+			return i
+	return -1
+
+## 环路门洞两侧任意一间房探索过，这段门洞就算见过。
+func passage_seen(index: int) -> bool:
+	if index < 0 or index >= passage_owner.size():
+		return true
+	for k in [passage_owner[index], passage_other[index]]:
+		var ri := int(k)
+		if ri >= 0 and ri < explored.size() and explored[ri]:
+			return true
+	return false
+
+## 该点所在区域是否已点亮（房间、里间、门洞或走廊段）。
 func is_explored_at(pos: Vector2) -> bool:
-	for i in rooms.size():
+	for i in range(rooms.size() - 1, -1, -1):
 		if rooms[i].has_point(pos):
 			return explored[i]
+	var pi := passage_index_at(pos)
+	if pi >= 0:
+		return passage_seen(pi)
 	for i in corridor_segments.size():
 		if corridor_segments[i].has_point(pos):
 			return corridor_explored[i]
@@ -2145,16 +2372,20 @@ func is_explored_at(pos: Vector2) -> bool:
 
 ## 当前所在区域的标识（用于判断「当前房间/当前段」）。
 func current_zone_at(pos: Vector2) -> String:
-	for i in rooms.size():
+	for i in range(rooms.size() - 1, -1, -1):
 		if rooms[i].has_point(pos):
 			return "r%d" % i
+	var pi := passage_index_at(pos)
+	if pi >= 0:
+		return "p%d" % pi
 	for i in corridor_segments.size():
 		if corridor_segments[i].has_point(pos):
 			return "c%d" % i
 	return ""
 
 func room_index_at(pos: Vector2) -> int:
-	for i in rooms.size():
+	# 倒序：套间的里间矩形在母房内部，必须先命中里间
+	for i in range(rooms.size() - 1, -1, -1):
 		if rooms[i].has_point(pos):
 			return i
 	return -1

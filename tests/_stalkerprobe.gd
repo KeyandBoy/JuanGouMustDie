@@ -117,6 +117,22 @@ func _ready() -> void:
 	_check(GameState.warnings == 0, "EXPLORING stare never catches (warnings=%d)" % GameState.warnings, failures)
 	_check(not saw_stalk, "warnings 0: stare never enters stalk", failures)
 
+	# 观察者巡逻 10 秒会走远，开卷前重新摆回原位，保证「学习被抓」这段是确定性的
+	watcher = null
+	for offsq: Vector2 in [Vector2(70.0, 0.0), Vector2(-70.0, 0.0), Vector2(0.0, 70.0), Vector2(0.0, -70.0), Vector2(70.0, 70.0), Vector2(-70.0, 70.0), Vector2(70.0, -70.0), Vector2(-70.0, -70.0)]:
+		var spq: Vector2 = study_spot + offsq
+		if not inst.map.is_walkable(spq):
+			continue
+		if not inst.map.vision_clear(spq, study_spot):
+			continue
+		watcher = students[0]
+		watcher.position = spq
+		watcher.facing = (study_spot - spq).normalized()
+		watcher.state = "patrol"
+		watcher.path = PackedVector2Array()
+		break
+	_check(watcher != null and inst.map.vision_clear(watcher.position, study_spot), "watcher re-placed before study", failures)
+
 	inst._toggle_study()
 	_check(inst.quiz.is_open, "study starts with quiz open", failures)
 	var caught := false

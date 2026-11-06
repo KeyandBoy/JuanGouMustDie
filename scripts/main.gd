@@ -610,7 +610,7 @@ func _random_spawn_position() -> Vector2:
 		Vector2(36, 32), Vector2(-36, 32), Vector2(36, -32), Vector2(-36, -32),
 	]
 	for idx in candidates:
-		var center: Vector2 = map._walkable_center(map.rooms[idx])
+		var center: Vector2 = map._walkable_center(map.rooms[idx], idx)
 		for off in offsets:
 			var p: Vector2 = center + off
 			if _spawn_point_clear(p):
@@ -620,7 +620,7 @@ func _random_spawn_position() -> Vector2:
 func _tutorial_spawn() -> Vector2:
 	if map.rooms.is_empty():
 		return map.exit_pos
-	var center: Vector2 = map._walkable_center(map.rooms[0])
+	var center: Vector2 = map._walkable_center(map.rooms[0], 0)
 	for off in [Vector2(-80, 0), Vector2(80, 0), Vector2(0, 60), Vector2(0, -60), Vector2(-120, 0)]:
 		var p: Vector2 = center + off
 		if map.is_walkable(p) and _spawn_point_clear(p):
@@ -700,7 +700,7 @@ func _spawn_high_value_spots() -> void:
 	for idx in office_rooms:
 		if made >= 1:
 			break
-		var pos: Vector2 = map._walkable_center(map.rooms[idx])
+		var pos: Vector2 = map._walkable_center(map.rooms[idx], idx)
 		if pos.distance_to(map.exit_pos) < 40.0:
 			continue
 		_make_desk(pos, 1.5, idx, Rect2(-20.0, -10.0, 40.0, 20.0))
@@ -713,7 +713,7 @@ func _spawn_high_value_spots() -> void:
 	room_pool.shuffle()
 	if not room_pool.is_empty():
 		var idx: int = room_pool[0]
-		var pos: Vector2 = map._walkable_center(map.rooms[idx])
+		var pos: Vector2 = map._walkable_center(map.rooms[idx], idx)
 		var too_close := false
 		for d in get_tree().get_nodes_in_group("interactables"):
 			if d.position.distance_to(pos) < 55.0:
@@ -738,7 +738,7 @@ func _spawn_items() -> void:
 	var want: int = mini(4, pool.size())
 	for i in want:
 		var idx: int = pool[i]
-		var pos: Vector2 = map._walkable_center(map.rooms[idx])
+		var pos: Vector2 = map._walkable_center(map.rooms[idx], idx)
 		var pickup = item_spawn_script.new()
 		var id: String = GameState.pick_loot()
 		var def: Dictionary = GameState.get_item_def(id)
@@ -747,6 +747,24 @@ func _spawn_items() -> void:
 		pickup.picked.connect(_on_item_picked)
 		pickup.full.connect(_on_item_full)
 		add_child(pickup)
+
+	# 套间（密室）：额外放一件奖励，保证「找到里间就有收获」
+	if map.nested_room_index >= 0 and map.nested_room_index < map.rooms.size():
+		var npos: Vector2 = map._walkable_center(map.rooms[map.nested_room_index], map.nested_room_index)
+		var taken := false
+		for n in get_tree().get_nodes_in_group("pickups"):
+			if (n as Node2D).position.distance_to(npos) < 44.0:
+				taken = true
+				break
+		if not taken:
+			var hidden = item_spawn_script.new()
+			var hid: String = GameState.pick_loot()
+			var hdef: Dictionary = GameState.get_item_def(hid)
+			hidden.setup(hid, hdef.get("color", Color.WHITE))
+			hidden.position = npos + Vector2(randf_range(-14, 14), randf_range(-10, 10))
+			hidden.picked.connect(_on_item_picked)
+			hidden.full.connect(_on_item_full)
+			add_child(hidden)
 
 func _spawn_anti_tyrant_drops() -> void:
 	var pool: Array[int] = []
@@ -757,7 +775,7 @@ func _spawn_anti_tyrant_drops() -> void:
 	pool.shuffle()
 	var spots: Array[Vector2] = []
 	for idx in pool:
-		var p: Vector2 = map._walkable_center(map.rooms[idx])
+		var p: Vector2 = map._walkable_center(map.rooms[idx], idx)
 		var too_close := false
 		for n in get_tree().get_nodes_in_group("pickups"):
 			if n.position.distance_to(p) < 60.0:
@@ -773,7 +791,7 @@ func _spawn_anti_tyrant_drops() -> void:
 	# 兜底：候选房间不足（附近已有掉落/暴君占位）时，放宽距离限制补满 2 个
 	if spots.size() < 2:
 		for idx in pool:
-			var p: Vector2 = map._walkable_center(map.rooms[idx])
+			var p: Vector2 = map._walkable_center(map.rooms[idx], idx)
 			var dup := false
 			for s in spots:
 				if s.distance_to(p) < 24.0:
@@ -932,7 +950,7 @@ func _add_room_heat(index: int) -> void:
 	room_heat_tier[index] = tier
 	if tier <= old_tier or index >= map.rooms.size():
 		return
-	var target: Vector2 = map._walkable_center(map.rooms[index])
+	var target: Vector2 = map._walkable_center(map.rooms[index], index)
 	if tier == 2:
 		_dispatch_investigators(1, 20.0, target, 0.15)
 		hud.toast("这间房被盯上了：巡查者正在赶来！")
@@ -1394,7 +1412,7 @@ func _spawn_tyrant(idle: float, forced_pos := Vector2.INF) -> Node2D:
 	var pos: Vector2 = forced_pos
 	if pos == Vector2.INF and map.boss_room_index >= 0 and map.boss_room_index < map.rooms.size():
 		# E4：有 Boss 房时优先在 Boss 房登场（离玩家太近则退回远点）
-		var bc: Vector2 = map._walkable_center(map.rooms[map.boss_room_index])
+		var bc: Vector2 = map._walkable_center(map.rooms[map.boss_room_index], map.boss_room_index)
 		if bc.distance_to(player.position) >= 140.0:
 			pos = bc
 	if pos == Vector2.INF:
@@ -1486,7 +1504,7 @@ func _start_tyrant_intro() -> void:
 	get_tree().paused = true
 
 	var room_i: int = map.room_index_at(player.position)
-	var room_center: Vector2 = map._walkable_center(map.rooms[room_i])
+	var room_center: Vector2 = map._walkable_center(map.rooms[room_i], room_i)
 	var door_pos: Vector2 = room_center
 	if room_i >= 0 and room_i < map.doors.size():
 		var dp: Vector2 = map.doors[room_i]["pos"]

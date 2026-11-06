@@ -159,13 +159,38 @@ func _rebuild_masks() -> void:
 	if map == null:
 		return
 	var rooms: Array = map.rooms
+	var hole := Rect2()
+	var parent := int(map.get("nested_parent"))
+	if parent >= 0 and parent < rooms.size():
+		hole = map.nested_rect
 	for i in rooms.size():
-		_add_mask(rooms[i], "r%d" % i, not bool(map.explored[i]))
+		var zone := "r%d" % i
+		var black := not bool(map.explored[i])
+		if i == parent and hole.size.x > 0.0:
+			_add_room_mask_with_hole(rooms[i], zone, black, hole)
+		else:
+			_add_mask(rooms[i], zone, black)
 	var segs: Array = map.corridor_segments
 	var cex: Array = map.corridor_explored
 	for i in segs.size():
 		var seen: bool = i < cex.size() and bool(cex[i])
 		_add_mask(segs[i], "c%d" % i, not seen)
+	# 环路门洞：单独一档，站在里面只亮门洞本身，不泄露两边房间
+	var prects: Array = map.passage_rects
+	for i in prects.size():
+		_add_mask(prects[i], "p%d" % i, not bool(map.passage_seen(i)))
+
+## 母房带套间：遮罩要挖掉里间那块，否则里间会被母房的压暗层盖住。
+func _add_room_mask_with_hole(rect: Rect2, zone: String, black: bool, hole: Rect2) -> void:
+	var strips: Array[Rect2] = [
+		Rect2(rect.position.x, rect.position.y, rect.size.x, hole.position.y - rect.position.y),
+		Rect2(rect.position.x, hole.end.y, rect.size.x, rect.end.y - hole.end.y),
+		Rect2(rect.position.x, hole.position.y, hole.position.x - rect.position.x, hole.size.y),
+		Rect2(hole.end.x, hole.position.y, rect.end.x - hole.end.x, hole.size.y),
+	]
+	for s in strips:
+		if s.size.x > 0.5 and s.size.y > 0.5:
+			_add_mask(s, zone, black)
 
 func _add_mask(rect: Rect2, zone: String, black: bool) -> void:
 	var r := ColorRect.new()

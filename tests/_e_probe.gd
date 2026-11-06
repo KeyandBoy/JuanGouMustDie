@@ -27,7 +27,7 @@ func _ready() -> void:
 	_check(map.entry_room_index >= 0, "e2: entry room assigned")
 	if map.entry_room_index >= 0:
 		_check(String(map.room_roles[map.entry_room_index]) != "stair", "e2: entry is not the stair room")
-		_check(map.exit_pos.distance_to(map._walkable_center(map.rooms[map.entry_room_index])) < 2.0,
+		_check(map.exit_pos.distance_to(map._walkable_center(map.rooms[map.entry_room_index], map.entry_room_index)) < 2.0,
 			"e2: spawn sits in entry room")
 		var max_depth := 0
 		for i in map.rooms.size():
@@ -63,7 +63,7 @@ func _ready() -> void:
 		# 玩家放到楼梯房，确保 Boss 房足够远
 		if stair_i >= 0:
 			inst.player.position = map._walkable_center(map.rooms[stair_i])
-		var boss_center: Vector2 = map._walkable_center(map.rooms[map.boss_room_index])
+		var boss_center: Vector2 = map._walkable_center(map.rooms[map.boss_room_index], map.boss_room_index)
 		inst.tyrant_spawned = false
 		inst._spawn_tyrant(0.0)
 		if inst.tyrant != null:

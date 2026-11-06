@@ -63,6 +63,14 @@ func _draw() -> void:
 		var sr := Rect2(off + (s.position - map.world_rect.position) * sc, s.size * sc)
 		draw_rect(sr, Color(0.86, 0.89, 0.84))
 
+	# 走过的环路门洞（没走过就跟墙一样不画）
+	for i in map.passage_rects.size():
+		if i < map.passage_owner.size() and not map.passage_seen(i):
+			continue
+		var ps: Rect2 = map.passage_rects[i]
+		var psr := Rect2(off + (ps.position - map.world_rect.position) * sc, ps.size * sc)
+		draw_rect(psr, Color(0.86, 0.89, 0.84))
+
 	# 已探索的房间：按房型着色
 	var seen_any := false
 	for i in map.rooms.size():
