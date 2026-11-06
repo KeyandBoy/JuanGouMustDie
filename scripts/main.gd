@@ -341,9 +341,14 @@ func _floor_material_at(pos: Vector2) -> String:
 	var i: int = map.room_index_at(pos)
 	if i < 0 or i >= map.room_types.size():
 		return "tile"
+	# 安全屋铺地毯（安静），其余按房间类型
+	if i < map.room_roles.size() and String(map.room_roles[i]) == "safe":
+		return "carpet"
 	match String(map.room_types[i]):
 		"classroom", "office", "storage":
 			return "wood"
+		"stair":
+			return "tile"
 	return "tile"
 
 

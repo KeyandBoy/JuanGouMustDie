@@ -47,9 +47,12 @@ func _ready() -> void:
 		"d6: tyrant uses drone layer (%s)" % AudioManager.desired_pressure_path())
 	GameState.tyrant_active = old_tyrant
 
-	# D8 脚步：缺素材时安全返回 false；材质按房间类型映射
-	_check(AudioManager.play_footstep("tile", Vector2.ZERO) == false,
-		"d8: missing step samples stay silent (no crash)")
+	# D8 脚步：素材已就位，三种材质都能出声；材质按房间类型映射
+	for mat in ["tile", "wood", "carpet"]:
+		var sample := "res://assets/sfx/step/step_%s_1.ogg" % mat
+		_check(ResourceLoader.exists(sample), "d8: sample exists (%s)" % mat)
+		_check(AudioManager.play_footstep(mat, Vector2.ZERO),
+			"d8: footstep plays (%s)" % mat)
 	var wood_i := -1
 	var tile_i := -1
 	for i in inst.map.rooms.size():

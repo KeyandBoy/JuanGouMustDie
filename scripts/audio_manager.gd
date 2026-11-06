@@ -54,7 +54,8 @@ const AMBIENCE_FADE := 2.0
 const PRESSURE_PATH := "res://assets/music/amb_tyrant_drone.ogg"
 const PRESSURE_DB := -19.0
 const PRESSURE_FADE := 1.8
-## D8 脚步材质：找不到对应文件就静音，等音频窗口补素材后自动生效。
+## D8 脚步材质：素材已就位（Kenney Impact Sounds, CC0），
+## 每种材质 5 条变体随机取，缺文件仍静音兜底。
 const STEP_MATERIALS: Array[String] = ["tile", "wood", "carpet"]
 const STEP_PATH_FMT := "res://assets/sfx/step/step_%s_%d.ogg"
 
@@ -568,7 +569,7 @@ func _sfx_stream(path: String) -> AudioStream:
 func play_footstep(material: String, world_pos: Vector2, running := false) -> bool:
 	var m: String = material if STEP_MATERIALS.has(material) else "tile"
 	var candidates: Array[String] = []
-	for i in range(1, 4):
+	for i in range(1, 6):
 		candidates.append(STEP_PATH_FMT % [m, i])
 	candidates.append("res://assets/sfx/step/step_%s.ogg" % m)
 	candidates.append("res://assets/sfx/step/step_%s_1.wav" % m)
