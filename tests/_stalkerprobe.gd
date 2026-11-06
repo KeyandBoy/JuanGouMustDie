@@ -45,8 +45,8 @@ func _ready() -> void:
 		_check(inst.map.explored[fog_i], "fog: target room explored", failures)
 		var zn: String = inst.map.current_zone_at(inst.player.position)
 		_check(zn == "r%d" % fog_i, "fog: player zone is room (%s)" % zn, failures)
-		var a_cur: float = inst.fog.zone_alpha("r%d" % fog_i)
-		_check(a_cur >= 0.0 and a_cur <= 0.01, "fog: current room unmasked (a=%.2f)" % a_cur, failures)
+		var a_here: float = inst.fog.mask_alpha_at(inst.player.position)
+		_check(a_here >= 0.0 and a_here <= 0.02, "fog: player inside the light circle (a=%.2f)" % a_here, failures)
 		_check(inst.fog._mask != null and inst.fog._mask.visible, "fog: soft mask sprite visible", failures)
 
 		# 走到走廊：房间压暗保留轮廓，当前走廊段不遮
@@ -59,8 +59,8 @@ func _ready() -> void:
 		_check(a_dim > 0.05 and a_dim < 0.9, "fog: explored room dims after leaving (a=%.2f)" % a_dim, failures)
 		var cz: String = inst.map.current_zone_at(inst.player.position)
 		_check(cz.begins_with("c"), "fog: corridor zone (%s)" % cz, failures)
-		var a_corr: float = inst.fog.zone_alpha(cz)
-		_check(a_corr >= 0.0 and a_corr <= 0.01, "fog: current corridor segment unmasked (a=%.2f)" % a_corr, failures)
+		var a_corr: float = inst.fog.mask_alpha_at(corridor_spot)
+		_check(a_corr >= 0.0 and a_corr <= 0.02, "fog: current corridor segment lit (a=%.2f)" % a_corr, failures)
 		_check(inst.map.corridor_segments.size() > 0, "fog: corridor split into %d segments" % inst.map.corridor_segments.size(), failures)
 
 		# 未探索的房间必须很暗
@@ -73,8 +73,8 @@ func _ready() -> void:
 		# 再走回去：房间恢复全亮
 		inst.player.position = inst.map.rooms[fog_i].get_center()
 		await get_tree().create_timer(0.35).timeout
-		var a_back: float = inst.fog.zone_alpha("r%d" % fog_i)
-		_check(a_back >= 0.0 and a_back <= 0.01, "fog: re-entry unmasks room (a=%.2f)" % a_back, failures)
+		var a_back: float = inst.fog.mask_alpha_at(inst.player.position)
+		_check(a_back >= 0.0 and a_back <= 0.02, "fog: re-entry lights the room again (a=%.2f)" % a_back, failures)
 	GameState.level = 1
 
 	var qdesk: Dictionary = inst.map.desks[0]

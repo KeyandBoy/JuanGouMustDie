@@ -489,7 +489,7 @@ func _ready() -> void:
 		GameState.warnings = 0
 		inst._toggle_study()
 		_check(inst.quiz.is_open, "study works anywhere (off-desk)", failures)
-		_check(is_equal_approx(inst.study_efficiency, 0.5), "off-desk efficiency 0.5 (%.2f)" % inst.study_efficiency, failures)
+		_check(is_equal_approx(inst.study_efficiency, 1.0), "off-desk base efficiency 1.0 (%.2f)" % inst.study_efficiency, failures)
 		inst.quiz.close()
 		inst._stop_study()
 

@@ -60,7 +60,33 @@ func _ready() -> void:
 		await get_tree().create_timer(0.45).timeout
 		await _shot("res://tests/shot_loop_passage.png")
 		print("PASSAGE zone=", map.current_zone_at(rp), " seen=", map.passage_seen(0))
+
+	# 厕所隔间 / 教室课桌排布
+	for kind in ["toilet", "classroom"]:
+		for i in map.rooms.size():
+			if String(map.room_types[i]) != kind:
+				continue
+			var c: Vector2 = map._walkable_center(map.rooms[i], i)
+			_move(inst, c)
+			await get_tree().create_timer(0.45).timeout
+			await _shot("res://tests/shot_room_%s.png" % kind)
+			print("ROOM ", kind, " desks=", _desks_in(map, i), " stalls=", _stalls_in(map, i))
+			break
 	get_tree().quit(0)
+
+func _desks_in(map, room: int) -> int:
+	var n := 0
+	for d in map.desks:
+		if int(d["room"]) == room:
+			n += 1
+	return n
+
+func _stalls_in(map, room: int) -> int:
+	var n := 0
+	for t in map.toilets:
+		if int(t.get("room", -1)) == room:
+			n += 1
+	return n
 
 func _move(inst, p: Vector2) -> void:
 	inst.player.position = p

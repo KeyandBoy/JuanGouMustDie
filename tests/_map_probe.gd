@@ -91,8 +91,11 @@ func _ready() -> void:
 		for i in 4:
 			await get_tree().process_frame
 		_check(map.explored[fog_i], "entering reveals the room", failures)
-		var a_cur: float = inst.fog.zone_alpha("r%d" % fog_i)
-		_check(a_cur >= 0.0 and a_cur <= 0.01, "current room is unmasked (a=%.2f)" % a_cur, failures)
+		var a_here: float = inst.fog.mask_alpha_at(inst.player.position)
+		_check(a_here >= 0.0 and a_here <= 0.02, "player stands in the lit circle (a=%.2f)" % a_here, failures)
+		var corner: Vector2 = map.rooms[fog_i].end - Vector2(12.0, 12.0)
+		var a_far: float = inst.fog.mask_alpha_at(corner)
+		_check(a_far > a_here + 0.10, "outside the light circle stays dim (a=%.2f)" % a_far, failures)
 		_check(inst.fog._mask != null and inst.fog._mask.visible, "soft fog mask sprite exists", failures)
 		inst.player.position = map.corridor_segments[0].get_center()
 		inst.camera.reset_smoothing()

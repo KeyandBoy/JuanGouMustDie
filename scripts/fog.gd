@@ -9,15 +9,18 @@ var map: Node2D
 var player: Node2D
 var halo: ColorRect
 
-## 探索三态（按「整间房 / 整段走廊」为单位）：
-##   未探索        → 很暗（但仍能看出地面/家具轮廓，不是一块死黑）
+## 探索三态（按「整间房 / 整段走廊」为单位记录探索状态）：
+##   未探索        → 很暗（但仍能看出地面/家具轮廓）
 ##   已探索、人不在 → 压暗（像记忆里的房间）
-##   当前所在      → 不遮
-## 三态之间不是硬切：整张图按「每格 1 像素」烘一张遮罩纹理，
-## 再用模糊着色器 + 线性过滤把边界糊成柔和光晕（所以不会出现方块边）。
+##   当前所在      → 以玩家为圆心的圆形照明（不是房间方块）
+## 实现：整张图按「每格 1 像素」烘一张遮罩纹理（R=当前区域标记，A=基础暗度），
+## 模糊着色器负责柔和边界 + 圆形光照。
 const MASK_COLOR := Color(0.035, 0.042, 0.058)
 const UNEXPLORED_ALPHA := 0.86
 const DIM_ALPHA := 0.46
+## 圆形照明：半径 / 边缘羽化（单位=格）
+const LIGHT_RADIUS := 11.0
+const LIGHT_SOFT := 6.0
 
 const HALO_BY_LEVEL := {
 	1: Vector2(160.0, 300.0),
@@ -53,6 +56,9 @@ func _ready() -> void:
 	_mask.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var mmat := ShaderMaterial.new()
 	mmat.shader = MASK_SHADER
+	mmat.set_shader_parameter("mask_color", MASK_COLOR)
+	mmat.set_shader_parameter("light_radius", LIGHT_RADIUS)
+	mmat.set_shader_parameter("light_soft", LIGHT_SOFT)
 	_mask.material = mmat
 	add_child(_mask)
 
@@ -125,6 +131,7 @@ func _process(delta: float) -> void:
 		_hide_masks()
 		return
 	_refresh_masks()
+	_update_light()
 	_apply_halo()
 	_update_ambient(delta)
 	_update_flicker(delta)
@@ -176,16 +183,14 @@ func _rebuild_mask() -> void:
 	if gw <= 0 or gh <= 0:
 		return
 	var img := Image.create(gw, gh, false, Image.FORMAT_RGBA8)
-	img.fill(_col(UNEXPLORED_ALPHA))
+	img.fill(Color(0.0, MASK_COLOR.g, MASK_COLOR.b, UNEXPLORED_ALPHA))
 	_zone_alpha.clear()
 
 	for i in map.rooms.size():
 		var zone := "r%d" % i
 		var a := DIM_ALPHA if bool(map.explored[i]) else UNEXPLORED_ALPHA
-		if zone == _zone:
-			a = 0.0
 		_zone_alpha[zone] = a
-		_fill_cells(img, map.rooms[i], a)
+		_fill_cells(img, map.rooms[i], a, zone == _zone)
 
 	var segs: Array = map.corridor_segments
 	var cex: Array = map.corridor_explored
@@ -193,10 +198,8 @@ func _rebuild_mask() -> void:
 		var zone := "c%d" % i
 		var seen: bool = i < cex.size() and bool(cex[i])
 		var a := DIM_ALPHA if seen else UNEXPLORED_ALPHA
-		if zone == _zone:
-			a = 0.0
 		_zone_alpha[zone] = a
-		_fill_cells(img, segs[i], a)
+		_fill_cells(img, segs[i], a, zone == _zone)
 
 	# 环路门洞：单独一档，站在里面只亮门洞本身，不泄露两边房间
 	var prects: Array = map.passage_rects
@@ -204,22 +207,43 @@ func _rebuild_mask() -> void:
 		var zone := "p%d" % i
 		var seen: bool = bool(map.passage_seen(i))
 		var a := DIM_ALPHA if seen else UNEXPLORED_ALPHA
-		if zone == _zone:
-			a = 0.0
 		_zone_alpha[zone] = a
-		_fill_cells(img, prects[i], a)
+		_fill_cells(img, prects[i], a, zone == _zone)
 
 	_mask.texture = ImageTexture.create_from_image(img)
 	_mask.centered = false
 	_mask.position = map.world_rect.position
 	_mask.scale = Vector2(CELL, CELL)
 	_mask.visible = true
+	_update_light()
 
-func _col(alpha: float) -> Color:
-	return Color(MASK_COLOR.r, MASK_COLOR.g, MASK_COLOR.b, alpha)
+## 每帧把圆形照明挪到玩家身上（着色器用「格」坐标，避免地图不是正方形时变椭圆）。
+func _update_light() -> void:
+	if _mask == null or map == null or player == null or not is_instance_valid(player):
+		return
+	var mat := _mask.material as ShaderMaterial
+	if mat == null:
+		return
+	mat.set_shader_parameter("map_cells", Vector2(int(map.gw), int(map.gh)))
+	mat.set_shader_parameter("light_center", (player.global_position - map.world_rect.position) / CELL)
+
+## 某个世界坐标最终看到的遮罩 alpha（测试用）：0=全亮。
+func mask_alpha_at(pos: Vector2) -> float:
+	if map == null or player == null or not is_instance_valid(player):
+		return -1.0
+	var zone := ""
+	if map.has_method("current_zone_at"):
+		zone = map.current_zone_at(pos)
+	if zone == "" or not _zone_alpha.has(zone):
+		return -1.0
+	var a := float(_zone_alpha[zone])
+	var d := pos.distance_to(player.position) / CELL
+	var lit := 1.0 - smoothstep(LIGHT_RADIUS, LIGHT_RADIUS + LIGHT_SOFT, d)
+	return a * (1.0 - lit)
 
 ## 把世界矩形换成「格」再整块填充（fill_rect 走 C++，比逐像素快很多）。
-func _fill_cells(img: Image, r: Rect2, alpha: float) -> void:
+## R 通道 = 「当前所在区域」标记（着色器用它把圆形照明限制在房间里）。
+func _fill_cells(img: Image, r: Rect2, alpha: float, current := false) -> void:
 	var x0 := int(round(r.position.x / CELL))
 	var y0 := int(round(r.position.y / CELL))
 	var w := int(round(r.size.x / CELL))
@@ -232,7 +256,7 @@ func _fill_cells(img: Image, r: Rect2, alpha: float) -> void:
 	h = mini(h, img.get_height() - y0)
 	if w <= 0 or h <= 0:
 		return
-	img.fill_rect(Rect2i(x0, y0, w, h), _col(alpha))
+	img.fill_rect(Rect2i(x0, y0, w, h), Color(1.0 if current else 0.0, MASK_COLOR.g, MASK_COLOR.b, alpha))
 
 func _hide_masks() -> void:
 	if _mask != null:

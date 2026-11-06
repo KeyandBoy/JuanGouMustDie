@@ -1061,7 +1061,10 @@ func _update_prompt() -> void:
 	elif desk != null:
 		hud.set_prompt(desk.get_prompt())
 	else:
-		hud.set_prompt("按 F 学习（效率 0.5 倍）· Shift 闪避 · WASD 移动 · ESC 菜单")
+		var eff := 1.0
+		if map != null:
+			eff = map.study_efficiency_at(player.position)
+		hud.set_prompt("按 F 学习（效率 %.2f 倍）· Shift 闪避 · WASD 移动 · ESC 菜单" % eff)
 
 func _on_player_interact() -> void:
 	if GameState.run_state == GameState.RunState.QUIZ:
@@ -1113,10 +1116,12 @@ func _toggle_study() -> void:
 		quiz.open(q)
 		return
 	var desk := _nearest_desk(40.0)
-	study_efficiency = 0.5
+	# 效率由「位置」决定：空地 1.0，靠近课桌/工位/实验台等线性提高（负向点会更低）
+	study_efficiency = 1.0
 	active_desk = {}
+	if map != null:
+		study_efficiency = map.study_efficiency_at(player.position)
 	if desk != null:
-		study_efficiency = float(desk.efficiency)
 		active_desk = {"room": int(desk.room_index)}
 	_update_answer_efficiency()
 	auto_study_timer = 0.0

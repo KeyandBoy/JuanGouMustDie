@@ -75,6 +75,14 @@ var box_rects: Array[Rect2] = []
 ##   sprite=贴图名、rect=世界矩形、room=房间下标、solid=是否挡路、decal=是否贴在墙上的装饰
 var big_items: Array[Dictionary] = []
 var big_rects: Array[Rect2] = []
+## 厕所隔间：隔板（薄墙，带碰撞）与坐便器（纯绘制）
+var stall_rects: Array[Rect2] = []
+var toilets: Array[Dictionary] = []
+var sinks: Array[Rect2] = []
+## 学习点（答题效率来源）：{pos, eff, radius, kind}
+## 空地基础效率 STUDY_BASE，越靠近点越接近该点效率（线性），负向点（<1）取 min。
+var study_points: Array[Dictionary] = []
+const STUDY_BASE := 1.0
 var _tex_cache: Dictionary = {}
 
 var nav_points := PackedVector2Array()
@@ -120,16 +128,16 @@ class WallShadow:
 ## 房型元数据：weight=出现权重（hall 固定占北排第一间）、w_min/w_max=房间宽度（格），
 ## color=地板底色、wall=墙砖底色、eff=答题效率倍率、desk=每 60 格放几张课桌的分母（0=不放）。
 var type_defs: Dictionary = {
-	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.93, 0.83, 0.56), "wall": Color(0.87, 0.82, 0.70), "w_min": 34, "w_max": 46, "eff": 1.0, "desk": 55.0},
-	"lab":       {"name": "实验室",   "weight": 3, "color": Color(0.85, 0.90, 0.93), "wall": Color(0.79, 0.86, 0.91), "w_min": 30, "w_max": 42, "eff": 1.5, "desk": 78.0},
-	"library":   {"name": "图书室",   "weight": 3, "color": Color(0.82, 0.68, 0.48), "wall": Color(0.78, 0.70, 0.58), "w_min": 30, "w_max": 40, "eff": 1.25, "desk": 72.0},
-	"medical":   {"name": "医务室",   "weight": 2, "color": Color(0.85, 0.93, 0.89), "wall": Color(0.82, 0.90, 0.88), "w_min": 30, "w_max": 38, "eff": 1.3, "desk": 95.0},
-	"office":    {"name": "办公室",   "weight": 3, "color": Color(0.75, 0.83, 0.87), "wall": Color(0.73, 0.80, 0.85), "w_min": 28, "w_max": 38, "eff": 1.4, "desk": 85.0},
-	"storage":   {"name": "储物间",   "weight": 2, "color": Color(0.75, 0.79, 0.68), "wall": Color(0.70, 0.75, 0.68), "w_min": 26, "w_max": 34, "eff": 1.2, "desk": 110.0},
-	"broadcast": {"name": "广播室",   "weight": 1, "color": Color(0.67, 0.60, 0.76), "wall": Color(0.63, 0.57, 0.72), "w_min": 26, "w_max": 34, "eff": 1.6, "desk": 120.0},
-	"toilet":    {"name": "厕所",     "weight": 2, "color": Color(0.62, 0.83, 0.89), "wall": Color(0.66, 0.85, 0.91), "w_min": 24, "w_max": 30, "eff": 0.6, "desk": 999.0},
-	"stair":     {"name": "楼梯间",   "weight": 1, "color": Color(0.81, 0.83, 0.86), "wall": Color(0.76, 0.79, 0.83), "w_min": 24, "w_max": 30, "eff": 0.6, "desk": 999.0},
-	"hall":      {"name": "大厅楼梯", "weight": 0, "color": Color(0.95, 0.81, 0.52), "wall": Color(0.91, 0.81, 0.63), "w_min": 30, "w_max": 40, "eff": 0.8, "desk": 150.0},
+	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.93, 0.83, 0.56), "wall": Color(0.87, 0.82, 0.70), "w_min": 34, "w_max": 46, "eff": 1.35, "desk": 55.0},
+	"lab":       {"name": "实验室",   "weight": 3, "color": Color(0.85, 0.90, 0.93), "wall": Color(0.79, 0.86, 0.91), "w_min": 30, "w_max": 42, "eff": 1.25, "desk": 78.0},
+	"library":   {"name": "图书室",   "weight": 3, "color": Color(0.82, 0.68, 0.48), "wall": Color(0.78, 0.70, 0.58), "w_min": 30, "w_max": 40, "eff": 1.45, "desk": 72.0},
+	"medical":   {"name": "医务室",   "weight": 2, "color": Color(0.85, 0.93, 0.89), "wall": Color(0.82, 0.90, 0.88), "w_min": 30, "w_max": 38, "eff": 1.15, "desk": 95.0},
+	"office":    {"name": "办公室",   "weight": 3, "color": Color(0.75, 0.83, 0.87), "wall": Color(0.73, 0.80, 0.85), "w_min": 28, "w_max": 38, "eff": 1.30, "desk": 85.0},
+	"storage":   {"name": "储物间",   "weight": 2, "color": Color(0.75, 0.79, 0.68), "wall": Color(0.70, 0.75, 0.68), "w_min": 26, "w_max": 34, "eff": 0.0, "desk": 110.0},
+	"broadcast": {"name": "广播室",   "weight": 1, "color": Color(0.67, 0.60, 0.76), "wall": Color(0.63, 0.57, 0.72), "w_min": 26, "w_max": 34, "eff": 1.25, "desk": 120.0},
+	"toilet":    {"name": "厕所",     "weight": 2, "color": Color(0.62, 0.83, 0.89), "wall": Color(0.66, 0.85, 0.91), "w_min": 24, "w_max": 30, "eff": 0.0, "desk": 999.0},
+	"stair":     {"name": "楼梯间",   "weight": 1, "color": Color(0.81, 0.83, 0.86), "wall": Color(0.76, 0.79, 0.83), "w_min": 24, "w_max": 30, "eff": 0.0, "desk": 999.0},
+	"hall":      {"name": "大厅楼梯", "weight": 0, "color": Color(0.95, 0.81, 0.52), "wall": Color(0.91, 0.81, 0.63), "w_min": 30, "w_max": 40, "eff": 1.05, "desk": 150.0},
 }
 
 func generate(p_seed: int, room_count: int = 0) -> void:
@@ -422,6 +430,10 @@ func _reset() -> void:
 	decor_items.clear()
 	big_items.clear()
 	big_rects.clear()
+	stall_rects.clear()
+	toilets.clear()
+	sinks.clear()
+	study_points.clear()
 	wall_rects.clear()
 	doors.clear()
 	windows.clear()
@@ -717,6 +729,46 @@ func is_safe_room_at(pos: Vector2) -> bool:
 ## 安全屋不能做题：给学生一个"喘息点"，但代价是不能刷题
 func study_allowed_at(pos: Vector2) -> bool:
 	return not is_safe_room_at(pos)
+
+## 记一个学习点：eff 是「贴着它」的效率，radius 是线性回落到 1.0 的半径（格）。
+func _add_study_point(pos: Vector2, eff: float, radius_cells: float, kind := "") -> void:
+	study_points.append({
+		"pos": pos,
+		"eff": eff,
+		"radius": maxf(4.0, radius_cells * CELL),
+		"kind": kind,
+	})
+
+## 当前位置的答题效率：空地 = 1.0，越靠近学习点越接近该点效率（线性）；
+## 负向点（<1，比如厕所隔间）越近越差，取 min。
+func study_efficiency_at(pos: Vector2) -> float:
+	var eff := STUDY_BASE
+	for p in study_points:
+		var radius: float = p["radius"]
+		if radius <= 0.0:
+			continue
+		var d := pos.distance_to(p["pos"])
+		if d >= radius:
+			continue
+		var t := 1.0 - d / radius
+		var target: float = float(p["eff"])
+		var v: float = lerpf(STUDY_BASE, target, t)
+		if target >= STUDY_BASE:
+			eff = maxf(eff, v)
+		else:
+			eff = minf(eff, v)
+	return eff
+
+## 离玩家最近、且已经进入半径的学习点（用于 HUD 提示文案）。
+func nearest_study_kind(pos: Vector2) -> String:
+	var best := ""
+	var bd := INF
+	for p in study_points:
+		var d := pos.distance_to(p["pos"])
+		if d < bd and d < float(p["radius"]):
+			bd = d
+			best = String(p["kind"])
+	return best
 
 func _ensure_stair(north: Array[String], south: Array[String], tail: Array[String]) -> void:
 	if north.has("stair") or south.has("stair") or tail.has("stair"):
@@ -1398,6 +1450,8 @@ func door_blocks_point(p: Vector2) -> bool:
 func _spawn_furniture() -> void:
 	desks.clear()
 	box_rects.clear()
+	stall_rects.clear()
+	toilets.clear()
 	furniture.resize(grid.size())
 	furniture.fill(0)
 	reserved.resize(grid.size())
@@ -1425,37 +1479,133 @@ func _spawn_furniture() -> void:
 				eff *= 0.8
 			"safe":
 				eff = 0.0
-		var count := 0
-		if role != "safe":
-			# 课桌按房间面积配（分母越小越密），大教室自然摆得更多
-			var dens: float = float(type_defs[t].get("desk", 999.0))
-			var room_rect: Rect2 = rooms[i]
-			var area_cells := int(room_rect.size.x / CELL) * int(room_rect.size.y / CELL)
-			count = clampi(int(float(area_cells) / dens), 0, 18)
-			if t == "toilet":
-				count = 1
-			if count == 0 and dens < 900.0:
-				count = 1
 		if role == "safe":
-			count = 0
-		for j in count:
-			var rect := _pick_desk_rect(i, t == "hall")
-			if rect.size.x <= 0.0:
-				break
-			_mark_furniture(rect)
-			desks.append({"pos": rect.get_center(), "rect": rect, "room": i, "efficiency": eff, "occupied": false})
-		if t == "storage":
-			for j in rng.randi_range(3, 6):
-				var br := _pick_box_rect(i)
-				if br.size.x <= 0.0:
-					break
-				_mark_furniture(br)
-				box_rects.append(br)
+			continue
+		match t:
+			"classroom", "office", "lab":
+				# 课桌/工位/实验台都按整行整列摆
+				_place_desk_grid(i, eff)
+			"library":
+				# 阅读桌只占中间几排，四周留给书架
+				_place_desk_grid(i, eff, false, 3)
+			"toilet":
+				# 厕所只有隔间 + 坐便器，不摆课桌
+				_place_toilet_stalls(i)
+			"stair":
+				_add_study_point(rooms[i].get_center(), 0.90, 1.8, "台阶")
+			"storage":
+				for j in rng.randi_range(3, 6):
+					var br := _pick_box_rect(i)
+					if br.size.x <= 0.0:
+						break
+					_mark_furniture(br)
+					box_rects.append(br)
+			_:
+				pass
 	_build_box_collision()
 	_spawn_decor()
 
+## 课桌按「整行整列」摆：四周留边，列距 5 格、行距 4 格，列数够时中间留一条竖向过道。
+## 同一个房间的桌子全部对齐到同一套列/行网格上，所以看起来是排排列列的。
+func _place_desk_grid(room_i: int, eff: float, sparse := false, max_rows := 7) -> void:
+	var r: Rect2 = rooms[room_i]
+	var x0 := int(round(r.position.x / CELL)) + 2
+	var y0 := int(round(r.position.y / CELL)) + 2
+	var x1 := int(round(r.end.x / CELL)) - 3
+	var y1 := int(round(r.end.y / CELL)) - 3
+	var dw := 2
+	var dh := 1
+	var step_x := 6
+	var step_y := 5
+	if sparse:
+		step_x = 7
+		step_y = 6
+	if x1 - x0 + 1 < dw or y1 - y0 + 1 < dh:
+		return
+	var cols := maxi(1, int(float(x1 - x0 + 1 - dw) / step_x) + 1)
+	var rows := maxi(1, int(float(y1 - y0 + 1 - dh) / step_y) + 1)
+	cols = mini(cols, 10)
+	rows = mini(rows, max_rows)
+	var total_w := (cols - 1) * step_x + dw
+	var total_h := (rows - 1) * step_y + dh
+	var sx := x0 + maxi(0, int(((x1 - x0 + 1) - total_w) / 2.0))
+	var sy := y0 + maxi(0, int(((y1 - y0 + 1) - total_h) / 2.0))
+	# 列数够多时，中间那一列空出来当纵向过道
+	var aisle := int(cols / 2) if cols >= 5 else -1
+	var kind := "课桌"
+	match String(room_types[room_i]):
+		"office":
+			kind = "工位"
+		"lab":
+			kind = "实验台"
+		"library":
+			kind = "阅读桌"
+	var placed := 0
+	for ry in rows:
+		for cx in cols:
+			if cx == aisle:
+				continue
+			var gx := sx + cx * step_x
+			var gy := sy + ry * step_y
+			if not _cells_free(gx, gy, dw, dh, room_i):
+				continue
+			var rect := Rect2(gx * CELL, gy * CELL, dw * CELL, dh * CELL)
+			var blocked := false
+			for d in desks:
+				if rect.grow(CELL * 0.25).intersects(Rect2(d["rect"])):
+					blocked = true
+					break
+			if blocked:
+				continue
+			_mark_furniture(rect)
+			desks.append({
+				"pos": rect.get_center(), "rect": rect, "room": room_i,
+				"efficiency": eff, "occupied": false,
+			})
+			_add_study_point(rect.get_center(), eff, 2.5, kind)
+			placed += 1
+			if placed >= 30:
+				return
+
+## 厕所：沿北墙排一排隔间（每间 3 格宽 × 4 格深），每间一个坐便器。
+func _place_toilet_stalls(room_i: int) -> void:
+	var r: Rect2 = rooms[room_i]
+	var x0 := int(round(r.position.x / CELL)) + 2
+	var x1 := int(round(r.end.x / CELL)) - 2
+	var y0 := int(round(r.position.y / CELL)) + 2
+	var y1 := int(round(r.end.y / CELL)) - 2
+	var stall_w := 3
+	var stall_d := 4
+	if y1 - y0 + 1 < stall_d or x1 - x0 + 1 < stall_w * 2:
+		return
+	var cols := mini(6, int(float(x1 - x0 + 1) / stall_w))
+	if cols <= 0:
+		return
+	var total_w := cols * stall_w
+	var sx0 := x0 + maxi(0, int(((x1 - x0 + 1) - total_w) / 2.0))
+	for k in cols:
+		var sx := sx0 + k * stall_w
+		# 门/导航点附近不放隔间（否则会把厕所门堵死）
+		if not _cells_free(sx, y0, stall_w, stall_d, room_i):
+			continue
+		# 隔板：不放在最左（贴墙），每间右边界一块
+		var px := (sx + stall_w) * CELL - CELL * 0.18
+		var pr := Rect2(px, y0 * CELL, CELL * 0.18, stall_d * CELL)
+		stall_rects.append(pr)
+		# 坐便器：贴在隔间后部（靠北墙）
+		var bowl := Rect2(
+			(sx + 0.35) * CELL, y0 * CELL + CELL * 0.35,
+			(stall_w - 0.7) * CELL, CELL * 1.25)
+		toilets.append({"rect": bowl, "room": room_i})
+		# 隔间里被熏得心烦：越靠近便器效率越低
+		_add_study_point(bowl.get_center(), 0.60, 1.8, "隔间")
+	# 门口洗手台：稍微好一点，但也别指望能学进去
+	var sink := Vector2(r.get_center().x, (y0 + stall_d + 1.2) * CELL)
+	sinks.append(Rect2(sink.x - CELL * 1.1, sink.y - CELL * 0.45, CELL * 2.2, CELL * 0.9))
+	_add_study_point(sink, 0.80, 1.6, "洗手台")
+
 ## 房型专属大件（贴图家具）：靠墙摆放，solid 的挡路并参与碰撞。
-## 房间不够大就自动少放；摆放位置用确定性 rng，失败会重试几次。
+## 同一面墙上有多件时，按「均分槽位」摆（贴墙的一排，不是随机东一个西一个）。
 func _spawn_big_items() -> void:
 	for i in rooms.size():
 		var t := String(room_types[i])
@@ -1474,9 +1624,67 @@ func _spawn_big_items() -> void:
 				continue
 			var count := int(def.get("count", 1))
 			for k in count:
-				for attempt in 8:
-					if _place_big(i, def):
-						break
+				var ok := false
+				if _place_big_slot(i, def, k, count):
+					ok = true
+				else:
+					for attempt in 6:
+						if _place_big(i, def):
+							ok = true
+							break
+				# 部分家具有学习价值（讲台/诊台/病床/机器/货架…）
+				if ok and def.has("study"):
+					var last: Dictionary = big_items[big_items.size() - 1]
+					_add_study_point(
+						(last["rect"] as Rect2).get_center(),
+						float(def["study"]),
+						float(def.get("study_r", 2.0)),
+						String(last.get("sprite", "")))
+
+## 第 slot/total 件沿墙均分的位置（同一侧的多件排成一排）。
+func _place_big_slot(room_i: int, def: Dictionary, slot: int, total: int) -> bool:
+	if bool(def.get("decal", false)) or bool(def.get("floor", false)):
+		return false
+	var side := String(def.get("side", "n"))
+	if side == "c":
+		return false
+	var r: Rect2 = rooms[room_i]
+	var wc := int(def.get("w", 2))
+	var hc := int(def.get("h", 2))
+	var x0 := int(round(r.position.x / CELL))
+	var y0 := int(round(r.position.y / CELL))
+	var cw := int(round(r.size.x / CELL))
+	var ch := int(round(r.size.y / CELL))
+	var cx := x0
+	var cy := y0
+	var wall_off := int(def.get("wall_off", 0))
+	if side == "n" or side == "s":
+		var span := cw - wc
+		var px := x0
+		if total <= 1:
+			px = x0 + int(span / 2.0)
+		else:
+			px = x0 + int(round(float(span) * float(slot) / float(total - 1)))
+		cx = px
+		cy = y0 if side == "n" else y0 + maxi(0, ch - hc)
+		if side == "n":
+			cy += wall_off
+		else:
+			cy -= wall_off
+	else:
+		var span2 := ch - hc
+		var py := y0
+		if total <= 1:
+			py = y0 + int(span2 / 2.0)
+		else:
+			py = y0 + int(round(float(span2) * float(slot) / float(total - 1)))
+		cy = py
+		cx = x0 if side == "w" else x0 + maxi(0, cw - wc)
+		if side == "w":
+			cx += wall_off
+		else:
+			cx -= wall_off
+	return _place_big(room_i, def, Vector2i(cx, cy))
 
 ## 每种房型的大件清单：sprite=贴图名、w/h=占格数、side=靠哪面墙(n/s/w/e/c=居中)、
 ## count=数量、decal=贴墙装饰(不挡路)、floor=贴地件(地毯，画在最底层)。
@@ -1488,71 +1696,73 @@ func _spawn_big_items() -> void:
 func _big_plan(t: String) -> Array:
 	match t:
 		"classroom":
+			# 讲台 + 后墙书柜 + 黑板画（课桌由网格生成）
 			return [
+				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "n", "count": 1, "wall_off": 2, "study": 1.10, "study_r": 2.0},
 				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "w", "count": 1},
-				{"sprite": "shelf_wide", "w": 3, "h": 2, "side": "s", "count": 1},
-				{"sprite": "stool_b", "w": 1, "h": 1, "side": "n", "count": 1},
-				{"sprite": "poster_c", "w": 2, "h": 1, "side": "n", "decal": true, "solid": false},
+				{"sprite": "shelf_wide", "w": 3, "h": 2, "side": "e", "count": 1},
+				{"sprite": "poster_c", "w": 2, "h": 1, "side": "s", "decal": true, "solid": false},
 			]
 		"lab":
+			# 试剂柜（气味，效率反而低）+ 器材架 + 水槽 + 凳子（实验台由网格生成）
 			return [
-				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "n", "count": 1},
-				{"sprite": "desk_small", "w": 2, "h": 1, "side": "s", "count": 2},
-				{"sprite": "locker", "w": 2, "h": 3, "side": "e", "count": 1},
-				{"sprite": "crate_stack", "w": 1, "h": 2, "side": "w", "count": 1},
-				{"sprite": "plant_pot", "w": 1, "h": 1, "side": "w", "count": 1},
+				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "n", "count": 1, "study": 0.85, "study_r": 1.6},
+				{"sprite": "locker", "w": 2, "h": 3, "side": "e", "count": 1, "study": 0.85, "study_r": 1.6},
+				{"sprite": "desk_small", "w": 2, "h": 1, "side": "w", "count": 1},
+				{"sprite": "stool_a", "w": 1, "h": 1, "side": "s", "count": 2, "study": 1.10, "study_r": 1.5},
 				{"sprite": "poster_c", "w": 2, "h": 1, "side": "s", "decal": true, "solid": false},
 			]
 		"library":
+			# 四面书架 + 地毯（阅读桌由网格生成，最多 3 排）
 			return [
 				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "w", "count": 1},
 				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "e", "count": 1},
 				{"sprite": "shelf_wide", "w": 3, "h": 2, "side": "n", "count": 1},
-				{"sprite": "stool_a", "w": 1, "h": 1, "side": "s", "count": 2},
+				{"sprite": "shelf_wide", "w": 3, "h": 2, "side": "s", "count": 1},
 				{"sprite": "rug_b", "w": 4, "h": 3, "side": "c", "floor": true, "solid": false},
 				{"sprite": "poster_d", "w": 1, "h": 2, "side": "s", "decal": true, "solid": false},
 			]
 		"medical":
+			# 一列病床（效率低）+ 帘子 + 药柜（0.85）+ 诊台（1.15）
 			return [
-				{"sprite": "bed_a", "w": 2, "h": 2, "side": "w", "count": 1},
-				{"sprite": "bed_b", "w": 2, "h": 2, "side": "e", "count": 1},
-				{"sprite": "bed_head", "w": 1, "h": 2, "side": "n", "count": 2},
-				{"sprite": "wardrobe", "w": 2, "h": 2, "side": "s", "count": 1},
-				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "s", "count": 1},
-				{"sprite": "plant_pot2", "w": 1, "h": 1, "side": "n", "count": 1},
+				{"sprite": "bed_a", "w": 2, "h": 2, "side": "w", "count": 3, "study": 0.90, "study_r": 1.6},
+				{"sprite": "wardrobe", "w": 2, "h": 2, "side": "s", "count": 2},
+				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "e", "count": 1, "study": 0.85, "study_r": 1.6},
+				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "s", "count": 1, "study": 1.15, "study_r": 2.0},
 				{"sprite": "fence", "w": 1, "h": 1, "side": "n", "decal": true, "solid": false},
 			]
 		"office":
+			# 工位由网格生成；文件柜/饮水机/绿植靠墙
 			return [
-				{"sprite": "desk_office2", "w": 3, "h": 3, "side": "w", "count": 1},
-				{"sprite": "chair_a", "w": 2, "h": 2, "side": "e", "count": 1},
 				{"sprite": "cab_tall", "w": 2, "h": 3, "side": "n", "count": 1},
-				{"sprite": "chair_b", "w": 2, "h": 2, "side": "s", "count": 1},
+				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "w", "count": 1},
+				{"sprite": "plant_pot", "w": 1, "h": 1, "side": "e", "count": 1},
+				{"sprite": "canister", "w": 1, "h": 1, "side": "e", "count": 1},
 				{"sprite": "poster_c", "w": 2, "h": 1, "side": "s", "decal": true, "solid": false},
 			]
 		"storage":
+			# 货架 + 旧柜子 + 堆着的旧凳子（0.90），没有课桌
 			return [
 				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "w", "count": 1},
 				{"sprite": "cab_short", "w": 2, "h": 2, "side": "e", "count": 1},
 				{"sprite": "locker", "w": 2, "h": 3, "side": "n", "count": 1},
 				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "s", "count": 1},
-				{"sprite": "stool_a", "w": 1, "h": 1, "side": "s", "count": 2},
+				{"sprite": "stool_a", "w": 1, "h": 1, "side": "s", "count": 2, "study": 0.90, "study_r": 1.5},
 				{"sprite": "rug_d", "w": 3, "h": 2, "side": "c", "floor": true, "solid": false},
 				{"sprite": "fence", "w": 1, "h": 1, "side": "n", "decal": true, "solid": false},
 			]
 		"broadcast":
+			# 主播台（1.25，隔音好）+ 机柜（0.85，噪音）+ 磁带架
 			return [
-				{"sprite": "crate_stack", "w": 1, "h": 2, "side": "n", "count": 1},
-				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "s", "count": 1},
-				{"sprite": "wardrobe2", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "n", "count": 1, "study": 1.25, "study_r": 2.2},
+				{"sprite": "crate_stack", "w": 1, "h": 2, "side": "e", "count": 1, "study": 0.85, "study_r": 1.6},
 				{"sprite": "shelf_tall", "w": 2, "h": 3, "side": "w", "count": 1},
 				{"sprite": "clock", "w": 1, "h": 1, "side": "s", "decal": true, "solid": false},
 			]
 		"toilet":
+			# 隔间由 _place_toilet_stalls 生成，这里只放门口绿植和画框
 			return [
-				{"sprite": "cab_mid", "w": 2, "h": 2, "side": "w", "count": 1},
-				{"sprite": "cab_short", "w": 2, "h": 2, "side": "e", "count": 1},
-				{"sprite": "stool_b", "w": 1, "h": 1, "side": "n", "count": 1},
+				{"sprite": "plant_pot", "w": 1, "h": 1, "side": "s", "count": 1},
 				{"sprite": "poster_d", "w": 1, "h": 1, "side": "s", "decal": true, "solid": false},
 			]
 		"hall":
@@ -1564,7 +1774,7 @@ func _big_plan(t: String) -> Array:
 			]
 	return []
 
-func _place_big(room_idx: int, def: Dictionary) -> bool:
+func _place_big(room_idx: int, def: Dictionary, forced := Vector2i(-1, -1)) -> bool:
 	var r: Rect2 = rooms[room_idx]
 	var wc := int(def.get("w", 2))
 	var hc := int(def.get("h", 2))
@@ -1591,7 +1801,14 @@ func _place_big(room_idx: int, def: Dictionary) -> bool:
 	else:
 		var cx := x0
 		var cy := y0
-		if floor_item or side == "c":
+		if forced.x >= 0:
+			cx = forced.x
+			cy = forced.y
+			if decal or floor_item:
+				return false
+			if not _cells_free(cx, cy, wc, hc, room_idx):
+				return false
+		elif floor_item or side == "c":
 			cx = x0 + int((cw - wc) / 2.0)
 			cy = y0 + int((ch - hc) / 2.0)
 			# 贴地件（地毯）不挡路：只要格子是地板、没被实心家具占了就行，
@@ -1978,6 +2195,7 @@ func _reserve_cells(p: Vector2, radius: int) -> void:
 func _build_box_collision() -> void:
 	var rects: Array[Rect2] = []
 	rects.append_array(box_rects)
+	rects.append_array(stall_rects)
 	for it in big_items:
 		if bool(it.get("solid", false)):
 			rects.append(it["rect"])
@@ -2500,6 +2718,7 @@ func _draw() -> void:
 	for s in stair_rects:
 		_stair_lines(s)
 	_draw_boxes()
+	_draw_stalls()
 
 	var font := UiTheme.font()
 	for i in rooms.size():
@@ -2547,6 +2766,34 @@ func _plant(p: Vector2) -> void:
 	draw_circle(p, 8.0, Color(0.27, 0.62, 0.34))
 	draw_circle(p + Vector2(-4.0, -3.0), 5.5, Color(0.36, 0.73, 0.42))
 	draw_circle(p + Vector2(4.0, -2.0), 5.0, Color(0.31, 0.67, 0.38))
+
+## 厕所隔间：薄隔板 + 坐便器（素材库里没有马桶，这里程序画）
+func _draw_stalls() -> void:
+	if stall_rects.is_empty() and toilets.is_empty():
+		return
+	for r in stall_rects:
+		draw_rect(r, Color(0.78, 0.82, 0.85))
+		draw_rect(r, Color(0.52, 0.57, 0.62), false, 1.0)
+	for t in toilets:
+		var b: Rect2 = t["rect"]
+		# 水箱
+		var tank := Rect2(b.position.x + b.size.x * 0.14, b.position.y, b.size.x * 0.72, b.size.y * 0.34)
+		draw_rect(tank, Color(0.88, 0.91, 0.93))
+		draw_rect(tank, Color(0.55, 0.62, 0.68), false, 1.0)
+		# 便座
+		var seat := Vector2(b.get_center().x, b.position.y + b.size.y * 0.66)
+		var rad := minf(b.size.x, b.size.y) * 0.30
+		draw_circle(seat + Vector2(1.0, 2.0), rad, Color(0.0, 0.0, 0.0, 0.12))
+		draw_circle(seat, rad, Color(0.93, 0.95, 0.96))
+		draw_circle(seat, rad, Color(0.60, 0.66, 0.72), false, 1.2)
+		draw_circle(seat, rad * 0.46, Color(0.58, 0.64, 0.70))
+	# 洗手台
+	for s in sinks:
+		draw_rect(s, Color(0.86, 0.89, 0.91))
+		draw_rect(s, Color(0.55, 0.62, 0.68), false, 1.0)
+		var c := s.get_center()
+		draw_circle(c, minf(s.size.x, s.size.y) * 0.30, Color(0.70, 0.78, 0.82))
+		draw_circle(c, minf(s.size.x, s.size.y) * 0.30, Color(0.52, 0.60, 0.66), false, 1.0)
 
 func _draw_boxes() -> void:
 	for r in box_rects:

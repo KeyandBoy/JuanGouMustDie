@@ -103,10 +103,10 @@ func _dump_rooms(map) -> void:
 					String(it["sprite"]), int(rc.size.x / 20.0), int(rc.size.y / 20.0),
 					"" if bool(it["solid"]) else "·",
 				])
-		print("  room%d %s %dx%d desks=%d decor=%d : %s" % [
+		print("  room%d %s %dx%d desks=%d decor=%d stalls=%d : %s" % [
 			i, String(map.room_types[i]),
 			int(r.size.x / 20.0), int(r.size.y / 20.0),
-			_desk_count(map, i), _decor_count(map, i), _join(sprites),
+			_desk_count(map, i), _decor_count(map, i), _stall_count(map, i), _join(sprites),
 		])
 
 func _desk_count(map, room: int) -> int:
@@ -120,6 +120,13 @@ func _decor_count(map, room: int) -> int:
 	var n := 0
 	for d in map.decor_items:
 		if int(d.get("room", -1)) == room:
+			n += 1
+	return n
+
+func _stall_count(map, room: int) -> int:
+	var n := 0
+	for t in map.toilets:
+		if int(t.get("room", -1)) == room:
 			n += 1
 	return n
 
