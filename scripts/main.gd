@@ -2760,8 +2760,8 @@ func _on_level_card_pressed(lv: int) -> void:
 	_close_all_modals()
 	menu_layer = null
 	_start_level(lv)
-	# 系统操作说明只在新手关出现（见 tutorial.gd 第 1 步），关卡里只放剧情提示
-	_maybe_show_level_dialogue(lv)
+	# 关卡里不再弹任何「系统/广播」弹窗（操作说明只在新手关，剧情提示也不打断节奏）
+	# 文本仍在 scripts/dialogue_db.gd，想改成 toast 随时可以接回来
 
 func show_dialogue(data: DialogueData, pause_game := true) -> Control:
 	if data == null or data.lines.is_empty():
@@ -2783,6 +2783,8 @@ func show_dialogue(data: DialogueData, pause_game := true) -> Control:
 	return ui
 
 func _maybe_show_level_dialogue(level: int) -> void:
+	## 关卡剧情提示：正式关现在已经不自动调用（见 _on_level_card_pressed）。
+	## 文本仍保留在 DialogueDb.level_tip()，以后想改成 toast / 图鉴可以接回来。
 	var key := "dlg_lv_%d" % level
 	if bool(GameState.story_flags.get(key, false)):
 		return
