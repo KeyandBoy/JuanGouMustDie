@@ -3,8 +3,8 @@
 - 更新时间：2026-11-06
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`37c62d1`（小地图挂左侧 / 探索遮罩柔和光晕 / 删除假视差剪影）
-- 已推送 origin/main：`37c62d1`
+- 当前 HEAD：`241032c`（系统操作说明只在新手关出现）
+- 已推送 origin/main：`241032c`
 - 工作区：只剩 `tests/shot_*.png` 等截图产物未提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
@@ -29,6 +29,7 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **系统说明只在新手关（2026-11-06，opencode）**：删掉 `_on_level_card_pressed` 里「首次进入弹系统说明」的分支（`story_flags["dlg_tutorial"]` 会被读档覆盖，导致每关都弹）；两条「系统」说明挪到 `tutorial.gd` 第 1 步开场对白最前面，1~5 关只保留剧情提示。
 - **验收第二轮修正（2026-11-06，opencode）**：
   - 小地图改挂**左侧状态卡正下方**（`main._layout_minimap()` 每帧跟随状态卡，卡片换边也跟着换）。
   - 探索遮罩重写：整张图按「每格 1 像素」烘一张三态遮罩纹理 + `shaders/fog_mask_soft.gdshader` 3×3 帐篷模糊，房间/走廊边界变成约 2 格宽的柔和光晕，不再是硬边方块；测试改读 `fog.zone_alpha(zone)`。
