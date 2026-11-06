@@ -31,27 +31,52 @@ func _ready() -> void:
 	var screen_cells: float = design.x / (20.0 * zoom)
 	_check(map.gw >= 55 and map.gh >= 40, "map is continuous and big (%dx%d cells)" % [map.gw, map.gh], failures)
 	_check(screen_cells >= 62.0 and screen_cells <= 92.0, "one screen ~70-85 cells wide (%.0f)" % screen_cells, failures)
-	_check(is_equal_approx(zoom, 0.85), "camera zoom fixed at 0.85 (%.2f)" % zoom, failures)
+	_check(is_equal_approx(zoom, 0.95), "camera zoom fixed at 0.95 (%.2f)" % zoom, failures)
 	_check(map.is_connected_plan(), "every room reachable from exit", failures)
 
-	# --- 2. 死区跟随（死区大小按真实视口算，headless 也一样成立）---
+	# --- 2. 房间居中镜头 ---
 	var vs: Vector2 = inst.get_viewport().get_visible_rect().size
-	var dz: Vector2 = vs * 0.5 / zoom * Vector2(0.20, 0.22)
-	var center: Vector2 = Vector2(map.world_rect.size.x * 0.5, map.world_rect.size.y * 0.5)
-	inst.player.position = center
-	inst.camera.reset_smoothing()
-	inst.camera.global_position = center
-	var cam0: Vector2 = inst.camera.global_position
-	inst.player.position = cam0 + Vector2(dz.x * 0.4, dz.y * 0.4)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var cam1: Vector2 = inst.camera.global_position
-	_check(cam1.distance_to(cam0) < 2.0, "camera holds still inside dead zone (%.1f)" % cam1.distance_to(cam0), failures)
-	inst.player.position = cam0 + Vector2(dz.x * 3.0, 0.0)
-	for i in 3:
-		await get_tree().process_frame
-	var cam2: Vector2 = inst.camera.global_position
-	_check(cam2.distance_to(cam0) > dz.x * 0.5, "camera scrolls after leaving dead zone (%.0f)" % cam2.distance_to(cam0), failures)
+	var cam_room := -1
+	for i in map.rooms.size():
+		var t: String = String(map.room_types[i])
+		if t == "hall" or t == "stair":
+			continue
+		if i == int(map.nested_room_index) or i == int(map.nested_parent):
+			continue
+		cam_room = i
+		break
+	_check(cam_room >= 0, "room found for camera test", failures)
+	if cam_room >= 0:
+		var rc: Vector2 = map.rooms[cam_room].get_center()
+		var spot: Vector2 = map._walkable_center(map.rooms[cam_room], cam_room)
+		inst.player.position = spot
+		inst.camera.reset_smoothing()
+		inst.camera.global_position = spot
+		for i in 3:
+			await get_tree().process_frame
+		var cam0: Vector2 = inst.camera.global_position
+		_check(cam0.distance_to(rc) < 80.0,
+			"camera centers the current room (%.0f px from room center)" % cam0.distance_to(rc), failures)
+		# 在房间里横着走 3 格：镜头仍然咬住房间中心（房间居中，不是死区跟随）
+		var p2: Vector2 = spot + Vector2(60.0, 0.0)
+		if map.is_walkable(p2):
+			inst.player.position = p2
+			for i in 3:
+				await get_tree().process_frame
+			var cam1: Vector2 = inst.camera.global_position
+			_check(cam1.distance_to(rc) < 80.0 and cam1.distance_to(cam0) < 60.0,
+				"camera keeps room centered while walking inside (moved %.0f)" % cam1.distance_to(cam0), failures)
+		# 走到走廊：镜头切到「当前走廊段」的中心
+		var corr: Vector2 = map.corridor_segments[0].get_center()
+		inst.player.position = corr
+		for i in 4:
+			await get_tree().process_frame
+		var cz: String = map.current_zone_at(corr)
+		var cam2: Vector2 = inst.camera.global_position
+		_check(cz.begins_with("c") and cam2.distance_to(map.zone_center_at(corr)) < 80.0,
+			"camera switches to the corridor segment center (%s)" % cz, failures)
+	var screen_cells2: float = (vs.x / (20.0 * zoom)) if vs.x > 0.0 else 0.0
+	_check(screen_cells2 > 0.0, "viewport measured (%.0f px wide)" % vs.x, failures)
 
 	# --- 3. 三态迷雾 ---
 	var fog_i := -1
@@ -80,10 +105,10 @@ func _ready() -> void:
 			if map.explored[i] or i == int(map.nested_room_index):
 				continue
 			var dm: ColorRect = _mask_for(inst.fog, "r%d" % i)
-			if dm != null and dm.color.a < 0.99:
+			if dm != null and (dm.color.a < 0.75 or dm.color.get_luminance() > 0.12):
 				dark_ok = false
 				break
-		_check(dark_ok, "unexplored rooms stay pitch black", failures)
+		_check(dark_ok, "unexplored rooms stay dark", failures)
 		_check(inst.fog.halo != null and not inst.fog.halo.visible,
 			"no flashlight halo outside blackout", failures)
 

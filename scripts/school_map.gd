@@ -116,16 +116,16 @@ class WallShadow:
 ## 房型元数据：weight=出现权重（hall 固定占北排第一间）、w_min/w_max=房间宽度（格），
 ## color=地板底色、wall=墙砖底色、eff=答题效率倍率、desk=每 60 格放几张课桌的分母（0=不放）。
 var type_defs: Dictionary = {
-	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.93, 0.83, 0.56), "wall": Color(0.87, 0.82, 0.70), "w_min": 26, "w_max": 36, "eff": 1.0, "desk": 55.0},
-	"lab":       {"name": "实验室",   "weight": 3, "color": Color(0.85, 0.90, 0.93), "wall": Color(0.79, 0.86, 0.91), "w_min": 24, "w_max": 34, "eff": 1.5, "desk": 78.0},
-	"library":   {"name": "图书室",   "weight": 3, "color": Color(0.82, 0.68, 0.48), "wall": Color(0.78, 0.70, 0.58), "w_min": 22, "w_max": 30, "eff": 1.25, "desk": 72.0},
-	"medical":   {"name": "医务室",   "weight": 2, "color": Color(0.85, 0.93, 0.89), "wall": Color(0.82, 0.90, 0.88), "w_min": 20, "w_max": 28, "eff": 1.3, "desk": 95.0},
-	"office":    {"name": "办公室",   "weight": 3, "color": Color(0.75, 0.83, 0.87), "wall": Color(0.73, 0.80, 0.85), "w_min": 18, "w_max": 26, "eff": 1.4, "desk": 85.0},
-	"storage":   {"name": "储物间",   "weight": 2, "color": Color(0.75, 0.79, 0.68), "wall": Color(0.70, 0.75, 0.68), "w_min": 15, "w_max": 20, "eff": 1.2, "desk": 110.0},
-	"broadcast": {"name": "广播室",   "weight": 1, "color": Color(0.67, 0.60, 0.76), "wall": Color(0.63, 0.57, 0.72), "w_min": 15, "w_max": 20, "eff": 1.6, "desk": 120.0},
-	"toilet":    {"name": "厕所",     "weight": 2, "color": Color(0.62, 0.83, 0.89), "wall": Color(0.66, 0.85, 0.91), "w_min": 13, "w_max": 17, "eff": 0.6, "desk": 999.0},
-	"stair":     {"name": "楼梯间",   "weight": 1, "color": Color(0.81, 0.83, 0.86), "wall": Color(0.76, 0.79, 0.83), "w_min": 15, "w_max": 20, "eff": 0.6, "desk": 999.0},
-	"hall":      {"name": "大厅楼梯", "weight": 0, "color": Color(0.95, 0.81, 0.52), "wall": Color(0.91, 0.81, 0.63), "w_min": 24, "w_max": 32, "eff": 0.8, "desk": 150.0},
+	"classroom": {"name": "普通教室", "weight": 6, "color": Color(0.93, 0.83, 0.56), "wall": Color(0.87, 0.82, 0.70), "w_min": 34, "w_max": 46, "eff": 1.0, "desk": 55.0},
+	"lab":       {"name": "实验室",   "weight": 3, "color": Color(0.85, 0.90, 0.93), "wall": Color(0.79, 0.86, 0.91), "w_min": 30, "w_max": 42, "eff": 1.5, "desk": 78.0},
+	"library":   {"name": "图书室",   "weight": 3, "color": Color(0.82, 0.68, 0.48), "wall": Color(0.78, 0.70, 0.58), "w_min": 30, "w_max": 40, "eff": 1.25, "desk": 72.0},
+	"medical":   {"name": "医务室",   "weight": 2, "color": Color(0.85, 0.93, 0.89), "wall": Color(0.82, 0.90, 0.88), "w_min": 30, "w_max": 38, "eff": 1.3, "desk": 95.0},
+	"office":    {"name": "办公室",   "weight": 3, "color": Color(0.75, 0.83, 0.87), "wall": Color(0.73, 0.80, 0.85), "w_min": 28, "w_max": 38, "eff": 1.4, "desk": 85.0},
+	"storage":   {"name": "储物间",   "weight": 2, "color": Color(0.75, 0.79, 0.68), "wall": Color(0.70, 0.75, 0.68), "w_min": 26, "w_max": 34, "eff": 1.2, "desk": 110.0},
+	"broadcast": {"name": "广播室",   "weight": 1, "color": Color(0.67, 0.60, 0.76), "wall": Color(0.63, 0.57, 0.72), "w_min": 26, "w_max": 34, "eff": 1.6, "desk": 120.0},
+	"toilet":    {"name": "厕所",     "weight": 2, "color": Color(0.62, 0.83, 0.89), "wall": Color(0.66, 0.85, 0.91), "w_min": 24, "w_max": 30, "eff": 0.6, "desk": 999.0},
+	"stair":     {"name": "楼梯间",   "weight": 1, "color": Color(0.81, 0.83, 0.86), "wall": Color(0.76, 0.79, 0.83), "w_min": 24, "w_max": 30, "eff": 0.6, "desk": 999.0},
+	"hall":      {"name": "大厅楼梯", "weight": 0, "color": Color(0.95, 0.81, 0.52), "wall": Color(0.91, 0.81, 0.63), "w_min": 30, "w_max": 40, "eff": 0.8, "desk": 150.0},
 }
 
 func generate(p_seed: int, room_count: int = 0) -> void:
@@ -137,9 +137,9 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	if room_count > 0:
 		n = clampi(room_count, 6, 10)
 
-	var cw := rng.randi_range(10, 12)
-	var rd_n := rng.randi_range(18, 24)
-	var rd_s := rng.randi_range(18, 24)
+	var cw := rng.randi_range(11, 13)
+	var rd_n := rng.randi_range(22, 30)
+	var rd_s := rng.randi_range(22, 30)
 
 	is_l_shape = n >= 7 and rng.randf() < 0.35
 	var n_tail := 0
@@ -211,7 +211,7 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	var tail_end := y_s_start
 	if is_l_shape:
 		for i in n_tail:
-			tail_h.append(rng.randi_range(16, 22))
+			tail_h.append(rng.randi_range(20, 28))
 		for i in n_tail:
 			tail_end += tail_h[i]
 			if i < n_tail - 1:
@@ -1351,7 +1351,7 @@ func _spawn_furniture() -> void:
 			var dens: float = float(type_defs[t].get("desk", 999.0))
 			var room_rect: Rect2 = rooms[i]
 			var area_cells := int(room_rect.size.x / CELL) * int(room_rect.size.y / CELL)
-			count = clampi(int(float(area_cells) / dens), 0, 14)
+			count = clampi(int(float(area_cells) / dens), 0, 18)
 			if t == "toilet":
 				count = 1
 			if count == 0 and dens < 900.0:
@@ -2372,6 +2372,19 @@ func is_explored_at(pos: Vector2) -> bool:
 		if corridor_segments[i].has_point(pos):
 			return corridor_explored[i]
 	return true
+
+## 当前区域的中心（镜头「房间居中」用）：房间 / 里间 / 环路门洞 / 走廊段。
+func zone_center_at(pos: Vector2) -> Vector2:
+	for i in range(rooms.size() - 1, -1, -1):
+		if rooms[i].has_point(pos):
+			return rooms[i].get_center()
+	var pi := passage_index_at(pos)
+	if pi >= 0:
+		return passage_rects[pi].get_center()
+	for i in corridor_segments.size():
+		if corridor_segments[i].has_point(pos):
+			return corridor_segments[i].get_center()
+	return Vector2.INF
 
 ## 当前所在区域的标识（用于判断「当前房间/当前段」）。
 func current_zone_at(pos: Vector2) -> String:

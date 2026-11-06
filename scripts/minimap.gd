@@ -1,7 +1,7 @@
 extends Control
 
-const SIZE := Vector2(200.0, 140.0)
-const PAD := 7.0
+const SIZE := Vector2(184.0, 126.0)
+const PAD := 6.0
 
 var map
 var player

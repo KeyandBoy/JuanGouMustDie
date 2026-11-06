@@ -14,9 +14,10 @@ const L_INTRO := 60
 const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
 const MINIMAP_ENABLED := true
-## 死区跟随：屏幕中间这块矩形里镜头不动（占视口比例）。
-const DEAD_ZONE_X := 0.20
-const DEAD_ZONE_Y := 0.22
+## 镜头以房间中心为准，最多把镜头从房间中心往玩家方向拉这么多（视口半宽/半高的比例）
+const CAMERA_PLAYER_MAX_OFF := 0.26
+## 镜头边界比地图多放宽几格，避免最外圈房间被顶死在屏幕边上（外面露出的是深色背景）
+const CAMERA_LIMIT_MARGIN := 16.0
 
 # B12：第 4 关随机停电。间隔 8~16s，每次 0.3~1.0s，只闪一下不常驻。
 const BLACKOUT_GAP_MIN := 8.0
@@ -120,6 +121,7 @@ var tutorial_questions: Array = []
 
 func _ready() -> void:
 	GameState.get_random_phase()
+	_setup_backdrop()
 	_build_world()
 	item_fx = ItemFx.new()
 	item_fx.player = player
@@ -128,6 +130,21 @@ func _ready() -> void:
 		_play_intro(true)
 	else:
 		_show_menu()
+
+## 地图之外的建筑背景（深色砖纹）：镜头放宽到地图边缘外时，不会露出死黑/纯色空白。
+func _setup_backdrop() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "Backdrop"
+	layer.layer = -10
+	add_child(layer)
+	var rect := ColorRect.new()
+	rect.name = "Brick"
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://shaders/backdrop_brick.gdshader")
+	rect.material = mat
+	layer.add_child(rect)
 
 func _is_test_run() -> bool:
 	for a in OS.get_cmdline_args():
@@ -434,40 +451,45 @@ func _setup_minimap() -> void:
 	minimap.setup(map, player)
 	minimap.anchor_left = 1.0
 	minimap.anchor_right = 1.0
-	minimap.offset_left = -212.0
+	minimap.offset_left = -196.0
 	minimap.offset_right = -12.0
 	minimap.offset_top = 164.0
-	minimap.offset_bottom = 304.0
+	minimap.offset_bottom = 290.0
 
 func _zoom_for_map() -> float:
 	if GameState.tutorial_active:
 		return 1.45
-	# 连续大地图：固定缩放，一屏约 70~85 格（CELL=20 → 0.85）
-	return 0.85
+	# 连续大地图：固定缩放，一屏约 68 格（CELL=20 → 0.95），房间占屏幕 2/3 左右
+	return 0.95
 
 func _apply_camera_limits() -> void:
 	if map.world_rect.size.x <= 0.0:
 		return
-	camera.limit_left = int(map.world_rect.position.x)
-	camera.limit_right = int(map.world_rect.end.x)
-	camera.limit_top = int(map.world_rect.position.y)
-	camera.limit_bottom = int(map.world_rect.end.y)
+	# 稍微放宽一点，避免最外圈房间被顶到屏幕边上（外面露出的是深色背景）
+	var m := 20.0 * CAMERA_LIMIT_MARGIN
+	camera.limit_left = int(map.world_rect.position.x - m)
+	camera.limit_right = int(map.world_rect.end.x + m)
+	camera.limit_top = int(map.world_rect.position.y - m)
+	camera.limit_bottom = int(map.world_rect.end.y + m)
 
-## 死区跟随：角色在屏幕中间一块矩形内自由移动，碰到边缘镜头才平滑滚动。
+## 镜头：以「当前房间 / 走廊段」的中心为准（房间居中），
+## 但镜头与玩家的距离不超过视口的 CAMERA_PLAYER_MAX_OFF，保证玩家不会被甩到屏幕角落。
 func _camera_follow() -> void:
 	if camera == null or player == null or not is_instance_valid(player):
 		return
 	var vs := get_viewport().get_visible_rect().size
 	var zx := maxf(camera.zoom.x, 0.01)
 	var zy := maxf(camera.zoom.y, 0.01)
-	var dz := Vector2(vs.x * 0.5 / zx * DEAD_ZONE_X, vs.y * 0.5 / zy * DEAD_ZONE_Y)
+	var half := Vector2(vs.x * 0.5 / zx, vs.y * 0.5 / zy)
 	var p: Vector2 = player.global_position
-	var t: Vector2 = camera.global_position
-	var d := p - t
-	if absf(d.x) > dz.x:
-		t.x += d.x - signf(d.x) * dz.x
-	if absf(d.y) > dz.y:
-		t.y += d.y - signf(d.y) * dz.y
+	var t: Vector2 = p
+	if map != null and is_instance_valid(map):
+		var zc: Vector2 = map.zone_center_at(p)
+		if zc != Vector2.INF:
+			t = zc
+	var max_off := half * CAMERA_PLAYER_MAX_OFF
+	t.x = clampf(t.x, p.x - max_off.x, p.x + max_off.x)
+	t.y = clampf(t.y, p.y - max_off.y, p.y + max_off.y)
 	camera.global_position = t
 
 func _setup_level(p_spawn_random := false) -> void:

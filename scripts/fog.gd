@@ -10,9 +10,11 @@ var halo: ColorRect
 ##   未探索        → 纯黑（只留门框和墙）
 ##   已探索、人不在 → 压暗（轮廓和家具还在，像记忆里的房间）
 ##   当前所在      → 不遮，整间均匀亮
-const MASK_BLACK := Color(0.010, 0.012, 0.018, 1.0)
+## 未探索：非常暗，但仍能看出房间轮廓（不再是一整块死黑，避免看着像渲染 bug）
+const MASK_BLACK := Color(0.050, 0.058, 0.075, 0.86)
 const MASK_DIM := Color(0.024, 0.028, 0.040, 1.0)
-const DIM_ALPHA := 0.58
+## 已探索、人不在：压暗但保留家具/地面轮廓（永久记住）
+const DIM_ALPHA := 0.46
 
 const HALO_BY_LEVEL := {
 	1: Vector2(160.0, 300.0),

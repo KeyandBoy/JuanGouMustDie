@@ -70,7 +70,8 @@ func _ready() -> void:
 			if not inst.map.explored[i]:
 				var m: ColorRect = _mask_for(inst.fog, "r%d" % i)
 				if m != null:
-					_check(m.color.a >= 0.99, "fog: unexplored room opaque (%.2f)" % m.color.a, failures)
+					_check(m.color.a >= 0.75 and m.color.get_luminance() < 0.12,
+				"fog: unexplored room stays dark (a=%.2f lum=%.3f)" % [m.color.a, m.color.get_luminance()], failures)
 					break
 
 		# 再走回去：房间恢复全亮
