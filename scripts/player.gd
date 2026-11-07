@@ -5,22 +5,24 @@ signal interacted
 const ShadowScript := preload("res://scripts/shadow.gd")
 const TorchScript := preload("res://scripts/torch_light.gd")
 
-const TEX_FRONT := preload("res://art/sprites/64/01_player_front.png")
-const TEX_BACK := preload("res://art/sprites/64/02_player_back.png")
-const TEX_LEFT := preload("res://art/sprites/64/03_player_left.png")
-const TEX_RIGHT := preload("res://art/sprites/64/04_player_right.png")
+# 角色贴图：由 tools/chargen_compose.py 从 CharGen(LPC) 素材合成，64x64 x 8 帧
+# 走路循环 4 方向；idle 为 2 帧呼吸循环。
+const TEX_WALK_FRONT := preload("res://art/sprites/lpc/player_walk_front.png")
+const TEX_WALK_BACK := preload("res://art/sprites/lpc/player_walk_back.png")
+const TEX_WALK_LEFT := preload("res://art/sprites/lpc/player_walk_left.png")
+const TEX_WALK_RIGHT := preload("res://art/sprites/lpc/player_walk_right.png")
+const TEX_IDLE_FRONT := preload("res://art/sprites/lpc/player_idle_front.png")
+const TEX_IDLE_BACK := preload("res://art/sprites/lpc/player_idle_back.png")
+const TEX_IDLE_LEFT := preload("res://art/sprites/lpc/player_idle_left.png")
+const TEX_IDLE_RIGHT := preload("res://art/sprites/lpc/player_idle_right.png")
 
-# 走路循环：每个方向一条横向条带，64x64 x 8 帧（AI 逐帧生成，解剖结构正确）
-# 冲刺直接复用走路帧、提高播放速度；不再使用旧版剪切派生的 4 帧跑条带（会撕裂出第三条腿）。
+# 冲刺直接复用走路帧、提高播放速度。
 const WALK_FRAMES := 8
-const TEX_WALK_FRONT := preload("res://art/sprites/64/anim/player_walk_front.png")
-const TEX_WALK_BACK := preload("res://art/sprites/64/anim/player_walk_back.png")
-const TEX_WALK_LEFT := preload("res://art/sprites/64/anim/player_walk_left.png")
-const TEX_WALK_RIGHT := preload("res://art/sprites/64/anim/player_walk_right.png")
-
+const IDLE_FRAMES := 2
 const WALK_FPS := 11.0
 const RUN_FPS := 18.0
-const VISUAL_SCALE := 0.7
+const IDLE_FPS := 2.4
+const VISUAL_SCALE := 0.78
 
 var speed_walk := 160.0
 var speed_sprint := 260.0
@@ -30,6 +32,7 @@ var stun_timer := 0.0
 var face_dir := Vector2.DOWN
 var bob_time := 0.0
 var anim_time := 0.0
+var idle_time := 0.0
 var sprite: Sprite2D
 var torch: PointLight2D
 var dashing := false
@@ -47,7 +50,7 @@ func _ready() -> void:
 	add_to_group("player")
 	# B4：统一椭圆影子，位置按贴图内容底部稍往下，避免被脚完全盖住
 	var shadow = ShadowScript.new()
-	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 21.5), 0.40)
+	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 23.5), 0.40)
 	add_child(shadow)
 	sprite = Sprite2D.new()
 	sprite.texture = TEX_WALK_FRONT
@@ -157,19 +160,27 @@ func _process(delta: float) -> void:
 		if torch != null:
 			torch.set_facing(face_dir)
 		anim_time += delta * (RUN_FPS if dashing else WALK_FPS)
+		idle_time = 0.0
 	else:
 		anim_time = 0.0
-	_apply_frame(moving and dashing)
+		idle_time += delta
+	_apply_frame(moving)
 	sprite.position.y = 0.0
 
-# 按当前朝向贴帧：所有状态共用走路循环（冲刺只是播放更快）
-func _apply_frame(_running: bool) -> void:
-	var tex: Texture2D = _walk_texture_for(face_dir)
-	if sprite.texture != tex:
+# 按当前朝向贴帧：行走 8 帧；站立时切 idle 2 帧呼吸循环
+func _apply_frame(moving: bool) -> void:
+	var idle := not moving
+	var tex: Texture2D = _idle_texture_for(face_dir) if idle else _walk_texture_for(face_dir)
+	var frames := IDLE_FRAMES if idle else WALK_FRAMES
+	if sprite.texture != tex or sprite.hframes != frames:
 		sprite.texture = tex
-		sprite.hframes = WALK_FRAMES
+		sprite.hframes = frames
 		sprite.vframes = 1
-	var f := int(anim_time) % WALK_FRAMES
+	var f := 0
+	if idle:
+		f = int(idle_time * IDLE_FPS) % IDLE_FRAMES
+	else:
+		f = int(anim_time) % WALK_FRAMES
 	if f < 0:
 		f = 0
 	sprite.frame = f
@@ -179,15 +190,15 @@ func _walk_texture_for(dir: Vector2) -> Texture2D:
 		return TEX_WALK_RIGHT if dir.x > 0.0 else TEX_WALK_LEFT
 	return TEX_WALK_FRONT if dir.y > 0.0 else TEX_WALK_BACK
 
+func _idle_texture_for(dir: Vector2) -> Texture2D:
+	if absf(dir.x) >= absf(dir.y):
+		return TEX_IDLE_RIGHT if dir.x > 0.0 else TEX_IDLE_LEFT
+	return TEX_IDLE_FRONT if dir.y > 0.0 else TEX_IDLE_BACK
+
 func _dominant_dir(v: Vector2) -> Vector2:
 	if absf(v.x) >= absf(v.y):
 		return Vector2.RIGHT if v.x > 0.0 else Vector2.LEFT
 	return Vector2.DOWN if v.y > 0.0 else Vector2.UP
-
-func _texture_for(dir: Vector2) -> Texture2D:
-	if absf(dir.x) >= absf(dir.y):
-		return TEX_RIGHT if dir.x > 0.0 else TEX_LEFT
-	return TEX_FRONT if dir.y > 0.0 else TEX_BACK
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):

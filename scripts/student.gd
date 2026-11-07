@@ -3,47 +3,42 @@ extends CharacterBody2D
 const ShadowScript := preload("res://scripts/shadow.gd")
 const EyeGlowScript := preload("res://scripts/eye_glow.gd")
 
-const JUAN_TEX := [
-	preload("res://art/sprites/64/05_npc_front.png"),
-	preload("res://art/sprites/64/06_npc_back.png"),
-	preload("res://art/sprites/64/07_npc_left.png"),
-	preload("res://art/sprites/64/08_npc_right.png"),
-	preload("res://art/sprites/64/09_npc_chase.png"),
-	preload("res://art/sprites/64/10_npc_search.png"),
-	preload("res://art/sprites/64/11_npc_stun.png"),
-]
-const STUDENT_TEX := [
-	preload("res://art/sprites/64/12_student_front.png"),
-	preload("res://art/sprites/64/13_student_back.png"),
-	preload("res://art/sprites/64/14_student_left.png"),
-	preload("res://art/sprites/64/15_student_right.png"),
-	preload("res://art/sprites/64/24_student_chase.png"),
-	preload("res://art/sprites/64/25_student_search.png"),
-	preload("res://art/sprites/64/26_student_stun.png"),
-]
-const TEACHER_TEX := [
-	preload("res://art/sprites/64/16_teacher_front.png"),
-	preload("res://art/sprites/64/17_teacher_back.png"),
-	preload("res://art/sprites/64/18_teacher_left.png"),
-	preload("res://art/sprites/64/19_teacher_right.png"),
-	preload("res://art/sprites/64/27_teacher_chase.png"),
-	preload("res://art/sprites/64/28_teacher_search.png"),
-	preload("res://art/sprites/64/29_teacher_stun.png"),
-]
-const GUARD_TEX := [
-	preload("res://art/sprites/64/20_guard_front.png"),
-	preload("res://art/sprites/64/21_guard_back.png"),
-	preload("res://art/sprites/64/22_guard_left.png"),
-	preload("res://art/sprites/64/23_guard_right.png"),
-	preload("res://art/sprites/64/30_guard_chase.png"),
-	preload("res://art/sprites/64/31_guard_search.png"),
-	preload("res://art/sprites/64/32_guard_stun.png"),
-]
-const VISUAL_SCALE := 0.7
+# 角色贴图：由 tools/chargen_compose.py 从 CharGen(LPC) 素材合成
+# 每个角色 4 方向行走条带（64x64 x 8 帧），顺序：front / back / left / right
+const ROLE_TEX := {
+	"juan": [
+		preload("res://art/sprites/lpc/juan_walk_front.png"),
+		preload("res://art/sprites/lpc/juan_walk_back.png"),
+		preload("res://art/sprites/lpc/juan_walk_left.png"),
+		preload("res://art/sprites/lpc/juan_walk_right.png"),
+	],
+	"student": [
+		preload("res://art/sprites/lpc/student_walk_front.png"),
+		preload("res://art/sprites/lpc/student_walk_back.png"),
+		preload("res://art/sprites/lpc/student_walk_left.png"),
+		preload("res://art/sprites/lpc/student_walk_right.png"),
+	],
+	"teacher": [
+		preload("res://art/sprites/lpc/teacher_walk_front.png"),
+		preload("res://art/sprites/lpc/teacher_walk_back.png"),
+		preload("res://art/sprites/lpc/teacher_walk_left.png"),
+		preload("res://art/sprites/lpc/teacher_walk_right.png"),
+	],
+	"guard": [
+		preload("res://art/sprites/lpc/guard_walk_front.png"),
+		preload("res://art/sprites/lpc/guard_walk_back.png"),
+		preload("res://art/sprites/lpc/guard_walk_left.png"),
+		preload("res://art/sprites/lpc/guard_walk_right.png"),
+	],
+}
+const WALK_FRAMES := 8
+const WALK_FPS := 9.5
+const VISUAL_SCALE := 0.78
 
 var role := "juan"
 var sprite: Sprite2D
 var bob_time := 0.0
+var anim_time := 0.0
 var map
 var player
 var alert_level := 0.0
@@ -82,11 +77,11 @@ func _ready() -> void:
 	add_to_group("students")
 	# B4：和学生贴图同一套椭圆影子
 	var shadow = ShadowScript.new()
-	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 19.0), 0.38)
+	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 23.5), 0.38)
 	add_child(shadow)
 	# B12：追击 / 搜寻 / 潜行时眼睛亮红；平时不亮
 	var eye: PointLight2D = EyeGlowScript.new()
-	eye.position = Vector2(0.0, -17.0)
+	eye.position = Vector2(0.0, -12.0)
 	eye.dot_scale = 0.22
 	add_child(eye)
 	sprite = Sprite2D.new()
@@ -102,14 +97,7 @@ func set_role(p_role: String) -> void:
 		sprite.texture = _textures()[0]
 
 func _textures() -> Array:
-	match role:
-		"student":
-			return STUDENT_TEX
-		"teacher":
-			return TEACHER_TEX
-		"guard":
-			return GUARD_TEX
-	return JUAN_TEX
+	return ROLE_TEX.get(role, ROLE_TEX["juan"])
 
 func setup(p_map: Node2D, p_player: Node2D) -> void:
 	map = p_map
@@ -491,30 +479,40 @@ func _update_visual(delta: float) -> void:
 	if sprite == null:
 		return
 	var tex_list := _textures()
+	# 4 方向行走条带：front / back / left / right
+	var dir_idx := 0
+	if absf(facing.x) >= absf(facing.y):
+		dir_idx = 3 if facing.x > 0.0 else 2
+	else:
+		dir_idx = 0 if facing.y >= 0.0 else 1
+	sprite.flip_h = false
 	if stun_timer > 0.0:
-		sprite.texture = tex_list[6]
-		sprite.flip_h = false
+		sprite.texture = tex_list[dir_idx]
+		sprite.hframes = WALK_FRAMES
+		sprite.vframes = 1
+		sprite.frame = 0
 		sprite.modulate = Color(0.7, 0.7, 0.8)
 		sprite.rotation = sin(Time.get_ticks_msec() * 0.02) * 0.12
 		sprite.position.y = 0.0
 		return
 	sprite.rotation = 0.0
-	sprite.modulate = Color.WHITE
+	# 状态着色：追击偏红、搜寻/潜行偏黄，保持和玩家同一套模型
 	if state == "chase":
-		sprite.texture = tex_list[4]
-		sprite.flip_h = facing.x < -0.01
+		sprite.modulate = Color(1.0, 0.74, 0.72)
 	elif state == "search" or state == "stalk":
-		sprite.texture = tex_list[5]
-		sprite.flip_h = facing.x < -0.01
+		sprite.modulate = Color(1.0, 0.90, 0.62)
 	else:
-		sprite.flip_h = false
-		if absf(facing.x) >= absf(facing.y):
-			sprite.texture = tex_list[3] if facing.x > 0.0 else tex_list[2]
-		else:
-			sprite.texture = tex_list[0] if facing.y > 0.0 else tex_list[1]
+		sprite.modulate = Color.WHITE
+	sprite.texture = tex_list[dir_idx]
+	sprite.hframes = WALK_FRAMES
+	sprite.vframes = 1
 	var moving := velocity.length() > 5.0
 	if moving:
+		anim_time += delta * (WALK_FPS * 1.35 if state == "chase" else WALK_FPS)
+		sprite.frame = int(anim_time) % WALK_FRAMES
 		bob_time += delta * 10.0
 	else:
+		anim_time = 0.0
+		sprite.frame = 0
 		bob_time = 0.0
 	sprite.position.y = -absf(sin(bob_time)) * 1.5

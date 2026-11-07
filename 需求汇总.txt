@@ -547,3 +547,18 @@
 - 教程关保持现状（小地图、整体可见、不做探索迷雾）；前五层仍不生成安全屋
 - 素材：家具贴图从素材库裁剪到 art/furniture（授权未确认，README 标注「发布前替换」）
 - 验证：十二套测试全绿 + 新增 tests/_map_probe、_big_probe、_nested_shot；screenshot.tscn 重拍
+
+【角色全动作 / 地板美化 / 像素肖像（2026-11-07）】
+- 角色：用素材/CharGen 重做主角与追击者全方向全动作模型（排除特殊体积单位；大体积另研究方案）
+  - 主角、卷狗、学生、老师、保安各 4 方向行走 8 帧 + 站立 2 帧；另导出 29 组全动作（idle/walk/slash/thrust/cast/shoot/hurt 等，4 方向）
+  - 暴君沿用 LPC 但用最近邻 2 倍放大做「大体积」，游戏内按人物实际高度换算缩放
+  - 游戏内已接入：player.gd / student.gd / tyrant.gd；旧 64px 单帧贴图保留未删
+- 地板：用素材/Tilemancer-0.2.1 美化地板砖
+  - 复刻其节点算法（bricks/perlin/cells/blur/directional_blur/blend/lighting），生成 20×20 无缝图集
+  - 6 种风格（木/方砖/水泥/石块/沙/地毯）× 6 变体；按房型选风格，再乘原房间基色，保留每层配色差异
+- 肖像：用素材/pixel_art_portrait_generator 为可对话 NPC（含主角）各做一张独立像素艺术大头照
+  - 主角 / 卷狗 / 学生 / 老师 / 保安 / 暴君 共 6 张；96×96 头肩 + 64×64 头像位裁切
+  - 按原版 shader 重新上色（红=暗部、绿=亮部、蓝=阴影、灰度按明度插值），叠放顺序与原场景一致
+  - dialogue_db.gd 已接说话人 → 头像映射；后续新增可对话角色只需登记一条
+- 工具：tools/chargen_compose.py、tools/tilemancer_tiles.py、tools/pck_extract.py、tools/extract_portrait_layers.py、tools/make_portraits.py
+- 验证：十二套测试全绿（_e_probe 首跑有已知偶发 e3/e4，重跑通过）；截图 shot_world / shot_tutorial / shot_tutorial_tyrant 目视通过；对话框头像探针通过

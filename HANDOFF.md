@@ -1,11 +1,11 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-06
+- 更新时间：2026-11-07
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`675e03c`（圆形照明 + 房型专属物品 + 家具网格 + 效率按距离）
-- 已推送 origin/main：`675e03c`
-- 工作区：只剩 `tests/shot_*.png` 等截图产物未提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
+- 当前 HEAD：`（提交后回填）`（CharGen 角色全动作 + Tilemancer 地板 + 像素肖像）
+- 已推送 origin/main：`（提交后回填）`
+- 工作区：`tests/shot_*.png` 已重拍但故意不提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
 ## 最简用法（推荐）
@@ -29,6 +29,11 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **角色全动作 / 地板美化 / 像素肖像（2026-11-07，opencode）**：
+  - 角色：`tools/chargen_compose.py` 直接解析 CharGen 的 `chargen.pak` + LPC 色表，6 套配方（juan/player/student/teacher/guard/tyrant）输出 4 方向 walk 8 帧 + idle 2 帧 + `actions/` 每人 29 组全动作（180 个文件）。暴君用最近邻 2 倍做「大体积」。`player.gd` / `student.gd` / `tyrant.gd` 已接入；`VISUAL_SCALE=0.78`，影子 y=23.5。
+  - 地板：`tools/tilemancer_tiles.py` 复刻 Tilemancer 的节点算法，生成 6 风格 × 6 变体 20px 无缝图集；`school_map.gd` 按房型取行、乘房间基色。
+  - 肖像：`tools/pck_extract.py` + `extract_portrait_layers.py` 从 Godot 3.5 PCK 解出 295 张 WEBP 图层；`make_portraits.py` 复刻原版 shader（红=暗、绿=亮、蓝=阴、灰度按明度插值）生成 6 张 96px 头肩 + 64px 头像裁切；`dialogue_db.gd` 已接说话人 → 头像。
+  - 验证：12 套测试全绿（`_e_probe` 首跑有已知偶发 e3/e4，重跑通过）；`shot_world` / `shot_tutorial` / `shot_tutorial_tyrant` 目视正常；对话框 44px 头像用临时探针确认。
 - **正式关不再弹窗（2026-11-06，opencode）**：`_on_level_card_pressed()` 不再调 `_maybe_show_level_dialogue()`，1~5F 进关没有任何「广播/系统」弹窗；新手关引导保留。
 - **第三轮验收：圆形照明 / 房型专属物品 / 排排列列 / 效率重做（2026-11-06，opencode）**：
   - 照明改「玩家周身圆形光」：遮罩 R 通道存当前区域，着色器做圆形光照 + 羽化，**光被墙挡住**；圈外已探索压暗/未探索更暗。
@@ -180,22 +185,24 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 未提交改动
 
-无（Phase4 提交后清空）。`tests/shot_*.png` 是截图产物、经常被重拍，故意不提交；
-另有可能来自另一窗口的 `scripts/intro.gd` / `art/cutscene/*` / `tools/manifests/*`，看一眼 `git status` 再决定。
+- `tests/shot_*.png`：本轮 `screenshot.tscn` 重拍产生的基线变化，故意不提交（经常被重拍）。
+- `tests/_blob_probe.*` / `tests/_blob_a|b.png` 等：来自另一窗口的探针文件，**不要误提交**。
+- 其余本轮的代码 / 工具 / `art/` 资源已随本次提交入库。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **Phase 5 手感微调（下一步优先）**：拿 `_big_probe` 输出的每间房课桌/家具数量，把装饰密度往「8~12 件」收、确认大教室里课桌不空、确认敌人 7~16 的曲线；觉得房间还不够好认时优先补「墙面特征」（黑板/画框/出口标识），不要加新系统。
-2. **套间/环路手感**：里间门口的「门」现在和普通门一样（E 开关）；如果玩家根本找不到，考虑给套间门加一点视觉提示（半开/门牌），但别破坏「探索才找到」的意图；环路门洞目前是墙上的 2 格缺口，可考虑加门框描边。
-3. **家具贴图是原型**：`art/furniture/README.md` 已写明来源与「授权未确认，发布前替换」；确认授权或自绘后按同名覆盖即可（代码按 rect 拉伸，尺寸可不同）。
-4. **EFG 剩余大件**（每项先确认再动）：E1 模板插门、E6 SubViewport 小地图（本轮小地图是 Control 直接画，需复核是否还要独立 Viewport）、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
-5. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
-6. **A10 / A8 接线**：音频窗口按 `Breath.state` 播放呼吸循环（`assets/sfx/breath/breath_{tense,panic,blind}.ogg` 已预留）；拾取「叮」在 `main._on_item_picked()` 接 `AudioManager.play_sfx`。
-7. **D6 追逐鼓点层**：仍需与 `chase_electro` 同 BPM 的分轨素材；D8 三套脚步采样已齐。
-8. **测试命令**：十二套（flow / _b / _fx / _settings / _c_ui / _d / _e / _f / _g / student→BAD_FRAMES=0 / tutorial / _stalker）+ 本轮新增 `_map_probe` / `_big_probe`；截图用 `screenshot.tscn`（非 headless），套间样张用 `_nested_shot.tscn`。
-9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
-10. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+1. **角色素材收尾（下一步优先，本轮刚做完）**：`art/sprites/lpc/actions/` 已有每人 29 组全动作，但游戏还没接攻击/施法；如果后续给暴君加技能或给玩家加动作，直接按 `index.json` 取条带。另：老师/保安/学生/卷狗现在只在追击者里出现，若后续加对话，头像已在 `dialogue_db.PORTRAITS` 登记。
+2. **Phase 5 手感微调**：拿 `_big_probe` 输出的每间房课桌/家具数量，把装饰密度往「8~12 件」收、确认大教室里课桌不空、确认敌人 7~16 的曲线；觉得房间还不够好认时优先补「墙面特征」（黑板/画框/出口标识），不要加新系统。
+3. **套间/环路手感**：里间门口的「门」现在和普通门一样（E 开关）；如果玩家根本找不到，考虑给套间门加一点视觉提示（半开/门牌），但别破坏「探索才找到」的意图；环路门洞目前是墙上的 2 格缺口，可考虑加门框描边。
+4. **家具贴图是原型**：`art/furniture/README.md` 已写明来源与「授权未确认，发布前替换」；确认授权或自绘后按同名覆盖即可（代码按 rect 拉伸，尺寸可不同）。
+5. **EFG 剩余大件**（每项先确认再动）：E1 模板插门、E6 SubViewport 小地图（本轮小地图是 Control 直接画，需复核是否还要独立 Viewport）、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
+6. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
+7. **A10 / A8 接线**：音频窗口按 `Breath.state` 播放呼吸循环（`assets/sfx/breath/breath_{tense,panic,blind}.ogg` 已预留）；拾取「叮」在 `main._on_item_picked()` 接 `AudioManager.play_sfx`。
+8. **D6 追逐鼓点层**：仍需与 `chase_electro` 同 BPM 的分轨素材；D8 三套脚步采样已齐。
+9. **测试命令**：十二套（flow / _b / _fx / _settings / _c_ui / _d / _e / _f / _g / student→BAD_FRAMES=0 / tutorial / _stalker）+ 本轮新增 `_map_probe` / `_big_probe`；截图用 `screenshot.tscn`（非 headless），套间样张用 `_nested_shot.tscn`。
+10. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
+11. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -218,7 +225,7 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 测试状态
 
-2026-11-06 全绿（连续大地图 Phase1-4 后）：
+2026-11-07 全绿（角色全动作 / 地板 / 肖像后）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -244,6 +251,8 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 > 本轮踩过的坑：headless 视口只有几十像素 —— 一屏格数要按 `display/window/size/viewport_width` 算。
 > 探索遮罩现在是「纹理 + 着色器」，断言请用 `fog.zone_alpha(zone)`，不要再找 ColorRect。
 > 套间/走廊样张用 `tests/_nested_shot.tscn`（输出 shot_nested_parent / shot_nested_inside / shot_corridor_glow / shot_loop_passage）。
+> 2026-11-07 记：`_e_probe` 有既有偶发性，首次跑曾出现 `e3/e4`（宝箱房判定），单独重跑即 ALL PASSED；不是本轮素材改动引起。
+> 新增 `art/sprites/lpc/`、`art/sprites/floor/`、`art/portraits/` 后必须先 `& $G --headless --import --path .`，否则 `preload` 会报找不到资源。
 
 ## 环境
 

@@ -22,8 +22,16 @@ const TYPE_ORDER := [
 	"storage", "broadcast", "toilet", "stair", "hall",
 ]
 const CORRIDOR_TYPE := "corridor"
-## 地板图案种类：0 棋格 / 1 砖 / 2 木地板 / 3 纯色 / 4 污渍 / 5 裂纹
+## 地板图案种类：6 个随机变体（贴图来自 tools/tilemancer_tiles.py，Tilemancer 风格光照）
 const FLOOR_VARIANTS := 6
+const FLOOR_ATLAS := preload("res://art/sprites/floor/tilemancer_styles.png")
+## 图集行序：0 木 / 1 方砖 / 2 水泥 / 3 石块 / 4 沙 / 5 地毯
+const FLOOR_STYLE_WOOD := 0
+const FLOOR_STYLE_TILE := 1
+const FLOOR_STYLE_CONCRETE := 2
+const FLOOR_STYLE_STONE := 3
+const FLOOR_STYLE_SAND := 4
+const FLOOR_STYLE_CARPET := 5
 
 const CORRIDOR_COLOR := Color(0.88, 0.90, 0.86)
 const CORRIDOR_WALL := Color(0.66, 0.69, 0.73)
@@ -35,6 +43,7 @@ const WINDOW_COLOR := Color(0.52, 0.80, 0.93)
 
 var rng := RandomNumberGenerator.new()
 var level_seed := 0
+var _floor_atlas_img: Image = null
 var rooms: Array[Rect2] = []
 var room_types: Array[String] = []
 var room_names: Array[String] = []
@@ -1095,11 +1104,12 @@ func _build_tiles() -> void:
 	# 第 0 行：地板（每个房型 FLOOR_VARIANTS 种图案）
 	for i in TYPE_ORDER.size():
 		var base: Color = type_defs[TYPE_ORDER[i]]["color"]
-		var pat := _floor_pat(TYPE_ORDER[i])
+		var style := _floor_style(TYPE_ORDER[i])
 		for v in FLOOR_VARIANTS:
-			_paint_floor_tile(img, i * FLOOR_VARIANTS + v, 0, base, v, level_seed + i * 977 + v * 31)
+			_paint_floor_tile(img, i * FLOOR_VARIANTS + v, 0, base, v, level_seed + i * 977 + v * 31, style)
 	for v in FLOOR_VARIANTS:
-		_paint_floor_tile(img, TYPE_ORDER.size() * FLOOR_VARIANTS + v, 0, CORRIDOR_COLOR, v, level_seed + 4242 + v * 31)
+		_paint_floor_tile(img, TYPE_ORDER.size() * FLOOR_VARIANTS + v, 0, CORRIDOR_COLOR,
+				v, level_seed + 4242 + v * 31, _floor_style(CORRIDOR_TYPE))
 	# 走廊没被选中的图案位也填上走廊色，避免取到黑格
 	for cx in range(TYPE_ORDER.size() * FLOOR_VARIANTS + FLOOR_VARIANTS, cols):
 		img.fill_rect(Rect2i(cx * c, 0, c, c), CORRIDOR_COLOR)
@@ -1198,72 +1208,34 @@ func _floor_pat(t: String) -> Array:
 			return [0, 2, 3, 4]
 	return [0, 1, 3, 4]
 
-func _paint_floor_tile(img: Image, col: int, row: int, base: Color, variant: int, seed_v: int) -> void:
+## 房间类型 -> Tilemancer 图集行（木/方砖/水泥/石块/沙/地毯）
+func _floor_style(t: String) -> int:
+	match t:
+		"classroom", "library":
+			return FLOOR_STYLE_WOOD
+		"lab", "medical", "toilet", "broadcast":
+			return FLOOR_STYLE_TILE
+		"office", "storage", "stair":
+			return FLOOR_STYLE_CONCRETE
+		"hall":
+			return FLOOR_STYLE_CARPET
+		"corridor":
+			return FLOOR_STYLE_TILE
+	return FLOOR_STYLE_CONCRETE
+
+## 从 Tilemancer 风格图集取一块地砖，按房间基色着色后贴进目标图。
+func _paint_floor_tile(img: Image, col: int, row: int, base: Color, variant: int, _seed_v: int, style: int = FLOOR_STYLE_TILE) -> void:
 	var c := int(CELL)
-	var ox := col * c
-	var oy := row * c
-	var r := RandomNumberGenerator.new()
-	r.seed = seed_v
-	match variant:
-		0:  # 棋格瓷砖
-			var alt := base.darkened(0.07)
-			for gy in 2:
-				for gx in 2:
-					var shade: Color = base if (gx + gy) % 2 == 0 else alt
-					img.fill_rect(Rect2i(ox + gx * c / 2, oy + gy * c / 2, c / 2, c / 2), shade)
-			img.fill_rect(Rect2i(ox, oy + c / 2 - 1, c, 2), base.darkened(0.20))
-			img.fill_rect(Rect2i(ox + c / 2 - 1, oy, 2, c), base.darkened(0.20))
-		1:  # 砖墙/小方砖
-			img.fill_rect(Rect2i(ox, oy, c, c), base)
-			var mortar := base.darkened(0.24)
-			var bh := c / 4
-			for k in range(1, 4):
-				img.fill_rect(Rect2i(ox, oy + k * bh - 1, c, 2), mortar)
-			for k in 4:
-				var off := 0 if k % 2 == 0 else c / 2
-				for b in 2:
-					var sx := ox + off + b * (c / 2)
-					if sx > ox and sx < ox + c:
-						img.fill_rect(Rect2i(sx, oy + k * bh, 1, bh), mortar)
-		2:  # 木地板
-			var ph := c / 4
-			for k in 4:
-				var shade: Color = base.lightened(0.05) if k % 2 == 0 else base.darkened(0.05)
-				img.fill_rect(Rect2i(ox, oy + k * ph, c, ph), shade)
-			for k in range(1, 4):
-				img.fill_rect(Rect2i(ox, oy + k * ph - 1, c, 1), base.darkened(0.30))
-			for k in 2:
-				var sx := ox + int(r.randi_range(4, c - 5))
-				var sy := oy + (k * 2 + (1 if k == 1 else 0)) * ph
-				if sy + ph * 2 <= oy + c:
-					img.fill_rect(Rect2i(sx, sy, 1, ph * 2), base.darkened(0.26))
-		3:  # 纯色 + 细噪点
-			img.fill_rect(Rect2i(ox, oy, c, c), base)
-			for n in 14:
-				var px := int(r.randi_range(0, c - 1))
-				var py := int(r.randi_range(0, c - 1))
-				img.set_pixel(ox + px, oy + py, base.darkened(0.11))
-		4:  # 污渍/水渍
-			img.fill_rect(Rect2i(ox, oy, c, c), base)
-			var cx := r.randf_range(5.0, float(c) - 5.0)
-			var cy := r.randf_range(5.0, float(c) - 5.0)
-			var rx := r.randf_range(3.5, 8.0)
-			var ry := rx * r.randf_range(0.5, 0.9)
-			for y in c:
-				for x in c:
-					var dx := (float(x) - cx) / rx
-					var dy := (float(y) - cy) / ry
-					if dx * dx + dy * dy <= 1.0:
-						img.set_pixel(ox + x, oy + y, base.darkened(0.17))
-		5:  # 裂纹
-			img.fill_rect(Rect2i(ox, oy, c, c), base)
-			var px := r.randf_range(3.0, float(c) - 3.0)
-			var crack := base.darkened(0.36)
-			for y in c:
-				px = clampf(px + r.randf_range(-2.2, 2.2), 1.0, float(c) - 2.0)
-				if y > 3 and r.randf() < 0.18:
-					continue
-				img.set_pixel(ox + int(px), oy + y, crack)
+	if _floor_atlas_img == null:
+		_floor_atlas_img = FLOOR_ATLAS.get_image()
+	var src := _floor_atlas_img.get_region(Rect2i((variant % FLOOR_VARIANTS) * c, style * c, c, c))
+	if src.get_width() != c or src.get_height() != c:
+		src.resize(c, c, Image.INTERPOLATE_NEAREST)
+	for y in c:
+		for x in c:
+			var p := src.get_pixel(x, y)
+			src.set_pixel(x, y, Color(base.r * p.r, base.g * p.g, base.b * p.b, 1.0))
+	img.blit_rect(src, Rect2i(0, 0, c, c), Vector2i(col * c, row * c))
 
 func _paint_wall_tile(img: Image, col: int, row: int, base: Color, mask: int) -> void:
 	var c := int(CELL)

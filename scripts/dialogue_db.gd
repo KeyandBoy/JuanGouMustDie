@@ -1,6 +1,19 @@
 class_name DialogueDb
 extends RefCounted
 
+## 说话人 -> 像素头像（tools/make_portraits.py 生成，64x64 头肩裁切）。
+## 新增可对话角色时在这里登记；条目自带 portrait 时以条目为准。
+const PORTRAITS := {
+	"主角": preload("res://art/portraits/player_head.png"),
+	"我": preload("res://art/portraits/player_head.png"),
+	"卷狗": preload("res://art/portraits/juan_head.png"),
+	"同桌": preload("res://art/portraits/student_head.png"),
+	"学生": preload("res://art/portraits/student_head.png"),
+	"老师": preload("res://art/portraits/teacher_head.png"),
+	"保安": preload("res://art/portraits/guard_head.png"),
+	"暴君": preload("res://art/portraits/tyrant_head.png"),
+}
+
 static func _line(speaker: String, text: String, flag: String = "") -> DialogueLine:
 	var line := DialogueLine.new()
 	line.speaker = speaker
@@ -19,6 +32,8 @@ static func make(id: String, entries: Array) -> DialogueData:
 		line.on_left = bool(e.get("on_left", false))
 		if e.has("portrait"):
 			line.portrait = e["portrait"]
+		elif PORTRAITS.has(line.speaker):
+			line.portrait = PORTRAITS[line.speaker]
 		data.lines.append(line)
 	return data
 
