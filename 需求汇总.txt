@@ -564,4 +564,6 @@
 - 验证：十二套测试全绿（_e_probe 首跑有已知偶发 e3/e4，重跑通过）；截图 shot_world / shot_tutorial / shot_tutorial_tyrant 目视通过；对话框头像探针通过
 - 修正（2026-11-07）：**暴君保留原来的 AI 恐怖形象**，不做 LPC 版本（特殊体积单位）；`tyrant.gd` 行走恢复 `art/sprites/tyrant/walk_*.png`，LPC 暴君素材删除，肖像改为从原立绘裁切
 - 补充（2026-11-07）：暴君要像主角一样有「各种角度」的模型图——在原画风下补 **4 方向站姿/待机（2 帧呼吸）**和转身模型图；攻击/咆哮/破门/眩晕仍用单张立绘（游戏内一次性播放）。工具 `tools/tyrant_multiview.py`
+- 补充（2026-11-07）：用 Deep-Fold 的 Pixel Sprite Generator 生成猎奇怪物；官方源码 MIT，离线移植为 `tools/deepfold_monsters.py`，产出 30 只原版随机色 + 18 只血肉/尸绿/虚空配色
+- 未完成（2026-11-07）：PixelDudes Maker（https://0x72.itch.io/pixeldudesmaker）本机无法访问 itch.io、本地也没有下载，需先提供工具包才能使用
 - 修正（2026-11-07）：LPC 行走帧之前误用了 `thrust` 行（`data/character.anim` 是 CharGen 导出表坐标，不是原始图层坐标）；现按原始 universal 表取 `walk` 行（y=512~704），动作行也一并修正

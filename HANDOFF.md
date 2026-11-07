@@ -29,6 +29,12 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **Deep-Fold 怪物生成 + 暴君预览修复（2026-11-07，opencode）**：
+  - `tyrant_view.html` 的 `background-size` 高度写成了 4 行，导致暴君条带被纵向拉伸、只剩半身；已改成 1 行。
+  - 新增 `tools/deepfold_monsters.py`：按 Deep-Fold/SpriteGenerator（MIT）源码移植；保留对称随机块、4 步 CA、余弦调色板、洪水填色、眼睛/描边，增加 `--mood flesh|necro|void|all` 猎奇配色。
+  - 产出 `art/sprites/monsters/`：`monster_01..30`（48px 原版色）、`grotesque_101..118`（64px 猎奇色）、两张联系表、`README.md`（来源/授权/命令）。
+  - PixelDudes Maker（0x72）本机无法访问 itch、也没有本地副本，本轮未使用；拿到 zip 放 `素材/` 后可继续。
+  - 验证：Godot 成功导入 50 张 PNG；联系表目视正常。
 - **暴君补齐 4 方向站姿 / 转身模型图（2026-11-07，opencode）**：
   - 保留原 AI 恐怖画风，不改成 LPC；从已有 4 方向 walk 条带取第 1 帧做站姿，再生成一帧「脚底不动、身体压缩 97%」的呼吸帧。
   - 新增 `tools/tyrant_multiview.py` → `idle_{front,back,left,right}.png`（2 帧）+ `turnaround.png`（4 方向转身模型图）。
