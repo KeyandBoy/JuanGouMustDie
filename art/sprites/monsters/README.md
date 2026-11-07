@@ -27,6 +27,26 @@ python tools\deepfold_monsters.py --count 18 --size 64 --start 101 --mood all --
 - `grotesque_XX.png`：猎奇配色，64×64
 - `monsters_sheet.png` / `grotesque_sheet.png`：联系表（4 倍放大）
 
+## 素材库怪物（2026-11-07 新增）
+
+`素材/怪物/` 里的单张正面图（Skeleton / zombie / puppet / minotaur）由
+`tools/monster_dirs.py` 加工成游戏用的 4 方向行走条带：
+
+- `skeleton_walk_{front,back,left,right}.png`（96×96 × 4 帧）
+- `zombie_walk_*.png`（64×64 × 4 帧）
+- `puppet_walk_*.png`（96×96 × 4 帧）
+- `minotaur_walk_*.png`（112×112 × 4 帧）
+
+规则：
+
+- front = 原图去透明边后等比缩放、底部居中
+- left / right = front 的水平镜像（同源素材只有正面）
+- back = 把脸部矩形压成同族颜色（自动取该区域主色）+ 上下明暗 + 整体压暗 6%
+- 走路 4 帧 = 上半身上抬 1px + 下半身左右各错 1px
+
+接进游戏：`scripts/student.gd` 的 `ROLE_TEX` / `ROLE_FRAMES` / `ROLE_SCALE` / `ROLE_STATS`，
+由 `main._spawn_students()` 按楼层混入（3F 骷髅+僵尸、4F 加傀儡、5F 加牛头人）。
+
 ## PixelDudes Maker
 
 - 工具页：<https://0x72.itch.io/pixeldudesmaker>

@@ -200,6 +200,23 @@ func _ready() -> void:
 					break
 			if pair_watch != Vector2.INF:
 				break
+		# 兜底：新布局里课桌排列整齐、桌与桌之间没有随机杂物，
+		# 换成用大件家具（书柜/床/柜子）当遮挡物来找「隔着家具」的一对位置
+		if pair_watch == Vector2.INF:
+			for br in inst.map.big_rects:
+				var bc: Vector2 = (br as Rect2).get_center()
+				for dv: Vector2 in [Vector2(0.0, -30.0), Vector2(0.0, 30.0), Vector2(-30.0, 0.0), Vector2(30.0, 0.0), Vector2(22.0, 22.0), Vector2(-22.0, 22.0)]:
+					var a2: Vector2 = bc + dv
+					var b2: Vector2 = bc - dv
+					if not inst.map.is_walkable(a2) or not inst.map.is_walkable(b2):
+						continue
+					if inst.map.vision_clear(a2, b2):
+						continue
+					pair_study = a2
+					pair_watch = b2
+					break
+				if pair_watch != Vector2.INF:
+					break
 		_check(pair_watch != Vector2.INF, "blocked pair found (studying across furniture)", failures)
 
 		var clear_watch := Vector2.INF

@@ -670,6 +670,17 @@ func _spawn_students() -> void:
 	count = clampi(count, 7, 16)
 	var spots: Array[Vector2] = map.spawn_points(count, true)
 	var roles: Array[String] = ["student", "student", "student", "juan", "juan", "teacher", "guard"]
+	# 3F 起混入怪物：越深越多（怪物素材来自 素材/怪物，方向帧由 tools/monster_dirs.py 生成）
+	var monster_pool: Array[String] = []
+	if GameState.level >= 3:
+		monster_pool.append("skeleton")
+		monster_pool.append("zombie")
+	if GameState.level >= 4:
+		monster_pool.append("puppet")
+	if GameState.level >= 5:
+		monster_pool.append("minotaur")
+	for k in monster_pool.size():
+		roles[k] = monster_pool[k]
 	roles.shuffle()
 	for i in count:
 		var student: CharacterBody2D = student_scene.new()

@@ -30,6 +30,46 @@ const ROLE_TEX := {
 		preload("res://art/sprites/lpc/guard_walk_left.png"),
 		preload("res://art/sprites/lpc/guard_walk_right.png"),
 	],
+	# 怪物（tools/monster_dirs.py 从单张正面图生成 4 方向 × 4 帧）
+	"skeleton": [
+		preload("res://art/sprites/monsters/skeleton_walk_front.png"),
+		preload("res://art/sprites/monsters/skeleton_walk_back.png"),
+		preload("res://art/sprites/monsters/skeleton_walk_left.png"),
+		preload("res://art/sprites/monsters/skeleton_walk_right.png"),
+	],
+	"zombie": [
+		preload("res://art/sprites/monsters/zombie_walk_front.png"),
+		preload("res://art/sprites/monsters/zombie_walk_back.png"),
+		preload("res://art/sprites/monsters/zombie_walk_left.png"),
+		preload("res://art/sprites/monsters/zombie_walk_right.png"),
+	],
+	"puppet": [
+		preload("res://art/sprites/monsters/puppet_walk_front.png"),
+		preload("res://art/sprites/monsters/puppet_walk_back.png"),
+		preload("res://art/sprites/monsters/puppet_walk_left.png"),
+		preload("res://art/sprites/monsters/puppet_walk_right.png"),
+	],
+	"minotaur": [
+		preload("res://art/sprites/monsters/minotaur_walk_front.png"),
+		preload("res://art/sprites/monsters/minotaur_walk_back.png"),
+		preload("res://art/sprites/monsters/minotaur_walk_left.png"),
+		preload("res://art/sprites/monsters/minotaur_walk_right.png"),
+	],
+}
+## 每个角色的条带帧数（学生 8 帧，怪物 4 帧）
+const ROLE_FRAMES := {
+	"skeleton": 4, "zombie": 4, "puppet": 4, "minotaur": 4,
+}
+## 每个角色的绘制缩放（怪物体型差异）
+const ROLE_SCALE := {
+	"skeleton": 0.72, "zombie": 0.86, "puppet": 0.74, "minotaur": 0.95,
+}
+## 每个角色相对基础值的速度 / 视野 / 抓人半径倍率
+const ROLE_STATS := {
+	"skeleton": {"speed": 1.10, "vision": 1.00, "catch": 1.0},
+	"zombie":   {"speed": 0.82, "vision": 1.10, "catch": 1.2},
+	"puppet":   {"speed": 0.95, "vision": 1.20, "catch": 1.0},
+	"minotaur": {"speed": 0.86, "vision": 1.25, "catch": 1.35},
 }
 const WALK_FRAMES := 8
 const WALK_FPS := 9.5
@@ -37,6 +77,8 @@ const VISUAL_SCALE := 0.78
 
 var role := "juan"
 var sprite: Sprite2D
+var shadow
+var eye: PointLight2D
 var bob_time := 0.0
 var anim_time := 0.0
 var map
@@ -76,25 +118,49 @@ const THINK_INTERVAL := 0.3
 func _ready() -> void:
 	add_to_group("students")
 	# B4：和学生贴图同一套椭圆影子
-	var shadow = ShadowScript.new()
+	shadow = ShadowScript.new()
 	shadow.setup(Vector2(14.0, 5.0), Vector2(0.0, 23.5), 0.38)
 	add_child(shadow)
 	# B12：追击 / 搜寻 / 潜行时眼睛亮红；平时不亮
-	var eye: PointLight2D = EyeGlowScript.new()
+	eye = EyeGlowScript.new()
 	eye.position = Vector2(0.0, -12.0)
 	eye.dot_scale = 0.22
 	add_child(eye)
 	sprite = Sprite2D.new()
-	sprite.texture = _textures()[0]
-	sprite.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = 1
 	add_child(sprite)
+	_apply_role_visuals()
 
 func set_role(p_role: String) -> void:
-	role = p_role if p_role in ["juan", "student", "teacher", "guard"] else "juan"
-	if sprite != null:
-		sprite.texture = _textures()[0]
+	if p_role in ROLE_TEX:
+		role = p_role
+	else:
+		role = "student"
+	_apply_role_visuals()
+
+## 角色外观：贴图 / 缩放 / 影子大小与落点 / 红眼高度，都按角色重新算一次。
+func _apply_role_visuals() -> void:
+	if sprite == null:
+		return
+	var s := _scale()
+	sprite.texture = _textures()[0]
+	sprite.scale = Vector2(s, s)
+	var k := s / VISUAL_SCALE
+	if shadow != null:
+		var feet := (sprite.texture.get_height() * 0.5 - 2.0) * s
+		shadow.setup(Vector2(14.0 * k, 5.0 * k), Vector2(0.0, feet), 0.38)
+	if eye != null:
+		eye.position = Vector2(0.0, -12.0 * k)
+
+func _frames() -> int:
+	return int(ROLE_FRAMES.get(role, WALK_FRAMES))
+
+func _scale() -> float:
+	return float(ROLE_SCALE.get(role, VISUAL_SCALE))
+
+func _role_stats() -> Dictionary:
+	return ROLE_STATS.get(role, {})
 
 func _textures() -> Array:
 	return ROLE_TEX.get(role, ROLE_TEX["juan"])
@@ -108,6 +174,9 @@ func setup(p_map: Node2D, p_player: Node2D) -> void:
 ## F8：按楼层缩放感知与移速（教学关不缩放）。
 func _apply_level_scale() -> void:
 	if GameState.tutorial_active:
+		var st0 := _role_stats()
+		if not st0.is_empty():
+			_apply_role_stats(st0)
 		return
 	var lv := maxi(1, GameState.level)
 	level_vision_mult = 1.0 + 0.08 * float(lv - 1)
@@ -115,6 +184,16 @@ func _apply_level_scale() -> void:
 	vision_range = 160.0 * level_vision_mult
 	speed = 80.0 * level_speed_mult
 	chase_speed = 140.0 * level_speed_mult
+	var st := _role_stats()
+	if not st.is_empty():
+		_apply_role_stats(st)
+
+## 怪物相对学生的体型/性格差异：速度、视野、抓人圈。
+func _apply_role_stats(st: Dictionary) -> void:
+	speed *= float(st.get("speed", 1.0))
+	chase_speed *= float(st.get("speed", 1.0))
+	vision_range *= float(st.get("vision", 1.0))
+	catch_radius *= float(st.get("catch", 1.0))
 
 func _physics_process(delta: float) -> void:
 	if stun_timer > 0.0:
@@ -488,7 +567,7 @@ func _update_visual(delta: float) -> void:
 	sprite.flip_h = false
 	if stun_timer > 0.0:
 		sprite.texture = tex_list[dir_idx]
-		sprite.hframes = WALK_FRAMES
+		sprite.hframes = _frames()
 		sprite.vframes = 1
 		sprite.frame = 0
 		sprite.modulate = Color(0.7, 0.7, 0.8)
@@ -504,12 +583,12 @@ func _update_visual(delta: float) -> void:
 	else:
 		sprite.modulate = Color.WHITE
 	sprite.texture = tex_list[dir_idx]
-	sprite.hframes = WALK_FRAMES
+	sprite.hframes = _frames()
 	sprite.vframes = 1
 	var moving := velocity.length() > 5.0
 	if moving:
 		anim_time += delta * (WALK_FPS * 1.35 if state == "chase" else WALK_FPS)
-		sprite.frame = int(anim_time) % WALK_FRAMES
+		sprite.frame = int(anim_time) % _frames()
 		bob_time += delta * 10.0
 	else:
 		anim_time = 0.0

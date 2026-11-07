@@ -29,6 +29,11 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **素材库怪物 4 方向帧 + 进游戏（2026-11-07，opencode）**：
+  - `tools/monster_dirs.py` → `art/sprites/monsters/{skeleton,zombie,puppet,minotaur}_walk_{front,back,left,right}.png`（4 帧/方向）。
+  - 背面程序化生成（脸部主色覆盖 + 明暗 + 压暗 6%），左右镜像，走路 4 帧是上抬 1px + 下半身错位。
+  - `student.gd` 加怪物角色（帧数/缩放/数值差异，影子与红眼按体型重算）；`main._spawn_students()` 3F 起混入：3F 骷髅+僵尸、4F 加傀儡、5F 加牛头人。
+  - 样张 `tests/shot_monsters.png`；14 套全绿。
 - **修正暴君“顺拐”（2026-11-07，opencode）**：
   - 原因：`tyrant_walk_rig.py` 手臂与同侧腿共用 `sin(phase)` 符号。
   - 侧视手臂相位取反（左腿前摆→左臂后摆）；正视/背视取消手臂横向旋转，改为与抬腿相反的 1px 上下位移。
