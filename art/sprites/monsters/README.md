@@ -47,6 +47,17 @@ python tools\deepfold_monsters.py --count 18 --size 64 --start 101 --mood all --
 接进游戏：`scripts/student.gd` 的 `ROLE_TEX` / `ROLE_FRAMES` / `ROLE_SCALE` / `ROLE_STATS`，
 由 `main._spawn_students()` 按楼层混入（3F 骷髅+僵尸、4F 加傀儡、5F 加牛头人）。
 
+## 第二批：batareya 包 20 只（2026-11-07）
+
+```powershell
+python tools\monster_dirs.py --pack
+```
+
+- 输出 `pack_01..20_walk_{front,back,left,right}.png`（64×96 × 4 帧）。
+- 背面：脚本自动找眼睛（亮色像素）框出"脸"，用**矩形外圈的主色**填充，再加明暗并压暗 6%。
+- 游戏里由 `student.gd` 的 `grotesque` 角色按 `monster_variant`（1~20）运行时载入；2F 起混入。
+- 预览场景：`tests/_pack_demo.tscn`（20 变体循环）。
+
 ## PixelDudes Maker
 
 - 工具页：<https://0x72.itch.io/pixeldudesmaker>

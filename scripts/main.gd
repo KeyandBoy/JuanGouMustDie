@@ -672,6 +672,8 @@ func _spawn_students() -> void:
 	var roles: Array[String] = ["student", "student", "student", "juan", "juan", "teacher", "guard"]
 	# 3F 起混入怪物：越深越多（怪物素材来自 素材/怪物，方向帧由 tools/monster_dirs.py 生成）
 	var monster_pool: Array[String] = []
+	if GameState.level >= 2:
+		monster_pool.append("grotesque")
 	if GameState.level >= 3:
 		monster_pool.append("skeleton")
 		monster_pool.append("zombie")
@@ -691,6 +693,7 @@ func _spawn_students() -> void:
 		circle.radius = 11.0
 		shape.shape = circle
 		student.add_child(shape)
+		student.monster_variant = randi_range(1, 20)
 		student.set_role(roles[i % roles.size()])
 		student.position = spots[i] if i < spots.size() else map.exit_pos
 		add_child(student)

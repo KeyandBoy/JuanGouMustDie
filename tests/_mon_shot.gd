@@ -48,6 +48,20 @@ func _ready() -> void:
 		picked.path = PackedVector2Array()
 		picked.facing = Vector2.DOWN
 	await get_tree().create_timer(0.5).timeout
+	# 第二批：随机怪物（grotesque）4 个变体，排在第二行
+	var student_script = load("res://scripts/student.gd")
+	var variants := [1, 5, 11, 17]
+	for k in variants.size():
+		var mon = student_script.new()
+		mon.collision_layer = 0
+		mon.collision_mask = 0
+		inst.add_child(mon)
+		mon.monster_variant = variants[k]
+		mon.set_role("grotesque")
+		mon.position = center + Vector2(-105.0 + k * 70.0, 90.0)
+		mon.state = "patrol"
+		mon.path = PackedVector2Array()
+	await get_tree().create_timer(0.4).timeout
 	var img := get_viewport().get_texture().get_image()
 	img.save_png("res://tests/shot_monsters.png")
 	print("MONSTERS found=", found, " all=", ROLES.size())

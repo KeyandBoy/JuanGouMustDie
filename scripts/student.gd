@@ -55,14 +55,17 @@ const ROLE_TEX := {
 		preload("res://art/sprites/monsters/minotaur_walk_left.png"),
 		preload("res://art/sprites/monsters/minotaur_walk_right.png"),
 	],
+	# 20 只随机怪物（运行时按 monster_variant 载入，不 preload）
+	"grotesque": [],
 }
+const MONSTER_PACK_COUNT := 20
 ## 每个角色的条带帧数（学生 8 帧，怪物 4 帧）
 const ROLE_FRAMES := {
-	"skeleton": 4, "zombie": 4, "puppet": 4, "minotaur": 4,
+	"skeleton": 4, "zombie": 4, "puppet": 4, "minotaur": 4, "grotesque": 4,
 }
 ## 每个角色的绘制缩放（怪物体型差异）
 const ROLE_SCALE := {
-	"skeleton": 0.72, "zombie": 0.86, "puppet": 0.74, "minotaur": 0.95,
+	"skeleton": 0.72, "zombie": 0.86, "puppet": 0.74, "minotaur": 0.95, "grotesque": 0.62,
 }
 ## 每个角色相对基础值的速度 / 视野 / 抓人半径倍率
 const ROLE_STATS := {
@@ -70,6 +73,7 @@ const ROLE_STATS := {
 	"zombie":   {"speed": 0.82, "vision": 1.10, "catch": 1.2},
 	"puppet":   {"speed": 0.95, "vision": 1.20, "catch": 1.0},
 	"minotaur": {"speed": 0.86, "vision": 1.25, "catch": 1.35},
+	"grotesque": {"speed": 0.92, "vision": 1.10, "catch": 1.1},
 }
 const WALK_FRAMES := 8
 const WALK_FPS := 9.5
@@ -79,6 +83,9 @@ var role := "juan"
 var sprite: Sprite2D
 var shadow
 var eye: PointLight2D
+## grotesque 角色用：1..20 选一只随机怪物
+var monster_variant := 1
+var _pack_tex := {}
 var bob_time := 0.0
 var anim_time := 0.0
 var map
@@ -163,7 +170,20 @@ func _role_stats() -> Dictionary:
 	return ROLE_STATS.get(role, {})
 
 func _textures() -> Array:
+	if role == "grotesque":
+		return _grotesque_textures()
 	return ROLE_TEX.get(role, ROLE_TEX["juan"])
+
+## 20 只随机怪物：按 monster_variant 惰性载入（每只 4 方向条带）。
+func _grotesque_textures() -> Array:
+	var idx := clampi(monster_variant, 1, MONSTER_PACK_COUNT)
+	if _pack_tex.has(idx):
+		return _pack_tex[idx]
+	var arr: Array = []
+	for d in ["front", "back", "left", "right"]:
+		arr.append(load("res://art/sprites/monsters/pack_%02d_walk_%s.png" % [idx, d]))
+	_pack_tex[idx] = arr
+	return arr
 
 func setup(p_map: Node2D, p_player: Node2D) -> void:
 	map = p_map

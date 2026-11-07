@@ -54,19 +54,33 @@ MONSTERS = {
 
 
 def dominant_color(im: Image.Image, rect) -> tuple:
-    """取矩形内「不透明且不太黑」的最常见颜色（避开描边/眼睛）。"""
+    """取矩形「外圈」最常见的不透明颜色（避开眼睛/高光，取到的是身体色）。"""
     px = im.load()
     x0, y0, x1, y1 = rect
+    ex = 7
     counts = {}
-    for y in range(y0, min(y1, im.height)):
-        for x in range(x0, min(x1, im.width)):
+    for y in range(max(0, y0 - ex), min(im.height, y1 + ex)):
+        for x in range(max(0, x0 - ex), min(im.width, x1 + ex)):
+            if x0 <= x < x1 and y0 <= y < y1:
+                continue
             r, g, b, a = px[x, y]
             if a <= 8:
                 continue
-            if (r * 0.299 + g * 0.587 + b * 0.114) < 38:
+            if (r * 0.299 + g * 0.587 + b * 0.114) < 25:
                 continue
             key = (r, g, b)
             counts[key] = counts.get(key, 0) + 1
+    if not counts:
+        # 兜底：矩形内取
+        for y in range(y0, min(y1, im.height)):
+            for x in range(x0, min(x1, im.width)):
+                r, g, b, a = px[x, y]
+                if a <= 8:
+                    continue
+                if (r * 0.299 + g * 0.587 + b * 0.114) < 38:
+                    continue
+                key = (r, g, b)
+                counts[key] = counts.get(key, 0) + 1
     if not counts:
         return (128, 128, 128, 255)
     best = max(counts.items(), key=lambda kv: kv[1])[0]
@@ -136,6 +150,35 @@ def darken(im: Image.Image, mul: float) -> Image.Image:
     return im
 
 
+def auto_patch(im: Image.Image):
+    """自动找眼睛（亮色像素）区域当"脸"：返回 [(x0,y0,x1,y1)]。"""
+    px = im.load()
+    minx, miny, maxx, maxy = 10 ** 9, 10 ** 9, -1, -1
+    limit_y = int(im.height * 0.70)
+    for y in range(limit_y):
+        for x in range(im.width):
+            r, g, b, a = px[x, y]
+            if a > 8 and (r + g + b) / 3.0 > 185:
+                minx = min(minx, x)
+                maxx = max(maxx, x)
+                miny = min(miny, y)
+                maxy = max(maxy, y)
+    if maxx < 0:
+        bbox = im.getbbox()
+        if not bbox:
+            return []
+        x0, y0, x1, y1 = bbox
+        return [(x0, y0, x1, y0 + max(4, (y1 - y0) // 3))]
+    patch = (max(0, minx - 3), max(0, miny - 3), min(im.width, maxx + 4), min(im.height, maxy + 4))
+    bbox = im.getbbox() or (0, 0, im.width, im.height)
+    area = max(1, (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]))
+    patch_area = max(1, (patch[2] - patch[0]) * (patch[3] - patch[1]))
+    if patch_area > area * 0.45:
+        # 亮色区域太大（发光体/高光）→ 退化成上 1/3
+        return [(bbox[0], bbox[1], bbox[2], bbox[1] + max(4, (bbox[3] - bbox[1]) // 3))]
+    return [patch]
+
+
 def build(name: str, cfg: dict) -> None:
     src = Image.open(cfg["src"]).convert("RGBA")
     front_src = src
@@ -161,6 +204,25 @@ def build(name: str, cfg: dict) -> None:
 
 
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "--pack":
+        import glob
+
+        pattern = os.path.join(ROOT, "素材", "怪物", "Monster Creature sprites (pack 1 by batareya)", "*.png")
+        files = sorted(glob.glob(pattern))
+        if not files:
+            print("no pack files", file=sys.stderr)
+            return 1
+        for i, f in enumerate(files, 1):
+            im = Image.open(f).convert("RGBA")
+            build("pack_%02d" % i, {
+                "src": f,
+                "canvas": (64, 96),
+                "fill": 0.94,
+                "patch": auto_patch(im),
+                "dark": 0.94,
+            })
+        return 0
+
     for name, cfg in MONSTERS.items():
         if not os.path.exists(cfg["src"]):
             print("MISSING", cfg["src"], file=sys.stderr)
