@@ -3,8 +3,8 @@
 - 更新时间：2026-11-07
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`（提交后回填）`（CharGen 角色全动作 + Tilemancer 地板 + 像素肖像）
-- 已推送 origin/main：`（提交后回填）`
+- 当前 HEAD：`daffe90`（CharGen 角色全动作 + Tilemancer 地板 + 像素肖像）
+- 已推送 origin/main：`daffe90`
 - 工作区：`tests/shot_*.png` 已重拍但故意不提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
