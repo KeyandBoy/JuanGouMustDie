@@ -3,9 +3,9 @@
 - 更新时间：2026-11-07
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`6ce7839`（修正暴君走路顺拐）
-- 已推送 origin/main：`6ce7839`
-- 工作区：`tests/shot_*.png` 已重拍但故意不提交；另有另一窗口的 `_blob_probe` / `intro.gd` / `art/cutscene` 等改动，**不要误提交**。
+- 当前 HEAD：`dcf5568`（素材库怪物 4 方向帧 + 进游戏）
+- 已推送 origin/main：`dcf5568`
+- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `intro.gd` / `art/cutscene` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
 ## 最简用法（推荐）
