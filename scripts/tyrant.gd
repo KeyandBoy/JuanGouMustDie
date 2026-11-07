@@ -29,6 +29,15 @@ const WALK_PATHS := [
 ]
 const WALK_FRAMES := 8
 const WALK_FPS := 9.0
+# 站立/待机：由 tools/tyrant_multiview.py 从走路第 1 帧生成 4 方向 2 帧呼吸
+const IDLE_PATHS := [
+	"res://art/sprites/tyrant/idle_front.png",
+	"res://art/sprites/tyrant/idle_back.png",
+	"res://art/sprites/tyrant/idle_left.png",
+	"res://art/sprites/tyrant/idle_right.png",
+]
+const IDLE_FRAMES := 2
+const IDLE_FPS := 2.4
 # 暴君在屏幕上的目标高度（比主角的 42px 高，保持压迫感）
 const TARGET_SCREEN_H := 54.0
 
@@ -73,8 +82,10 @@ var smoke_front: Node2D
 var smoke_script := preload("res://scripts/smoke_aura.gd")
 var _sprite_base := Color(0.14, 0.05, 0.06, 1.0)
 var walk_tex: Array[Texture2D] = []
+var idle_tex: Array[Texture2D] = []
 var use_pixel_walk := false
 var walk_time := 0.0
+var idle_time := 0.0
 var _cur_scale := 0.24
 var shadow: Node2D
 
@@ -115,6 +126,9 @@ func _ready() -> void:
 	walk_tex.clear()
 	for p in WALK_PATHS:
 		walk_tex.append(_load_art(p))
+	idle_tex.clear()
+	for p in IDLE_PATHS:
+		idle_tex.append(_load_art(p))
 	use_pixel_walk = use_generated and walk_tex.size() == WALK_PATHS.size()
 	for t in walk_tex:
 		if t == null:
@@ -446,17 +460,24 @@ func _apply_walk_frame(moving: bool, delta: float) -> void:
 		idx = 3 if facing.x > 0.0 else 2
 	else:
 		idx = 0 if facing.y >= 0.0 else 1
-	if idx >= walk_tex.size() or walk_tex[idx] == null:
-		return
-	_set_sprite_tex(walk_tex[idx], WALK_FRAMES)
 	if moving:
+		if idx >= walk_tex.size() or walk_tex[idx] == null:
+			return
 		walk_time += delta * WALK_FPS
+		idle_time = 0.0
+		_set_sprite_tex(walk_tex[idx], WALK_FRAMES)
+		sprite.frame = int(walk_time) % WALK_FRAMES
 	else:
+		# 站立：优先播 4 方向 idle；缺图时退回走路第 1 帧
 		walk_time = 0.0
-	var f := int(walk_time) % WALK_FRAMES
-	if f < 0:
-		f = 0
-	sprite.frame = f
+		var has_idle := idx < idle_tex.size() and idle_tex[idx] != null
+		var tex: Texture2D = idle_tex[idx] if has_idle else (walk_tex[idx] if idx < walk_tex.size() else null)
+		if tex == null:
+			return
+		idle_time += delta
+		var frames := IDLE_FRAMES if has_idle else 1
+		_set_sprite_tex(tex, frames)
+		sprite.frame = int(idle_time * IDLE_FPS) % frames
 	sprite.flip_h = false
 
 func fade_out() -> void:

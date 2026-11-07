@@ -29,6 +29,11 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **暴君补齐 4 方向站姿 / 转身模型图（2026-11-07，opencode）**：
+  - 保留原 AI 恐怖画风，不改成 LPC；从已有 4 方向 walk 条带取第 1 帧做站姿，再生成一帧「脚底不动、身体压缩 97%」的呼吸帧。
+  - 新增 `tools/tyrant_multiview.py` → `idle_{front,back,left,right}.png`（2 帧）+ `turnaround.png`（4 方向转身模型图）。
+  - `tyrant.gd` 站立时播 4 方向 idle（2.4fps），移动仍播 8 帧 walk；咆哮/攻击/破门/眩晕仍是单张立绘。
+  - 验证：flow / student / _b / _stalker 通过；`shot_tutorial_tyrant` 目视。
 - **修正 LPC 行走行映射 + 暴君改回原形象（2026-11-07，opencode）**：
   - `data/character.anim` 是 CharGen 拼接后的导出表坐标，不是原始 LPC 图层坐标；之前把 `thrust` 当成了 `walk`（游戏里主角走路是「拳头往前」）。现按原始 universal 表取帧：walk y=512~704、slash 768、shoot 1024、hurt 1280 等，5 个角色全部重新导出。
   - 暴君按需求保留原 AI 恐怖形象：`tyrant.gd` 走路改回 `art/sprites/tyrant/walk_*.png`，删除 LPC 暴君素材；暴君肖像改为从原立绘裁头肩。
