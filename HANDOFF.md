@@ -3,8 +3,8 @@
 - 更新时间：2026-11-07
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`dcf5568`（素材库怪物 4 方向帧 + 进游戏）
-- 已推送 origin/main：`dcf5568`
+- 当前 HEAD：`ff403e1`（怪物第二批：20 只随机怪物进游戏）
+- 已推送 origin/main：`7509a82`；`ff403e1` 因网络（443 连不上）暂留本地，恢复后 `git push` 即可。
 - 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `intro.gd` / `art/cutscene` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
