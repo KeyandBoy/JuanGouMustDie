@@ -20,12 +20,12 @@ var player: Node2D
 const CHASE_SPEED_MULT := 0.8
 const ATTACK_RECOVER := 3.0
 
-# 像素走路条带（CharGen/LPC 合成，4 方向 x 8 帧；暴君为 128x128 大体积帧）
+# 像素走路条带（原 AI 恐怖立绘，4 方向 x 8 帧，64x64 单元）
 const WALK_PATHS := [
-	"res://art/sprites/lpc/tyrant_walk_front.png",
-	"res://art/sprites/lpc/tyrant_walk_back.png",
-	"res://art/sprites/lpc/tyrant_walk_left.png",
-	"res://art/sprites/lpc/tyrant_walk_right.png",
+	"res://art/sprites/tyrant/walk_front.png",
+	"res://art/sprites/tyrant/walk_back.png",
+	"res://art/sprites/tyrant/walk_left.png",
+	"res://art/sprites/tyrant/walk_right.png",
 ]
 const WALK_FRAMES := 8
 const WALK_FPS := 9.0
@@ -434,14 +434,7 @@ func _set_sprite_tex(tex: Texture2D, frames: int) -> void:
 		sprite.vframes = 1
 		sprite.frame = 0
 		sprite.offset = Vector2(0.0, -tex.get_height() * 0.5)
-		if tex.resource_path.find("art/sprites/lpc/") >= 0:
-			# LPC 帧里人物只占约 48/64 的高度，按实际内容高度算缩放，
-			# 否则大体积角色会显得比主角还矮。
-			var lpc_scale: float = float(tex.get_width()) / float(frames) / 64.0
-			var content_h: float = 48.0 * lpc_scale
-			_cur_scale = TARGET_SCREEN_H / content_h
-		else:
-			_cur_scale = TARGET_SCREEN_H / float(tex.get_height())
+		_cur_scale = TARGET_SCREEN_H / float(tex.get_height())
 		if shadow != null:
 			# offset 把贴图底部对齐到节点原点，影子贴脚放
 			shadow.position = Vector2(0.0, 1.0)

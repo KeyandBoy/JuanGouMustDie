@@ -103,17 +103,6 @@ PALETTES = {
         "neck": ("#8a8f98", "#565b64"),
         "eye": ("#3c2a1c", "#140e08"),
     },
-    # 暴君：黑皮、深红眼、皮革
-    "tyrant": {
-        "skin": ("#8a7a70", "#4e4038"),
-        "hair": ("#2a2228", "#120c10"),
-        "primary": ("#3a2c2c", "#1c1414"),
-        "secondary": ("#7a2020", "#3c0c0c"),
-        "detail": ("#b03030", "#5a1010"),
-        "neck": ("#7a2020", "#3c0c0c"),
-        "horn": ("#cbbba2", "#6e5c4a"),
-        "eye": ("#ff4a3a", "#8a0c08"),
-    },
 }
 
 # 每个角色用到的图层（None = 不用）
@@ -203,24 +192,12 @@ CHARACTERS = {
         "glasses": None,
         "horns": None,
     },
-    "tyrant": {
-        "body": "body/male_android.png",
-        "cloths": "cloths/male08_primary.png",
-        "cloths_secondary": "cloths/male08_secondary.png",
-        "cloths_details": "cloths/male08_details.png",
-        "neck": None,
-        "mouth": "mouth/grin02.png",
-        "nose": "nose/large02.png",
-        "brows": "brows/angry02.png",
-        "eyes": "eyes/angled01.png",
-        "hair": "hair/base/male07.png",
-        "hair_front": None,
-        "hair_back": None,
-        "beard": None,
-        "glasses": None,
-        "horns": "horns/massive01.png",
-    },
 }
+
+# 暴君保留原来的 AI 恐怖立绘，肖像直接从原立绘裁头肩，不再用肖像生成器的图层。
+TYRANT_SRC = os.path.join(ROOT, "art", "sprites", "tyrant", "tyrant_front.png")
+TYRANT_CROP = (30, 0, 98, 68)  # 原图 120x192 里的头部区域
+
 
 
 # ------------------------------------------------------------------ pck 读取
@@ -399,12 +376,17 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
     images = []
-    for name in CHARACTERS:
-        im = compose(pak, name)
+    for name in list(CHARACTERS) + ["tyrant"]:
+        if name == "tyrant":
+            src = Image.open(TYRANT_SRC).convert("RGBA").crop(TYRANT_CROP)
+            im = src.resize((96, 96), Image.NEAREST)
+            head = src.resize((64, 64), Image.NEAREST)
+        else:
+            im = compose(pak, name)
+            # 对话框头像位只有 44x44，再裁一张只剩头肩的 64x64 版本
+            head = im.crop((16, 0, 80, 64))
         out = os.path.join(OUT_DIR, name + ".png")
         im.save(out)
-        # 对话框头像位只有 44x44，再裁一张只剩头肩的 64x64 版本
-        head = im.crop((16, 0, 80, 64))
         head.save(os.path.join(OUT_DIR, name + "_head.png"))
         print("saved", out, im.size)
         images.append((name, im))

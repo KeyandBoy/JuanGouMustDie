@@ -562,3 +562,5 @@
   - dialogue_db.gd 已接说话人 → 头像映射；后续新增可对话角色只需登记一条
 - 工具：tools/chargen_compose.py、tools/tilemancer_tiles.py、tools/pck_extract.py、tools/extract_portrait_layers.py、tools/make_portraits.py
 - 验证：十二套测试全绿（_e_probe 首跑有已知偶发 e3/e4，重跑通过）；截图 shot_world / shot_tutorial / shot_tutorial_tyrant 目视通过；对话框头像探针通过
+- 修正（2026-11-07）：**暴君保留原来的 AI 恐怖形象**，不做 LPC 版本（特殊体积单位）；`tyrant.gd` 行走恢复 `art/sprites/tyrant/walk_*.png`，LPC 暴君素材删除，肖像改为从原立绘裁切
+- 修正（2026-11-07）：LPC 行走帧之前误用了 `thrust` 行（`data/character.anim` 是 CharGen 导出表坐标，不是原始图层坐标）；现按原始 universal 表取 `walk` 行（y=512~704），动作行也一并修正

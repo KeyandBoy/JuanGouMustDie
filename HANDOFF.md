@@ -29,6 +29,10 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **修正 LPC 行走行映射 + 暴君改回原形象（2026-11-07，opencode）**：
+  - `data/character.anim` 是 CharGen 拼接后的导出表坐标，不是原始 LPC 图层坐标；之前把 `thrust` 当成了 `walk`（游戏里主角走路是「拳头往前」）。现按原始 universal 表取帧：walk y=512~704、slash 768、shoot 1024、hurt 1280 等，5 个角色全部重新导出。
+  - 暴君按需求保留原 AI 恐怖形象：`tyrant.gd` 走路改回 `art/sprites/tyrant/walk_*.png`，删除 LPC 暴君素材；暴君肖像改为从原立绘裁头肩。
+  - 十二套测试全绿；`shot_world` 走路姿态、`shot_tutorial_tyrant` 暴君形象已目视。
 - **角色全动作 / 地板美化 / 像素肖像（2026-11-07，opencode）**：
   - 角色：`tools/chargen_compose.py` 直接解析 CharGen 的 `chargen.pak` + LPC 色表，6 套配方（juan/player/student/teacher/guard/tyrant）输出 4 方向 walk 8 帧 + idle 2 帧 + `actions/` 每人 29 组全动作（180 个文件）。暴君用最近邻 2 倍做「大体积」。`player.gd` / `student.gd` / `tyrant.gd` 已接入；`VISUAL_SCALE=0.78`，影子 y=23.5。
   - 地板：`tools/tilemancer_tiles.py` 复刻 Tilemancer 的节点算法，生成 6 风格 × 6 变体 20px 无缝图集；`school_map.gd` 按房型取行、乘房间基色。

@@ -31,7 +31,7 @@ PAK = os.path.join(ROOT, "素材", "CharGen", "data", "chargen.pak")
 
 CELL = 64
 # character_walk.anim：行走 4 行，前两列同时是 idle
-WALK_ROWS = {"up": 256, "left": 320, "down": 384, "right": 448}
+WALK_ROWS = {"up": 512, "left": 576, "down": 640, "right": 704}
 IDLE_COLS = 2
 
 PREVIEW_DIR = r"C:\Users\43590\AppData\Local\Temp\opencode\chargen\preview"
@@ -164,17 +164,65 @@ def compose_at(pak, colormaps, layers, x, y, scale=1):
     return canvas
 
 
-def compose_animation(pak, colormaps, layers, frames, scale=1):
-    """把 character.anim 里的 frames（[x, y] 像素坐标）拼成横向条带。"""
-    strip = Image.new("RGBA", (CELL * scale * len(frames), CELL * scale), (0, 0, 0, 0))
-    for i, fr in enumerate(frames):
-        # 每帧格式：[x, y, w, h, anchor_x, anchor_y, duration_ms]
-        x, y = int(fr[0]), int(fr[1])
+# 原始 LPC universal 表的行布局（每个图层 832x1344 = 13x21 格）：
+#   0~3    spellcast（7 帧）
+#   4~7    thrust（8 帧，最后 1 帧是循环复制）
+#   8~11   walk（9 帧，最后 1 帧是循环复制）
+#   12~15  slash（6 帧）
+#   16~19  shoot（13 帧）
+#   20     hurt（6 帧，单行、朝下）
+# 注意：chargen.pak 里的 data/character.anim 是 CharGen「拼接后的导出表」坐标，
+# 不能直接拿来裁原始图层，否则会把 thrust 当成 walk。
+ANIM_ROWS = {
+    "cast": (0, 6),
+    "thrust": (256, 7),
+    "walk": (512, 8),
+    "slash": (768, 5),
+    "islash": (768, 5),
+    "shoot": (1024, 12),
+    "hurt": (1280, 5),
+}
+DIR_ROW = {"up": 0, "left": 1, "down": 2, "right": 3}
+
+
+def animation_frames(anim_id):
+    """返回 (起始行, 帧数, 是否倒放)。idle 复用 walk 前 2 帧。"""
+    name, _, direction = anim_id.rpartition("_")
+    if name == "idle":
+        row = ANIM_ROWS["walk"][0] + DIR_ROW[direction] * CELL
+        return row, 2, False
+    if name == "hurt":
+        return ANIM_ROWS["hurt"][0], ANIM_ROWS["hurt"][1], False
+    base, count = ANIM_ROWS[name]
+    row = base + DIR_ROW[direction] * CELL
+    return row, count, name == "islash"
+
+
+def compose_animation(pak, colormaps, layers, anim_id, scale=1):
+    """按原始 LPC 行布局把一条动画拼成横向条带。"""
+    row, count, reverse = animation_frames(anim_id)
+    order = list(range(count))
+    if reverse:
+        order.reverse()
+    strip = Image.new("RGBA", (CELL * scale * count, CELL * scale), (0, 0, 0, 0))
+    for i, col in enumerate(order):
         strip.alpha_composite(
-            compose_at(pak, colormaps, layers, x, y, scale=scale),
+            compose_frame(pak, colormaps, layers, row, col, scale=scale),
             (i * CELL * scale, 0),
         )
     return strip
+
+
+def animation_ids():
+    """与 CharGen 导出一致的 29 组动画。"""
+    out = []
+    for d in ("up", "left", "down", "right"):
+        out.append(f"idle_{d}")
+    for a in ("cast", "thrust", "walk", "slash", "islash", "shoot"):
+        for d in ("up", "left", "down", "right"):
+            out.append(f"{a}_{d}")
+    out.append("hurt_down")
+    return out
 
 
 # ---------------------------------------------------------------- recipes
@@ -232,23 +280,18 @@ RECIPES = {
         "eyes": Layer("textures/character/eyes/human_m.png", "human_eyes_brown"),
         "hair": Layer("textures/character/hair/human/cowlick1_m.png", "human_hair_black"),
     },
-    # 暴君：黑肤、黑皮衣、红眼、寸头；输出时放大 2 倍（大体积）
-    "tyrant": {
-        "body": Layer("textures/character/body/humanoid_m2.png", "human_skin_black"),
-        "head": Layer("textures/character/head/human_m.png", "human_skin_black"),
-        "pants": Layer("textures/gear/pants/loose/loose_m1.png", "cloth_black1"),
-        "shirt": Layer("textures/gear/shirt/leather/leather2_m1.png", "cloth_black1"),
-        "shoes": Layer("textures/gear/shoes/boots/bootsrim1_m1.png", "cloth_black1"),
-        "eyes": Layer("textures/character/eyes/human_m.png", "human_eyes_red"),
-        "hair": Layer("textures/character/hair/human/buzzcut_m.png", "human_hair_black"),
-    },
+    # 暴君：特殊体积单位，保留原来的 AI 恐怖立绘，不在这里做 LPC 版本
 }
+
+# 大体积方案（仅记录，当前未使用）：LPC 没有 large 贴图，做法是最近邻放大 2 倍，
+# 输出 128px 帧，游戏里再按内容高度 48/64 换算缩放。暴君按需求改回原立绘。
+LARGE_SCALE = 2
 
 # 绘制顺序：躯干 → 头 → 腿 → 鞋 → 上衣 → 领带 → 眼睛 → 头发
 DRAW_ORDER = ["body", "head", "pants", "shoes", "shirt", "jacket", "neck", "eyes", "hair"]
 
-# 每个角色输出的放大倍率（1 = 64px 帧；2 = 128px 帧，用于大体积）
-SCALES = {"juan": 1, "player": 1, "student": 1, "teacher": 1, "guard": 1, "tyrant": 2}
+# 每个角色输出的放大倍率（1 = 64px 帧）
+SCALES = {"juan": 1, "player": 1, "student": 1, "teacher": 1, "guard": 1}
 
 
 def build_layers(recipe):
@@ -266,10 +309,6 @@ def main():
     colormaps = load_colormaps(pak)
     out_dir = os.path.join(ROOT, "art", "sprites", "lpc") if args.build else PREVIEW_DIR
     os.makedirs(out_dir, exist_ok=True)
-
-    anims = None
-    if args.build:
-        anims = pak.json("data/character.anim")["animations"]
 
     names = list(RECIPES) if args.which == "all" else [args.which]
     for name in names:
@@ -289,18 +328,18 @@ def main():
             strip.save(os.path.join(out_dir, f"{name}_idle_{key}.png"))
 
         # 全部动作（idle / walk / slash / thrust / cast / shoot / hurt 等）按方向单独出条带
-        if anims:
+        if args.build:
             act_dir = os.path.join(out_dir, "actions", name)
             os.makedirs(act_dir, exist_ok=True)
             index = {"cell": CELL * scale, "animations": {}}
-            for anim in anims:
-                frames = anim["frames"]
-                img = compose_animation(pak, colormaps, layers, frames, scale=scale)
-                img.save(os.path.join(act_dir, f"{anim['id']}.png"))
-                index["animations"][anim["id"]] = len(frames)
+            ids = animation_ids()
+            for anim_id in ids:
+                img = compose_animation(pak, colormaps, layers, anim_id, scale=scale)
+                img.save(os.path.join(act_dir, f"{anim_id}.png"))
+                index["animations"][anim_id] = animation_frames(anim_id)[1]
             with open(os.path.join(act_dir, "index.json"), "w", encoding="utf-8") as f:
                 json.dump(index, f, ensure_ascii=False, indent=2)
-            print("saved", f"actions/{name}/", len(anims), "animations")
+            print("saved", f"actions/{name}/", len(ids), "animations")
 
 
 if __name__ == "__main__":
