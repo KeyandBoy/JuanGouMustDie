@@ -29,6 +29,11 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **暴君走路重做（2026-11-07，opencode）**：
+  - 原 AI 8 帧结构逐帧漂移、双脚永远贴地；新增 `tools/tyrant_walk_rig.py`，以每个方向第 1 帧为固定设计做纸娃娃摆动。
+  - 侧视：腿绕髋 ±15°、臂绕肩 ±9°（能看到跨步/交叉）；正视/背视：左右腿交替抬起 2px + 内收 1px、臂 ±6°。
+  - 重新生成 4 方向 8 帧 walk、idle、turnaround；`tyrant_view.html` 同步更新。
+  - 验证：4 方向条带目视 + flow/student/tutorial/_b/_stalker 通过。
 - **Deep-Fold 怪物生成 + 暴君预览修复（2026-11-07，opencode）**：
   - `tyrant_view.html` 的 `background-size` 高度写成了 4 行，导致暴君条带被纵向拉伸、只剩半身；已改成 1 行。
   - 新增 `tools/deepfold_monsters.py`：按 Deep-Fold/SpriteGenerator（MIT）源码移植；保留对称随机块、4 步 CA、余弦调色板、洪水填色、眼睛/描边，增加 `--mood flesh|necro|void|all` 猎奇配色。
