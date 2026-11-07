@@ -99,8 +99,8 @@ def pose_side(frame, phase):
     bend_r = 16.0 * max(0.0, -c)
     thighL, shinL = leg_pose(L["thighL"], L["shinL"], (25, 46), (24, 52), angle, bend_l)
     thighR, shinR = leg_pose(L["thighR"], L["shinR"], (38, 46), (39, 52), -angle, -bend_r)
-    armL = rotate(L["armL"], 16.0 * s, (19, 20))
-    armR = rotate(L["armR"], -16.0 * s, (44, 20))
+    armL = rotate(L["armL"], -16.0 * s, (19, 20))
+    armR = rotate(L["armR"], 16.0 * s, (44, 20))
     bob = -1 if abs(c) > 0.5 else 0
     sway = 1 if s > 0.3 else (-1 if s < -0.3 else 0)
 
@@ -123,8 +123,10 @@ def pose_front(frame, phase):
     upR = s < -0.2
     dxl, dyl = (2, -4) if upL else (0, 0)
     dxr, dyr = (-2, -4) if upR else (0, 0)
-    armL = rotate(L["armL"], 12.0 * s, (19, 20))
-    armR = rotate(L["armR"], -12.0 * s, (44, 20))
+    # 正视/背视里手臂不要做左右旋转（会和同侧腿同向，看起来顺拐）；
+    # 改成和抬腿相反的轻微上下位移，模拟前后摆的透视
+    armL = translate(L["armL"], 0, 1 if upL else 0)
+    armR = translate(L["armR"], 0, 1 if upR else 0)
     bob = -1 if abs(s) > 0.7 else 0
     sway = 2 if s > 0 else -2
 
