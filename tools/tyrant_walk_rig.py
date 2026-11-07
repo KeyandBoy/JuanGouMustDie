@@ -3,8 +3,13 @@
 背景：原来的 AI 8 帧条带里，角色结构逐帧漂移（巨型手臂/躯干左右跳），
 脚也基本不交替，播放起来像“切图”。这里不再使用后 7 帧，全部从第 1 帧派生：
 
-  left/right  腿绕髋部旋转 ±15°，手臂绕肩 ±9° —— 产生前后跨步
-  front/back  左右腿交替抬起 2px 并向内收 1px，手臂 ±6° —— 产生踏步
+  left/right  大腿绕髋 ±20°，小腿在过腿相绕膝弯 15°（抬脚/收腿），
+              手臂绕肩 ±12°，身体过腿时上抬 1px
+  front/back  整条腿交替抬起 3px、向内侧收 1px，手臂 ±10°，
+              身体左右 1px 重心偏移 + 过腿时上抬 1px
+
+唯一基准是 art/sprites/tyrant/base_{front,back,left,right}.png（原始站姿），
+不要从已经摆过的 walk 条带再派生，否则会累积变形。
 
 输出覆盖 art/sprites/tyrant/walk_{front,back,left,right}.png，
 然后由 tools/tyrant_multiview.py 重新生成 idle / turnaround。
@@ -22,24 +27,25 @@ BASE = os.path.join(ROOT, "art", "sprites", "tyrant")
 CELL = 64
 FRAMES = 8
 
-# 部件分割（按原图 64x64 的固定布局；四个方向的基准帧通用）
 LEG_TOP = 44
+KNEE_Y = 52
 ARM_TOP = 16
-ARM_LEFT_X = 20        # 左臂：x < 20
-ARM_LEFT_WIDE_X = 26   # 左臂下段放宽到 x < 26
-ARM_RIGHT_X = 43       # 右臂：x > 43
+ARM_LEFT_X = 20
+ARM_LEFT_WIDE_X = 26
+ARM_RIGHT_X = 43
 
 
 def split_parts(frame):
-    layers = {k: Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0)) for k in
-              ("legL", "legR", "armL", "armR", "torso")}
+    keys = ("thighL", "shinL", "thighR", "shinR", "armL", "armR", "torso")
+    layers = {k: Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0)) for k in keys}
     for y in range(CELL):
         for x in range(CELL):
             p = frame.getpixel((x, y))
             if p[3] == 0:
                 continue
             if y >= LEG_TOP:
-                part = "legL" if x < 33 else "legR"
+                side = "L" if x < 33 else "R"
+                part = ("thigh" if y < KNEE_Y else "shin") + side
             elif y >= ARM_TOP and (x < ARM_LEFT_X or (x < ARM_LEFT_WIDE_X and y >= 34)):
                 part = "armL"
             elif y >= ARM_TOP and x > ARM_RIGHT_X:
@@ -64,45 +70,83 @@ def translate(layer, dx, dy):
     return out
 
 
-def compose(layers, legL, legR, armL, armR):
-    out = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
-    out.alpha_composite(legL)
-    out.alpha_composite(legR)
-    out.alpha_composite(layers["torso"])
-    out.alpha_composite(armL)
-    out.alpha_composite(armR)
-    return out
+def rotate_point(point, pivot, angle):
+    a = math.radians(angle)
+    dx, dy = point[0] - pivot[0], point[1] - pivot[1]
+    return (pivot[0] + dx * math.cos(a) - dy * math.sin(a),
+            pivot[1] + dx * math.sin(a) + dy * math.cos(a))
+
+
+def leg_pose(thigh, shin, hip, knee, angle, bend):
+    """大腿绕髋；小腿先跟大腿一起绕髋，再绕新的膝盖弯曲。"""
+    t = rotate(thigh, angle, hip)
+    s = rotate(shin, angle, hip)
+    knee2 = rotate_point(knee, hip, angle)
+    s = rotate(s, bend, knee2)
+    return t, s
+
+
+def put(out, layer, dx=0, dy=0):
+    out.alpha_composite(translate(layer, dx, dy))
 
 
 def pose_side(frame, phase):
-    """侧视：腿绕髋旋转，手臂反向摆，能看到腿交叉。"""
+    """侧视：大腿前后摆 + 小腿过腿时弯曲抬脚，能看到跨步和收腿。"""
     L = split_parts(frame)
-    s = math.sin(phase)
-    legL = rotate(L["legL"], 15.0 * s, (25, 46))
-    legR = rotate(L["legR"], -15.0 * s, (38, 46))
-    armL = rotate(L["armL"], 9.0 * s, (19, 20))
-    armR = rotate(L["armR"], -9.0 * s, (44, 20))
-    return compose(L, legL, legR, armL, armR)
+    s, c = math.sin(phase), math.cos(phase)
+    angle = 22.0 * s
+    bend_l = 16.0 * max(0.0, c)
+    bend_r = 16.0 * max(0.0, -c)
+    thighL, shinL = leg_pose(L["thighL"], L["shinL"], (25, 46), (24, 52), angle, bend_l)
+    thighR, shinR = leg_pose(L["thighR"], L["shinR"], (38, 46), (39, 52), -angle, -bend_r)
+    armL = rotate(L["armL"], 16.0 * s, (19, 20))
+    armR = rotate(L["armR"], -16.0 * s, (44, 20))
+    bob = -1 if abs(c) > 0.5 else 0
+    sway = 1 if s > 0.3 else (-1 if s < -0.3 else 0)
+
+    out = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    put(out, thighL)
+    put(out, shinL)
+    put(out, thighR)
+    put(out, shinR)
+    put(out, L["torso"], sway, bob)
+    put(out, armL, sway, bob)
+    put(out, armR, sway, bob)
+    return out
 
 
 def pose_front(frame, phase):
-    """正视/背视：左右腿交替抬起并内收，避免平面旋转变成劈叉。"""
+    """正视/背视：整条腿交替抬起并内收，身体轻微起伏。"""
     L = split_parts(frame)
     s = math.sin(phase)
     upL = s > 0.2
     upR = s < -0.2
-    legL = translate(L["legL"], 1 if upL else 0, -2 if upL else 0)
-    legR = translate(L["legR"], -1 if upR else 0, -2 if upR else 0)
-    legL = rotate(legL, 4.0 * s, (25, 46))
-    legR = rotate(legR, 4.0 * s, (38, 46))
-    armL = rotate(L["armL"], 6.0 * s, (19, 20))
-    armR = rotate(L["armR"], -6.0 * s, (44, 20))
-    return compose(L, legL, legR, armL, armR)
+    dxl, dyl = (2, -4) if upL else (0, 0)
+    dxr, dyr = (-2, -4) if upR else (0, 0)
+    armL = rotate(L["armL"], 12.0 * s, (19, 20))
+    armR = rotate(L["armR"], -12.0 * s, (44, 20))
+    bob = -1 if abs(s) > 0.7 else 0
+    sway = 2 if s > 0 else -2
+
+    out = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    put(out, translate(L["thighL"], dxl, dyl))
+    put(out, translate(L["shinL"], dxl, dyl))
+    put(out, translate(L["thighR"], dxr, dyr))
+    put(out, translate(L["shinR"], dxr, dyr))
+    put(out, translate(L["torso"], sway, bob))
+    put(out, translate(armL, sway, bob))
+    put(out, translate(armR, sway, bob))
+    return out
 
 
 def build(key, pose):
-    src = Image.open(os.path.join(BASE, "walk_%s.png" % key)).convert("RGBA")
-    base = src.crop((0, 0, CELL, CELL))
+    # 唯一基准：原始站姿 base_*.png；不要从已经摆过的 walk 条带再派生，否则会累积变形
+    base_path = os.path.join(BASE, "base_%s.png" % key)
+    if os.path.exists(base_path):
+        base = Image.open(base_path).convert("RGBA").crop((0, 0, CELL, CELL))
+    else:
+        src = Image.open(os.path.join(BASE, "walk_%s.png" % key)).convert("RGBA")
+        base = src.crop((0, 0, CELL, CELL))
     strip = Image.new("RGBA", (CELL * FRAMES, CELL), (0, 0, 0, 0))
     for i in range(FRAMES):
         strip.alpha_composite(pose(base, i / float(FRAMES) * math.tau), (i * CELL, 0))

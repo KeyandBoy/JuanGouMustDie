@@ -28,7 +28,8 @@ const WALK_PATHS := [
 	"res://art/sprites/tyrant/walk_right.png",
 ]
 const WALK_FRAMES := 8
-const WALK_FPS := 9.0
+# 非匀速步态：触地帧（0/4）停久一点，抬脚/过腿帧快一点，走出重量感
+const WALK_FRAME_TIME := [0.16, 0.08, 0.10, 0.10, 0.16, 0.08, 0.10, 0.10]
 # 站立/待机：由 tools/tyrant_multiview.py 从走路第 1 帧生成 4 方向 2 帧呼吸
 const IDLE_PATHS := [
 	"res://art/sprites/tyrant/idle_front.png",
@@ -84,7 +85,8 @@ var _sprite_base := Color(0.14, 0.05, 0.06, 1.0)
 var walk_tex: Array[Texture2D] = []
 var idle_tex: Array[Texture2D] = []
 var use_pixel_walk := false
-var walk_time := 0.0
+var walk_frame := 0
+var walk_timer := 0.0
 var idle_time := 0.0
 var _cur_scale := 0.24
 var shadow: Node2D
@@ -463,13 +465,17 @@ func _apply_walk_frame(moving: bool, delta: float) -> void:
 	if moving:
 		if idx >= walk_tex.size() or walk_tex[idx] == null:
 			return
-		walk_time += delta * WALK_FPS
 		idle_time = 0.0
 		_set_sprite_tex(walk_tex[idx], WALK_FRAMES)
-		sprite.frame = int(walk_time) % WALK_FRAMES
+		walk_timer += delta
+		while walk_timer >= WALK_FRAME_TIME[walk_frame]:
+			walk_timer -= WALK_FRAME_TIME[walk_frame]
+			walk_frame = (walk_frame + 1) % WALK_FRAMES
+		sprite.frame = walk_frame
 	else:
 		# 站立：优先播 4 方向 idle；缺图时退回走路第 1 帧
-		walk_time = 0.0
+		walk_frame = 0
+		walk_timer = 0.0
 		var has_idle := idx < idle_tex.size() and idle_tex[idx] != null
 		var tex: Texture2D = idle_tex[idx] if has_idle else (walk_tex[idx] if idx < walk_tex.size() else null)
 		if tex == null:

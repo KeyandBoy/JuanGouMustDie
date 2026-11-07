@@ -567,4 +567,5 @@
 - 补充（2026-11-07）：用 Deep-Fold 的 Pixel Sprite Generator 生成猎奇怪物；官方源码 MIT，离线移植为 `tools/deepfold_monsters.py`，产出 30 只原版随机色 + 18 只血肉/尸绿/虚空配色
 - 未完成（2026-11-07）：PixelDudes Maker（https://0x72.itch.io/pixeldudesmaker）本机无法访问 itch.io、本地也没有下载，需先提供工具包才能使用
 - 修正（2026-11-07）：暴君原 AI 行走 8 帧结构漂移、双脚不交替，重做为纸娃娃步态——以第 1 帧为固定设计，侧视腿绕髋 ±15°/臂 ±9°；正视/背视左右腿交替抬起+内收，臂 ±6°。工具 `tools/tyrant_walk_rig.py`
+- 加强（2026-11-07）：暴君走路“只是摆腿”反馈——侧视腿摆 22° + 膝弯 16° 抬脚 + 臂 16°；正视/背视抬腿 4px + 内收 2px + 躯干 2px 重心偏移；`tyrant.gd` 改非匀速帧时间（触地 0.16s / 过腿 0.08~0.10s）；原始站姿另存 `base_*.png` 作为唯一基准
 - 修正（2026-11-07）：LPC 行走帧之前误用了 `thrust` 行（`data/character.anim` 是 CharGen 导出表坐标，不是原始图层坐标）；现按原始 universal 表取 `walk` 行（y=512~704），动作行也一并修正

@@ -25,6 +25,14 @@ def first_frame(path):
     return strip.crop((0, 0, CELL, CELL))
 
 
+def still_frame(key):
+    """站姿优先用 base_*.png（原始站姿），没有才退回走路第 1 帧。"""
+    base = os.path.join(BASE, "base_%s.png" % key)
+    if os.path.exists(base):
+        return Image.open(base).convert("RGBA").crop((0, 0, CELL, CELL))
+    return first_frame(os.path.join(BASE, "walk_%s.png" % key))
+
+
 def breath(frame):
     """脚底对齐，身体高度压到 97%，作为呼吸的第 2 帧。"""
     bbox = frame.getbbox()
@@ -43,7 +51,7 @@ def main():
     os.makedirs(BASE, exist_ok=True)
     stills = []
     for key, _label in DIRS:
-        walk = first_frame(os.path.join(BASE, "walk_%s.png" % key))
+        walk = still_frame(key)
         strip = Image.new("RGBA", (CELL * 2, CELL), (0, 0, 0, 0))
         strip.alpha_composite(walk, (0, 0))
         strip.alpha_composite(breath(walk), (CELL, 0))

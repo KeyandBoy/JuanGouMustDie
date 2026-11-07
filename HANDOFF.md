@@ -29,6 +29,12 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **暴君走路二次加强（2026-11-07，opencode）**：
+  - 侧视：腿摆 22°、过腿相膝弯 16°（抬脚收腿）、手臂 16°、身体 1px 起伏 + 1px 前后重心。
+  - 正视/背视：整条腿交替抬 4px + 内收 2px、手臂 ±12°、躯干 2px 左右重心 + 1px 起伏。
+  - `tyrant.gd` 改非匀速：`WALK_FRAME_TIME=[0.16,0.08,0.10,0.10,0.16,0.08,0.10,0.10]`，触地帧停久、过腿帧加快。
+  - 原始站姿另存 `art/sprites/tyrant/base_{front,back,left,right}.png`，rig 只从 base 派生，避免累积变形；idle/turnaround 也用 base。
+  - 验证：4 方向条带目视 + flow/student/tutorial/_b/_stalker 通过。
 - **暴君走路重做（2026-11-07，opencode）**：
   - 原 AI 8 帧结构逐帧漂移、双脚永远贴地；新增 `tools/tyrant_walk_rig.py`，以每个方向第 1 帧为固定设计做纸娃娃摆动。
   - 侧视：腿绕髋 ±15°、臂绕肩 ±9°（能看到跨步/交叉）；正视/背视：左右腿交替抬起 2px + 内收 1px、臂 ±6°。
