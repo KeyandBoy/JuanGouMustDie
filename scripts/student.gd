@@ -59,16 +59,19 @@ const ROLE_TEX := {
 	"grotesque": [],
 	# 15 只史莱姆（5 色 × 人形/混合/团状，运行时按 slime_variant 载入）
 	"slime": [],
+	# 4 只宝箱怪（伪装成储物箱，运行时按 mimic_variant 载入）
+	"mimic": [],
 }
 const MONSTER_PACK_COUNT := 20
 const SLIME_COUNT := 15
+const MIMIC_COUNT := 4
 ## 每个角色的条带帧数（学生 8 帧，怪物 4 帧）
 const ROLE_FRAMES := {
-	"skeleton": 4, "zombie": 4, "puppet": 4, "minotaur": 4, "grotesque": 4, "slime": 4,
+	"skeleton": 4, "zombie": 4, "puppet": 4, "minotaur": 4, "grotesque": 4, "slime": 4, "mimic": 4,
 }
 ## 每个角色的绘制缩放（怪物体型差异）
 const ROLE_SCALE := {
-	"skeleton": 0.72, "zombie": 0.86, "puppet": 0.74, "minotaur": 0.95, "grotesque": 0.62, "slime": 1.35,
+	"skeleton": 0.72, "zombie": 0.86, "puppet": 0.74, "minotaur": 0.95, "grotesque": 0.62, "slime": 1.35, "mimic": 0.78,
 }
 ## 每个角色相对基础值的速度 / 视野 / 抓人半径倍率
 const ROLE_STATS := {
@@ -78,6 +81,7 @@ const ROLE_STATS := {
 	"minotaur": {"speed": 0.86, "vision": 1.25, "catch": 1.35},
 	"grotesque": {"speed": 0.92, "vision": 1.10, "catch": 1.1},
 	"slime":    {"speed": 0.75, "vision": 0.95, "catch": 0.9},
+	"mimic":    {"speed": 1.05, "vision": 1.00, "catch": 1.2},
 }
 const WALK_FRAMES := 8
 const WALK_FPS := 9.5
@@ -93,6 +97,11 @@ var _pack_tex := {}
 ## slime 角色用：1..15 选一只史莱姆
 var slime_variant := 1
 var _slime_tex := {}
+## mimic 角色用：1..4 选一只宝箱怪
+var mimic_variant := 1
+var _mimic_tex := {}
+## 宝箱怪被惊动后：即使玩家还没答题/报警，也会直接进入追击
+var provoked := false
 var bob_time := 0.0
 var anim_time := 0.0
 var map
@@ -181,6 +190,8 @@ func _textures() -> Array:
 		return _grotesque_textures()
 	if role == "slime":
 		return _slime_textures()
+	if role == "mimic":
+		return _mimic_textures()
 	return ROLE_TEX.get(role, ROLE_TEX["juan"])
 
 ## 20 只随机怪物：按 monster_variant 惰性载入（每只 4 方向条带）。
@@ -203,6 +214,17 @@ func _slime_textures() -> Array:
 	for d in ["front", "back", "left", "right"]:
 		arr.append(load("res://art/sprites/monsters/slime_%02d_walk_%s.png" % [idx, d]))
 	_slime_tex[idx] = arr
+	return arr
+
+## 4 只宝箱怪：按 mimic_variant 惰性载入。
+func _mimic_textures() -> Array:
+	var idx := clampi(mimic_variant, 1, MIMIC_COUNT)
+	if _mimic_tex.has(idx):
+		return _mimic_tex[idx]
+	var arr: Array = []
+	for d in ["front", "back", "left", "right"]:
+		arr.append(load("res://art/sprites/monsters/mimic_%02d_walk_%s.png" % [idx, d]))
+	_mimic_tex[idx] = arr
 	return arr
 
 func setup(p_map: Node2D, p_player: Node2D) -> void:
@@ -259,6 +281,19 @@ func _physics_process(delta: float) -> void:
 		return
 	if catch_cooldown > 0.0:
 		catch_cooldown -= delta
+	# 宝箱怪：伪装成箱子不动，玩家靠近才「醒」
+	if role == "mimic" and state == "disguise":
+		velocity = Vector2.ZERO
+		move_and_slide()
+		if player != null and is_instance_valid(player) and player.position.distance_to(position) < 92.0:
+			state = "chase"
+			alert_level = max_alert
+			last_seen = player.position
+			repath_timer = 0.0
+			state_timer = 4.0
+			think_timer = 0.0
+			provoked = true
+		return
 	if map == null or player == null or (GameState.run_state != GameState.RunState.EXPLORING and GameState.run_state != GameState.RunState.QUIZ):
 		velocity = Vector2.ZERO
 		move_and_slide()
@@ -298,7 +333,7 @@ func _decide(dt: float) -> void:
 		alert_level = minf(max_alert, alert_level + dt * (55.0 + (1.0 - clampf(dist / vision_range, 0.0, 1.0)) * 75.0))
 		facing = to_player.normalized()
 		last_seen = player.position
-		if GameState.run_state == GameState.RunState.QUIZ:
+		if GameState.run_state == GameState.RunState.QUIZ or (provoked and role == "mimic"):
 			if state != "chase":
 				state = "chase"
 				repath_timer = 0.0

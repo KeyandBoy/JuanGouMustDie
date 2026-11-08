@@ -704,6 +704,38 @@ func _spawn_students() -> void:
 		add_child(student)
 		student.setup(map, player)
 
+	# 宝箱怪：2F 起藏在储物间的箱子堆里（没有储物间就藏在别的房间角落）
+	var mimic_n := 0
+	if GameState.level >= 2:
+		mimic_n = 1
+	if GameState.level >= 4:
+		mimic_n = 2
+	var mimic_spots: Array[Vector2] = []
+	for br in map.box_rects:
+		mimic_spots.append((br as Rect2).get_center())
+	if mimic_spots.size() < mimic_n:
+		for i in map.rooms.size():
+			var t := String(map.room_types[i])
+			if t == "hall" or t == "stair":
+				continue
+			mimic_spots.append(map._walkable_center(map.rooms[i], i))
+	mimic_spots.shuffle()
+	for k in mini(mimic_n, mimic_spots.size()):
+		var mon: CharacterBody2D = student_scene.new()
+		mon.collision_layer = 2
+		mon.collision_mask = 1
+		var shape := CollisionShape2D.new()
+		var circle := CircleShape2D.new()
+		circle.radius = 11.0
+		shape.shape = circle
+		mon.add_child(shape)
+		mon.mimic_variant = randi_range(1, 4)
+		mon.set_role("mimic")
+		mon.position = mimic_spots[k]
+		add_child(mon)
+		mon.setup(map, player)
+		mon.state = "disguise"
+
 func _spawn_desks() -> void:
 	for d in get_tree().get_nodes_in_group("interactables"):
 		d.queue_free()

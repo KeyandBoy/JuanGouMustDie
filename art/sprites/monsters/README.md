@@ -70,6 +70,18 @@ python tools\slime_frames.py
 - 预览场景：`tests/_slime_demo.tscn`（15 变体 5×3 循环）。
 - `Slime__Leader.png` 是单张 640×192 大图且造型暴露，暂不接入（全年龄定位）。
 
+## 第四批：宝箱怪 Mimic（2026-11-08）
+
+```powershell
+python tools\mimic_frames.py
+```
+
+- 源：`素材/怪物/{Mimic,Green-Mimic,Blue-Mimic,Corrupt-Mimic}.gif`（单帧 100×100）。
+- 输出 `mimic_01..04_walk_{front,back,left,right}.png`（96×96 × 4 帧，上下 1px 呼吸；蹲着时只播第 0 帧）。
+- 游戏里由 `student.gd` 的 `mimic` 角色按 `mimic_variant`（1~4）载入；`disguise` 状态站着不动，玩家进 92px 后惊醒并追击。
+- 生成位置：储物间的箱子堆（2F 1 只、4F 起 2 只）。
+- 预览场景：`tests/_mimic_demo.tscn`。
+
 ## PixelDudes Maker
 
 - 工具页：<https://0x72.itch.io/pixeldudesmaker>
