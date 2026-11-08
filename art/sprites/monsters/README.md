@@ -58,6 +58,18 @@ python tools\monster_dirs.py --pack
 - 游戏里由 `student.gd` 的 `grotesque` 角色按 `monster_variant`（1~20）运行时载入；2F 起混入。
 - 预览场景：`tests/_pack_demo.tscn`（20 变体循环）。
 
+## 第三批：MonsterGirl 史莱姆 15 只（2026-11-08）
+
+```powershell
+python tools\slime_frames.py
+```
+
+- 源：`素材/怪物/MonsterGirl_0.1/Slime_{Human,Mix,Monster}_{Dark,Fire,Ice,Nature,Water}.png`（128×32 = 4 帧 × 32×32）。
+- 输出 `slime_01..15_walk_{front,back,left,right}.png`：front 原样、left 镜像、right 原样、back 压暗 14%。
+- 游戏里由 `student.gd` 的 `slime` 角色按 `slime_variant`（1~15）运行时载入；2F 起出现。
+- 预览场景：`tests/_slime_demo.tscn`（15 变体 5×3 循环）。
+- `Slime__Leader.png` 是单张 640×192 大图且造型暴露，暂不接入（全年龄定位）。
+
 ## PixelDudes Maker
 
 - 工具页：<https://0x72.itch.io/pixeldudesmaker>

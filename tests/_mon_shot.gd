@@ -19,6 +19,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 
 	var map = inst.map
+	var student_script = load("res://scripts/student.gd")
 	var room_i := -1
 	for i in map.rooms.size():
 		if String(map.room_types[i]) == "classroom":
@@ -33,23 +34,32 @@ func _ready() -> void:
 	await get_tree().create_timer(0.3).timeout
 
 	var found: Array[String] = []
-	var students := get_tree().get_nodes_in_group("students")
 	for k in ROLES.size():
-		var picked = null
-		for st in students:
-			if String(st.get("role")) == ROLES[k]:
-				picked = st
-				break
-		if picked == null:
-			continue
+		var mon = student_script.new()
+		mon.collision_layer = 0
+		mon.collision_mask = 0
+		inst.add_child(mon)
+		mon.set_role(ROLES[k])
+		mon.position = center + Vector2(-105.0 + k * 70.0, 20.0)
+		mon.state = "patrol"
+		mon.path = PackedVector2Array()
+		mon.facing = Vector2.DOWN
 		found.append(ROLES[k])
-		picked.position = center + Vector2(-105.0 + k * 70.0, 20.0)
-		picked.state = "patrol"
-		picked.path = PackedVector2Array()
-		picked.facing = Vector2.DOWN
 	await get_tree().create_timer(0.5).timeout
+	# 第三批：史莱姆 4 个变体，排在第三行
+	var slime_variants := [1, 6, 11, 13]
+	for k in slime_variants.size():
+		var mon = student_script.new()
+		mon.collision_layer = 0
+		mon.collision_mask = 0
+		inst.add_child(mon)
+		mon.slime_variant = slime_variants[k]
+		mon.set_role("slime")
+		mon.position = center + Vector2(-105.0 + k * 70.0, 150.0)
+		mon.state = "patrol"
+		mon.path = PackedVector2Array()
+	await get_tree().create_timer(0.4).timeout
 	# 第二批：随机怪物（grotesque）4 个变体，排在第二行
-	var student_script = load("res://scripts/student.gd")
 	var variants := [1, 5, 11, 17]
 	for k in variants.size():
 		var mon = student_script.new()

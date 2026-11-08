@@ -671,18 +671,22 @@ func _spawn_students() -> void:
 	var spots: Array[Vector2] = map.spawn_points(count, true)
 	var roles: Array[String] = ["student", "student", "student", "juan", "juan", "teacher", "guard"]
 	# 3F 起混入怪物：越深越多（怪物素材来自 素材/怪物，方向帧由 tools/monster_dirs.py 生成）
-	var monster_pool: Array[String] = []
-	if GameState.level >= 2:
-		monster_pool.append("grotesque")
-	if GameState.level >= 3:
-		monster_pool.append("skeleton")
-		monster_pool.append("zombie")
-	if GameState.level >= 4:
-		monster_pool.append("puppet")
-	if GameState.level >= 5:
-		monster_pool.append("minotaur")
-	for k in monster_pool.size():
-		roles[k] = monster_pool[k]
+	# 按楼层混入怪物（最多占 4 个位置，其余保留学生/老师/保安）
+	var chosen: Array[String] = []
+	match GameState.level:
+		2:
+			chosen = ["slime"]
+		3:
+			chosen = ["slime", "skeleton", "zombie"]
+		4:
+			chosen = ["slime", "skeleton", "puppet", "grotesque"]
+		5:
+			chosen = ["slime", "zombie", "puppet", "minotaur"]
+		_:
+			chosen = []
+	for k in chosen.size():
+		if k < roles.size():
+			roles[k] = chosen[k]
 	roles.shuffle()
 	for i in count:
 		var student: CharacterBody2D = student_scene.new()
@@ -694,6 +698,7 @@ func _spawn_students() -> void:
 		shape.shape = circle
 		student.add_child(shape)
 		student.monster_variant = randi_range(1, 20)
+		student.slime_variant = randi_range(1, 15)
 		student.set_role(roles[i % roles.size()])
 		student.position = spots[i] if i < spots.size() else map.exit_pos
 		add_child(student)

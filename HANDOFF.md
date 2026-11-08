@@ -29,6 +29,7 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 本轮已完成
 
+- **素材库怪物第三批（2026-11-08，opencode）**：`tools/slime_frames.py` 把 MonsterGirl 的 15 只史莱姆（5 色 × 人形/混合/团状）切成 4 方向条带；`student.gd` 加 `slime` 角色（慢、视野低）；`main` 按楼层固定名单混入（2F 史莱姆、3F +骷髅/僵尸、4F +傀儡/随机怪、5F +牛头人）。样张 `tests/shot_monsters.png`，预览 `tests/_slime_demo.tscn`。`Slime__Leader`（大图且暴露）暂不接入。
 - **素材库怪物第二批（2026-11-07，opencode）**：`monster_dirs.py --pack` 自动找眼睛生成 20 只随机怪物的 4 方向条带；`student.gd` 加 `grotesque` 角色（运行时按 `monster_variant` 载入）；2F 起混入，3F+ 与骷髅/僵尸/傀儡/牛头人叠加。样张 `tests/shot_monsters.png`，预览 `tests/_pack_demo.tscn`。
 - **素材库怪物 4 方向帧 + 进游戏（2026-11-07，opencode）**：
   - `tools/monster_dirs.py` → `art/sprites/monsters/{skeleton,zombie,puppet,minotaur}_walk_{front,back,left,right}.png`（4 帧/方向）。
