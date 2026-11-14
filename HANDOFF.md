@@ -1,10 +1,10 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-08
+- 更新时间：2026-11-14
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`fb9e48e`（第三层世界 11~15F 设计文档）
-- 已推送 origin/main：`5edbe9f`（`fb9e48e` 待推送；纯文档）
+- 当前 HEAD：`c45d10f`（第一层难度曲线 P0）
+- 已推送 origin/main：`c45d10f`
 - 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `intro.gd` / `art/cutscene` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
