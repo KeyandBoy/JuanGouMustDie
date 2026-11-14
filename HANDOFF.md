@@ -1,10 +1,10 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-07
+- 更新时间：2026-11-08
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`82d89b9`（第一层五关不刷怪，怪物资产留给第二层）
-- 已推送 origin/main：`82d89b9`
+- 当前 HEAD：`fb9e48e`（第三层世界 11~15F 设计文档）
+- 已推送 origin/main：`5edbe9f`（`fb9e48e` 待推送；纯文档）
 - 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `intro.gd` / `art/cutscene` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
