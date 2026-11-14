@@ -28,30 +28,31 @@ func _ready() -> void:
 		_finish()
 		return
 
-	# F8：第 1 关不缩放
-	_check(absf(student.vision_range - 160.0) < 0.01, "f8: level 1 vision = 160 (%.1f)" % student.vision_range)
-	_check(absf(student.speed - 80.0) < 0.01, "f8: level 1 speed = 80 (%.1f)" % student.speed)
+	# F8：第 1 关不缩放（这里只验证「楼层系数」，角色自身的差异另外乘）
+	var st: Dictionary = student._role_stats()
+	var vm := float(st.get("vision", 1.0))
+	var sm := float(st.get("speed", 1.0))
+	_check(absf(student.vision_range - 160.0 * vm) < 0.01,
+		"f8: level 1 vision = 160×%.2f (%.1f)" % [vm, student.vision_range])
+	_check(absf(student.speed - 80.0 * sm) < 0.01,
+		"f8: level 1 speed = 80×%.2f (%.1f)" % [sm, student.speed])
 
-	# F8：第 3 关 +8% 视野/层、+5% 移速/层
+	# F8：第 3 关 +8% 视野/层、+5% 移速/层（都再乘角色差异）
 	var old_level: int = GameState.level
 	GameState.level = 3
-	student.vision_range = 160.0
-	student.speed = 80.0
-	student.chase_speed = 140.0
 	student._apply_level_scale()
-	_check(absf(student.vision_range - 185.6) < 0.1,
-		"f8: level 3 vision = 185.6 (%.1f)" % student.vision_range)
-	_check(absf(student.speed - 88.0) < 0.1, "f8: level 3 speed = 88 (%.1f)" % student.speed)
-	_check(absf(student.chase_speed - 154.0) < 0.1,
-		"f8: level 3 chase = 154 (%.1f)" % student.chase_speed)
+	_check(absf(student.vision_range - 185.6 * vm) < 0.1,
+		"f8: level 3 vision = 185.6×%.2f (%.1f)" % [vm, student.vision_range])
+	_check(absf(student.speed - 88.0 * sm) < 0.1,
+		"f8: level 3 speed = 88×%.2f (%.1f)" % [sm, student.speed])
+	_check(absf(student.chase_speed - 154.0 * sm) < 0.1,
+		"f8: level 3 chase = 154×%.2f (%.1f)" % [sm, student.chase_speed])
 
-	# 教学关不缩放
+	# 教学关不缩放（回到 1.0 楼层系数）
 	GameState.tutorial_active = true
-	student.vision_range = 160.0
-	student.speed = 80.0
 	student._apply_level_scale()
-	_check(absf(student.vision_range - 160.0) < 0.01 and absf(student.speed - 80.0) < 0.01,
-		"f8: tutorial stays unscaled")
+	_check(absf(student.vision_range - 160.0 * vm) < 0.01 and absf(student.speed - 80.0 * sm) < 0.01,
+		"f8: tutorial stays unscaled (%.1f / %.1f)" % [student.vision_range, student.speed])
 	GameState.tutorial_active = false
 	GameState.level = old_level
 

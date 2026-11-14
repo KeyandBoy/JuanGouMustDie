@@ -73,8 +73,13 @@ const ROLE_FRAMES := {
 const ROLE_SCALE := {
 	"skeleton": 0.72, "zombie": 0.86, "puppet": 0.74, "minotaur": 0.95, "grotesque": 0.62, "slime": 1.35, "mimic": 0.78,
 }
-## 每个角色相对基础值的速度 / 视野 / 抓人半径倍率
+## 每个角色相对基础值的速度 / 视野 / 抓人半径倍率。
+## 第一层的人也有性格差异：普通同学最好躲，卷狗听得见，老师视野宽，保安跑得快但视锥窄。
 const ROLE_STATS := {
+	"student":  {"speed": 0.90, "vision": 0.85, "catch": 0.90, "angle": 0.92, "hear": 0.80},
+	"juan":     {"speed": 1.15, "vision": 1.00, "catch": 1.00, "angle": 1.00, "hear": 1.30},
+	"teacher":  {"speed": 1.00, "vision": 1.10, "catch": 1.10, "angle": 1.17, "hear": 1.00},
+	"guard":    {"speed": 1.20, "vision": 0.95, "catch": 1.20, "angle": 0.67, "hear": 1.10},
 	"skeleton": {"speed": 1.10, "vision": 1.00, "catch": 1.0},
 	"zombie":   {"speed": 0.82, "vision": 1.10, "catch": 1.2},
 	"puppet":   {"speed": 0.95, "vision": 1.20, "catch": 1.0},
@@ -115,6 +120,8 @@ var vision_angle := 60.0
 ## 抓人判定：以守卫为圆心、360° 的独立判定圈，半径远小于视锥半径。
 ## 与朝向/视锥角度无关，但要求中间没有墙体遮挡（不能隔墙抓人）。
 var catch_radius := 30.0
+## 角色差异乘算前的基准抓人圈（catch_radius 不叠加，每次从基准重算）
+var base_catch_radius := 30.0
 var hear_range := 260.0
 var speed := 80.0
 var chase_speed := 140.0
@@ -236,26 +243,35 @@ func setup(p_map: Node2D, p_player: Node2D) -> void:
 ## F8：按楼层缩放感知与移速（教学关不缩放）。
 func _apply_level_scale() -> void:
 	if GameState.tutorial_active:
-		var st0 := _role_stats()
-		if not st0.is_empty():
-			_apply_role_stats(st0)
-		return
-	var lv := maxi(1, GameState.level)
-	level_vision_mult = 1.0 + 0.08 * float(lv - 1)
-	level_speed_mult = 1.0 + 0.05 * float(lv - 1)
+		level_vision_mult = 1.0
+		level_speed_mult = 1.0
+	else:
+		var lv := maxi(1, GameState.level)
+		level_vision_mult = 1.0 + 0.08 * float(lv - 1)
+		level_speed_mult = 1.0 + 0.05 * float(lv - 1)
+	_reset_base_stats()
+
+## 把速度/视野/听觉/视锥/抓人圈重置成「楼层基准 × 角色差异」。
+## 角色差异必须每次都重新乘，不能只在出生时算一次（临时增益到期会覆盖回去）。
+func _reset_base_stats() -> void:
 	vision_range = 160.0 * level_vision_mult
+	vision_angle = 60.0
+	hear_range = 260.0
+	base_catch_radius = 30.0
 	speed = 80.0 * level_speed_mult
 	chase_speed = 140.0 * level_speed_mult
 	var st := _role_stats()
 	if not st.is_empty():
 		_apply_role_stats(st)
 
-## 怪物相对学生的体型/性格差异：速度、视野、抓人圈。
+## 角色相对差异：速度、视野、视锥角、听觉、抓人圈。
 func _apply_role_stats(st: Dictionary) -> void:
 	speed *= float(st.get("speed", 1.0))
 	chase_speed *= float(st.get("speed", 1.0))
 	vision_range *= float(st.get("vision", 1.0))
-	catch_radius *= float(st.get("catch", 1.0))
+	vision_angle *= float(st.get("angle", 1.0))
+	hear_range *= float(st.get("hear", 1.0))
+	catch_radius = base_catch_radius * float(st.get("catch", 1.0))
 
 func _physics_process(delta: float) -> void:
 	if stun_timer > 0.0:
@@ -266,12 +282,8 @@ func _physics_process(delta: float) -> void:
 	if temp_buff_timer > 0.0:
 		temp_buff_timer -= delta
 		if temp_buff_timer <= 0.0 and temp_buff > 0.0:
-			var m := 1.0 + temp_buff
-			speed = 80.0 * level_speed_mult / m
-			chase_speed = 140.0 * level_speed_mult / m
-			vision_range = 160.0 * level_vision_mult / m
-			hear_range = 260.0 / m
 			temp_buff = 0.0
+			_reset_base_stats()
 	if door_pause > 0.0:
 		door_pause -= delta
 		velocity = Vector2.ZERO
@@ -513,10 +525,11 @@ func _apply_temp_buff(buff: float) -> void:
 		return
 	temp_buff = buff
 	var m := 1.0 + buff
-	speed = 80.0 * level_speed_mult * m
-	chase_speed = 140.0 * level_speed_mult * m
-	vision_range = 160.0 * level_vision_mult * m
-	hear_range = 260.0 * m
+	_reset_base_stats()
+	speed *= m
+	chase_speed *= m
+	vision_range *= m
+	hear_range *= m
 	temp_buff_timer = 40.0
 
 func _set_path(target: Vector2) -> void:
