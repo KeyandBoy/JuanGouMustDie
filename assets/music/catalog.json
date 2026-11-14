@@ -635,6 +635,254 @@
       ],
       "notes": "配合 L5 的灯光闪烁机制，随机触发短段比长循环更自然。Freesound 找 electrical hum / fluorescent buzz。",
       "license": null
+    },
+    {
+      "id": "dungeon_calm",
+      "title": "Lower Halls",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_calm"
+      ],
+      "states": [
+        "explore_calm"
+      ],
+      "emotion": "压抑、空旷",
+      "intensity": 2,
+      "bpm": null,
+      "loop": true,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "低频 drone",
+        "滴水",
+        "远处脚步"
+      ],
+      "notes": "第二层平时探索。参考 90~120s；**必须和 dungeon_chase 同 BPM**，否则叠鼓点接不上。规格见 .opencode/plan/第二层世界_音频规格.md",
+      "license": null
+    },
+    {
+      "id": "dungeon_alert",
+      "title": "Shifting Stone",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_alert"
+      ],
+      "states": [
+        "explore_alert"
+      ],
+      "emotion": "不安",
+      "intensity": 3,
+      "bpm": null,
+      "loop": true,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "不协和弦乐",
+        "金属摩擦",
+        "远处回响"
+      ],
+      "notes": "污染 ≥50 或警觉状态。参考 60~90s。",
+      "license": null
+    },
+    {
+      "id": "dungeon_chase",
+      "title": "Dragged Below",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_chase"
+      ],
+      "states": [
+        "chase"
+      ],
+      "emotion": "急促",
+      "intensity": 4,
+      "bpm": null,
+      "loop": true,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "急促鼓点",
+        "低频脉冲",
+        "金属拖拽"
+      ],
+      "notes": "第二层追逐。参考 45~60s；必须和 dungeon_calm 同 BPM，D6 鼓点层才有意义。",
+      "license": null
+    },
+    {
+      "id": "dungeon_quiz",
+      "title": "Cold Chalk",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_quiz"
+      ],
+      "states": [
+        "quiz"
+      ],
+      "emotion": "荒诞退化为窒息",
+      "intensity": 2,
+      "bpm": null,
+      "loop": true,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "失真钢琴",
+        "滴水",
+        "粉笔声"
+      ],
+      "notes": "地牢答题：保留一点答题怪感，但更冷。参考 60s。",
+      "license": null
+    },
+    {
+      "id": "pyramid",
+      "title": "The Helmet",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "pyramid"
+      ],
+      "states": [
+        "tyrant"
+      ],
+      "emotion": "沉重、逼近",
+      "intensity": 4,
+      "bpm": null,
+      "loop": true,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "拖刀金属",
+        "低频脉冲",
+        "脚步逼近"
+      ],
+      "notes": "三角头在场（听觉型追逐者）。拖刀声当节奏基底，参考 60s。",
+      "license": null
+    },
+    {
+      "id": "dungeon_safe",
+      "title": "Thin Silence",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_safe"
+      ],
+      "states": [
+        "safe"
+      ],
+      "emotion": "短暂安宁",
+      "intensity": 1,
+      "bpm": null,
+      "loop": true,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "心跳",
+        "呼吸",
+        "轻白噪"
+      ],
+      "notes": "第二层安全屋，参考 45s。音量压低，别盖过脚步声。",
+      "license": null
+    },
+    {
+      "id": "dungeon_clear",
+      "title": "Hollow Victory",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_clear"
+      ],
+      "states": [
+        "cleared"
+      ],
+      "emotion": "空洞的胜利",
+      "intensity": 3,
+      "bpm": null,
+      "loop": false,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "失真弦乐",
+        "长回响",
+        "低频收尾"
+      ],
+      "notes": "第二层通关短句，8~12s，和第一层 clear_victory 明确区分。",
+      "license": null
+    },
+    {
+      "id": "dungeon_gameover",
+      "title": "Swallowed",
+      "file": null,
+      "status": "missing",
+      "slots": [
+        "dungeon_gameover"
+      ],
+      "states": [
+        "gameover"
+      ],
+      "emotion": "下沉",
+      "intensity": 2,
+      "bpm": null,
+      "loop": false,
+      "level_scope": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "layer_role": "base",
+      "elements": [
+        "低频下沉",
+        "磁带减速",
+        "远处关门"
+      ],
+      "notes": "第二层失败短句，8~12s，比 gameover_somber 更『被吞掉』。",
+      "license": null
     }
   ]
 }

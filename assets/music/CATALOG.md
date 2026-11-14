@@ -3,7 +3,7 @@
 > 由 `tools/music_catalog.py` 从 `assets/music/catalog.json` 生成，最后更新：2026-11-04。
 > 要加歌/换歌/补缺口，改 JSON 再跑一次脚本，**不要直接改这个文件**。
 
-**统计**：在用 10 首 · 备用 4 首 · 待补 5 条
+**统计**：在用 10 首 · 备用 4 首 · 待补 13 条
 
 ## 一、在用曲目
 
@@ -38,27 +38,41 @@
 | 走廊喘息/呼吸环境层 | explore_calm、explore_alert、tyrant | 恐怖 | 2 | ambience | all | 喘息、呼吸、极轻的风声 | 很轻、非旋律、可长时间循环。Freesound 找单声道采样自己拼，注意授权逐条查（避开 CC BY-NC）。 |
 | 钟声 / 下课铃环境层 | menu、explore_calm、cleared | 诡异 | 2 | ambience | all | 钟声、下课铃、远处回响 | 校舍氛围点题用。可做成几十秒一次的点缀（accent），不必整段循环。 |
 | L5 灯管闪烁 / 电流嗡鸣层 | tyrant | 压迫 | 3 | ambience | 5 | 电流嗡鸣、灯管爆闪、高频颤动 | 配合 L5 的灯光闪烁机制，随机触发短段比长循环更自然。Freesound 找 electrical hum / fluorescent buzz。 |
+| Lower Halls | explore_calm | 压抑、空旷 | 2 | base | 6、7、8、9、10 | 低频 drone、滴水、远处脚步 | 第二层平时探索。参考 90~120s；**必须和 dungeon_chase 同 BPM**，否则叠鼓点接不上。规格见 .opencode/plan/第二层世界_音频规格.md |
+| Shifting Stone | explore_alert | 不安 | 3 | base | 6、7、8、9、10 | 不协和弦乐、金属摩擦、远处回响 | 污染 ≥50 或警觉状态。参考 60~90s。 |
+| Dragged Below | chase | 急促 | 4 | base | 6、7、8、9、10 | 急促鼓点、低频脉冲、金属拖拽 | 第二层追逐。参考 45~60s；必须和 dungeon_calm 同 BPM，D6 鼓点层才有意义。 |
+| Cold Chalk | quiz | 荒诞退化为窒息 | 2 | base | 6、7、8、9、10 | 失真钢琴、滴水、粉笔声 | 地牢答题：保留一点答题怪感，但更冷。参考 60s。 |
+| The Helmet | tyrant | 沉重、逼近 | 4 | base | 6、7、8、9、10 | 拖刀金属、低频脉冲、脚步逼近 | 三角头在场（听觉型追逐者）。拖刀声当节奏基底，参考 60s。 |
+| Thin Silence | safe | 短暂安宁 | 1 | base | 6、7、8、9、10 | 心跳、呼吸、轻白噪 | 第二层安全屋，参考 45s。音量压低，别盖过脚步声。 |
+| Hollow Victory | cleared | 空洞的胜利 | 3 | base | 6、7、8、9、10 | 失真弦乐、长回响、低频收尾 | 第二层通关短句，8~12s，和第一层 clear_victory 明确区分。 |
+| Swallowed | gameover | 下沉 | 2 | base | 6、7、8、9、10 | 低频下沉、磁带减速、远处关门 | 第二层失败短句，8~12s，比 gameover_somber 更『被吞掉』。 |
 
 ## 四、按状态索引
 
-- **chase**：Chase!（active）、Assault（standby）、追逐节奏层（加鼓点）（missing）
-- **cleared**：Big Intro #2（active）、钟声 / 下课铃环境层（missing）
+- **chase**：Chase!（active）、Assault（standby）、追逐节奏层（加鼓点）（missing）、Dragged Below（missing）
+- **cleared**：Big Intro #2（active）、钟声 / 下课铃环境层（missing）、Hollow Victory（missing）
 - **cutscene**：The Childrens Room（active）
-- **explore_alert**：Vicegrip of Pursuit（active）、The Fridge is Hungry（standby）、Night Runner（standby）、走廊喘息/呼吸环境层（missing）
-- **explore_calm**：Happy Loop（active）、走廊喘息/呼吸环境层（missing）、钟声 / 下课铃环境层（missing）
-- **gameover**：Somber（active）
+- **explore_alert**：Vicegrip of Pursuit（active）、The Fridge is Hungry（standby）、Night Runner（standby）、走廊喘息/呼吸环境层（missing）、Shifting Stone（missing）
+- **explore_calm**：Happy Loop（active）、走廊喘息/呼吸环境层（missing）、钟声 / 下课铃环境层（missing）、Lower Halls（missing）
+- **gameover**：Somber（active）、Swallowed（missing）
 - **menu**：Happy Loop（active）、钟声 / 下课铃环境层（missing）
-- **quiz**：Goofy Attitude!（active）、Wacky Wobblings（standby）
-- **tyrant**：Tyrant Dread（active）、Tyrant Dread L5（active）、Horror Drone #1（active）、暴君压迫层（低频轰鸣 + 心跳）（missing）、走廊喘息/呼吸环境层（missing）、L5 灯管闪烁 / 电流嗡鸣层（missing）
+- **quiz**：Goofy Attitude!（active）、Wacky Wobblings（standby）、Cold Chalk（missing）
+- **safe**：Thin Silence（missing）
+- **tyrant**：Tyrant Dread（active）、Tyrant Dread L5（active）、Horror Drone #1（active）、暴君压迫层（低频轰鸣 + 心跳）（missing）、走廊喘息/呼吸环境层（missing）、L5 灯管闪烁 / 电流嗡鸣层（missing）、The Helmet（missing）
 
 ## 五、按声音元素索引
 
 - **上升音阶**：Big Intro #2
 - **下沉低音**：Somber
 - **下课铃**：钟声 / 下课铃环境层
+- **不协和弦乐**：Shifting Stone
 - **不安持续音**：The Fridge is Hungry、Horror Drone #1
 - **不谐和音簇**：Tyrant Dread、Tyrant Dread L5
 - **低沉弦乐**：Somber
+- **低频 drone**：Lower Halls
+- **低频下沉**：Swallowed
+- **低频收尾**：Hollow Victory
+- **低频脉冲**：Dragged Below、The Helmet
 - **低频脉动**：Vicegrip of Pursuit
 - **低频轰鸣**：Tyrant Dread、Tyrant Dread L5、Horror Drone #1、暴君压迫层（低频轰鸣 + 心跳）
 - **军鼓**：追逐节奏层（加鼓点）
@@ -66,18 +80,22 @@
 - **加速鼓点**：Tyrant Dread L5
 - **压迫感**：Tyrant Dread
 - **口哨**：Goofy Attitude!
-- **呼吸**：走廊喘息/呼吸环境层
+- **呼吸**：走廊喘息/呼吸环境层、Thin Silence
 - **喘息**：暴君压迫层（低频轰鸣 + 心跳）、走廊喘息/呼吸环境层
 - **嗡鸣**：Horror Drone #1
+- **失真弦乐**：Hollow Victory
 - **失真贝斯**：Assault
+- **失真钢琴**：Cold Chalk
 - **工业噪音**：Assault
 - **底鼓**：追逐节奏层（加鼓点）
 - **弦乐持续音**：Vicegrip of Pursuit
 - **弦乐长音**：The Childrens Room
 - **弹簧音效**：Goofy Attitude!
-- **心跳**：暴君压迫层（低频轰鸣 + 心跳）
+- **心跳**：暴君压迫层（低频轰鸣 + 心跳）、Thin Silence
+- **急促鼓点**：Dragged Below
 - **急促鼓组**：Chase!
 - **怪异采样**：The Fridge is Hungry
+- **拖刀金属**：The Helmet
 - **持续低音**：Night Runner
 - **摇摆节奏**：Wacky Wobblings
 - **时钟滴答**：Night Runner
@@ -88,21 +106,31 @@
 - **渐强弦乐**：Night Runner
 - **滑稽管乐**：Goofy Attitude!
 - **滑音**：Wacky Wobblings
+- **滴水**：Lower Halls、Cold Chalk
 - **灯管爆闪**：L5 灯管闪烁 / 电流嗡鸣层
 - **玩具音色**：Wacky Wobblings
 - **电子琶音**：Chase!
 - **电流嗡鸣**：L5 灯管闪烁 / 电流嗡鸣层
+- **磁带减速**：Swallowed
 - **稀疏钢琴**：The Childrens Room
 - **空洞回响**：Somber
+- **粉笔声**：Cold Chalk
+- **脚步逼近**：The Helmet
 - **警报音色**：Chase!
 - **走廊回响**：The Childrens Room
 - **踩镲**：追逐节奏层（加鼓点）
 - **轻快鼓点**：Happy Loop
-- **远处回响**：钟声 / 下课铃环境层
+- **轻白噪**：Thin Silence
+- **远处关门**：Swallowed
+- **远处回响**：钟声 / 下课铃环境层、Shifting Stone
+- **远处脚步**：Lower Halls
 - **重鼓**：Assault
+- **金属拖拽**：Dragged Below
+- **金属摩擦**：Shifting Stone
 - **金属敲击**：Vicegrip of Pursuit
 - **钟声**：钟声 / 下课铃环境层
 - **铜管齐奏**：Big Intro #2
+- **长回响**：Hollow Victory
 - **高频颤动**：L5 灯管闪烁 / 电流嗡鸣层
 
 ## 六、授权审计
@@ -128,5 +156,13 @@
 | `gap_breath_ambience` | — | — | — | — | — |
 | `gap_bell_ambience` | — | — | — | — | — |
 | `gap_l5_flicker_ambience` | — | — | — | — | — |
+| `dungeon_calm` | — | — | — | — | — |
+| `dungeon_alert` | — | — | — | — | — |
+| `dungeon_chase` | — | — | — | — | — |
+| `dungeon_quiz` | — | — | — | — | — |
+| `pyramid` | — | — | — | — | — |
+| `dungeon_safe` | — | — | — | — | — |
+| `dungeon_clear` | — | — | — | — | — |
+| `dungeon_gameover` | — | — | — | — | — |
 
 > 补素材站点：Audionautix（CC BY 4.0，**必须署名**）、Freesound（逐条看授权，避开 CC BY-NC）。新增曲目一律先确认 `commercial_ok` 再入库。

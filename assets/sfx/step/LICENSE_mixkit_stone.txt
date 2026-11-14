@@ -1,0 +1,21 @@
+Mixkit Sound Effects — 石地脚步（step_stone_1..5.ogg）
+================================================================
+
+来源（Mixkit，免费音效库）
+- "Walking on stones loop"  https://mixkit.co/free-sound-effects/footstep/
+  直链：https://assets.mixkit.co/active_storage/sfx/1269/1269-preview.mp3
+- "Footsteps on stones loop" 同页（备用，本轮未采用）
+
+许可：Mixkit Sound Effects Free License
+  https://mixkit.co/license/#sfxFree
+  - 可免费用于商业与非商业项目（游戏、影片、广告等）
+  - 无需署名
+  - 不可把音效作为「独立素材文件」再分发/转售（放进游戏里没问题）
+
+本项目的处理（属于允许的修改）：
+  - 从 15.3s 的石头路行走录音里切出 5 个单步（0.32~0.47s）
+  - 每条做 6ms 淡入 / 30ms 淡出，峰值归一化到 -3dBFS
+  - 转单声道、44.1kHz、OGG Vorbis q5
+
+注意：stone_4 的原始峰值较低（-33dB），归一化后底噪会略明显，
+若试听觉得脏，换 Mixkit 同页的 "Footsteps on stones loop"（1270）切一条补位。
