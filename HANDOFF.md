@@ -3,8 +3,8 @@
 - 更新时间：2026-11-14 20:30
 - 最后操作：opencode（第二层 P0）
 - 分支：main
-- 当前 HEAD：本轮收工提交（P0 第二层骨架），见下方「本轮提交」
-- 已推送 origin/main：本轮收工已推送
+- 当前 HEAD：`699f6ce`（feat(world): 第二层骨架 P0）
+- 已推送 origin/main：`d8677e6`（`699f6ce` **待推送**，2026-11-14 20:33 网络不通，本地已提交）
 - 工作区：**另一个窗口同时在改 `scripts/main.gd` / `scripts/student.gd`**（第一层名单 `FLOOR_ROLES`、角色数值 `ROLE_STATS`、`base_catch_radius`）。20:13 曾把 `scripts/*.gd` 整批还原过一次，P0 改动已重新落盘并提交；明天开工前先 `git status` 看是否还有并行改动，别互相覆盖。
 - 另外：`tests/shot_*.png` 被另一窗口重拍，**本轮未提交**；`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
