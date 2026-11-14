@@ -14,6 +14,10 @@ const L_INTRO := 60
 const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
 const MINIMAP_ENABLED := true
+## 世界层：1 = 学校（真实的人），2 = 地牢（伪人 + 第一批怪物），3 = 地狱（全是怪物）。
+## 第一层 5 关只有学生/老师/保安；怪物角色（skeleton/zombie/puppet/minotaur/grotesque/slime/mimic）
+## 的代码与素材全部保留，等做第二层时把这里改成 2 即可启用。
+const WORLD_LAYER := 1
 ## 镜头以房间中心为准，最多把镜头从房间中心往玩家方向拉这么多（视口半宽/半高的比例）
 const CAMERA_PLAYER_MAX_OFF := 0.26
 ## 镜头边界就用地图矩形（四周已经补了 MAP_PAD 格实体，不会露出空白）
@@ -670,20 +674,21 @@ func _spawn_students() -> void:
 	count = clampi(count, 7, 16)
 	var spots: Array[Vector2] = map.spawn_points(count, true)
 	var roles: Array[String] = ["student", "student", "student", "juan", "juan", "teacher", "guard"]
-	# 3F 起混入怪物：越深越多（怪物素材来自 素材/怪物，方向帧由 tools/monster_dirs.py 生成）
-	# 按楼层混入怪物（最多占 4 个位置，其余保留学生/老师/保安）
+	# 怪物按世界层启用：第一层是「正常学校」，只出学生/老师/保安（认知污染还没开始）
+	# 第二层（地牢）才混入骷髅/僵尸/傀儡/牛头人/随机怪/史莱姆，见 student.gd 的 ROLE_* 表
 	var chosen: Array[String] = []
-	match GameState.level:
-		2:
-			chosen = ["slime"]
-		3:
-			chosen = ["slime", "skeleton", "zombie"]
-		4:
-			chosen = ["slime", "skeleton", "puppet", "grotesque"]
-		5:
-			chosen = ["slime", "zombie", "puppet", "minotaur"]
-		_:
-			chosen = []
+	if WORLD_LAYER >= 2:
+		match GameState.level:
+			2:
+				chosen = ["slime"]
+			3:
+				chosen = ["slime", "skeleton", "zombie"]
+			4:
+				chosen = ["slime", "skeleton", "puppet", "grotesque"]
+			5:
+				chosen = ["slime", "zombie", "puppet", "minotaur"]
+			_:
+				chosen = []
 	for k in chosen.size():
 		if k < roles.size():
 			roles[k] = chosen[k]
@@ -704,7 +709,12 @@ func _spawn_students() -> void:
 		add_child(student)
 		student.setup(map, player)
 
-	# 宝箱怪：2F 起藏在储物间的箱子堆里（没有储物间就藏在别的房间角落）
+	# 宝箱怪只属于第二层（地牢），第一层不生成
+	if WORLD_LAYER >= 2:
+		_spawn_mimics()
+
+## 宝箱怪：藏在储物间的箱子堆里，玩家靠近才醒（第一层不调用）。
+func _spawn_mimics() -> void:
 	var mimic_n := 0
 	if GameState.level >= 2:
 		mimic_n = 1
