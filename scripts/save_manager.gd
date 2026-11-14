@@ -5,7 +5,7 @@ const SAVE_BAK_PATH := "user://save_juangou.bak.json"
 const SAVE_TMP_PATH := "user://save_juangou.tmp.json"
 const SAVE_KEY := "juangou_save"
 const SETTINGS_PATH := "user://settings.cfg"
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 var _intro_seen := false
 
 func save_run() -> bool:
@@ -72,8 +72,11 @@ func _collect() -> Dictionary:
 		"grade": GameState.grade_id,
 		"subjects": GameState.subjects,
 		"level": GameState.level,
+		"world": GameState.world,
 		"study": GameState.study,
 		"emptiness": GameState.emptiness,
+		"contamination": GameState.contamination,
+		"notebook_fuel": GameState.notebook_fuel,
 		"warnings": GameState.warnings,
 		"stars": GameState.stars,
 		"level_stars": GameState.level_stars,
@@ -115,6 +118,13 @@ func _migrate(d: Dictionary) -> Dictionary:
 						slots.append({"id": sid, "count": 1})
 		d["inventory"] = slots
 		d["version"] = 3
+	if version < 4:
+		# v4：世界层 + 认知污染 + 笔记本电量（旧档默认第一层、无污染、满电）
+		if not d.has("contamination"):
+			d["contamination"] = 0.0
+		if not d.has("notebook_fuel"):
+			d["notebook_fuel"] = GameState.NOTEBOOK_FUEL_MAX
+		d["version"] = 4
 	return d
 
 func _apply(d: Dictionary) -> bool:
@@ -126,6 +136,8 @@ func _apply(d: Dictionary) -> bool:
 	GameState.set_level(int(d.get("level", 1)))
 	GameState.study = float(d.get("study", 0.0))
 	GameState.emptiness = float(d.get("emptiness", 50.0))
+	GameState.contamination = float(d.get("contamination", 0.0))
+	GameState.notebook_fuel = float(d.get("notebook_fuel", GameState.NOTEBOOK_FUEL_MAX))
 	GameState.warnings = int(d.get("warnings", 0))
 	GameState.stars = int(d.get("stars", 0))
 	var star_map := {}

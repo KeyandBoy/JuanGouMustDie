@@ -14,10 +14,23 @@ const L_INTRO := 60
 const ANTI_TYRANT_ITEMS: Array[String] = ["smoke", "chair", "stink"]
 const GENERAL_ITEMS: Array[String] = ["coffee", "bread", "portal", "shovel", "lamp", "notes", "shoes", "stopwatch", "intel", "ears"]
 const MINIMAP_ENABLED := true
-## 世界层：1 = 学校（真实的人），2 = 地牢（伪人 + 第一批怪物），3 = 地狱（全是怪物）。
-## 第一层 5 关只有学生/老师/保安；怪物角色（skeleton/zombie/puppet/minotaur/grotesque/slime/mimic）
-## 的代码与素材全部保留，等做第二层时把这里改成 2 即可启用。
-const WORLD_LAYER := 1
+## 第一层（1~5F）是正常学校，只出人：威胁按楼层解锁（2F 卷狗、3F 老师、4F 保安、5F 全上）。
+## 第二层（6~10F）由 GameState.world 自动切换，才混入怪物；怪物代码与素材一直留着。
+## 每层的敌人名单（长度就是该层的基础人数；地图更大时额外补普通同学）。
+const FLOOR_ROLES := {
+	1: ["student", "student", "student", "student", "student"],
+	2: ["student", "student", "student", "student", "juan", "juan"],
+	3: ["student", "student", "student", "student", "juan", "juan", "teacher"],
+	4: ["student", "student", "student", "student", "juan", "juan", "teacher", "teacher", "guard"],
+	5: [
+		"student", "student", "student", "student",
+		"juan", "juan", "juan",
+		"teacher", "teacher",
+		"guard", "guard",
+	],
+}
+## 第一层人数上限（含面积加成）
+const FLOOR_POP_MAX := 14
 ## 镜头以房间中心为准，最多把镜头从房间中心往玩家方向拉这么多（视口半宽/半高的比例）
 const CAMERA_PLAYER_MAX_OFF := 0.26
 ## 镜头边界就用地图矩形（四周已经补了 MAP_PAD 格实体，不会露出空白）
@@ -609,7 +622,9 @@ func _start_level(p_level: int = 1) -> void:
 	GameState.set_level(p_level)
 	GameState.get_random_phase()
 	_setup_level(true)
-	hud.toast("第 %d 层 · %s · 目标：净答对 %.0f 题" % [GameState.level, GameState.get_phase_label(), GameState.study_goal])
+	hud.toast("%s · %dF · %s · 目标：净答对 %.0f 题" % [
+		GameState.world_title(p_level), GameState.level,
+		GameState.get_phase_label(), GameState.study_goal])
 
 func _random_spawn_position() -> Vector2:
 	if map == null or map.rooms.is_empty():
@@ -668,30 +683,34 @@ func _spawn_students() -> void:
 	for s in get_tree().get_nodes_in_group("students"):
 		s.queue_free()
 	if map.rooms.is_empty(): return
-	# 按地图面积加成：以旧图（约 3000 格）为基准，每多 1200 格多 1 个，上限 16
+	# 楼层构成：先用该层名单（老师/保安不会因为随机而缺席），
+	# 地图比基准（约 3000 格）大就补普通同学，最多 3 个，总数上限 14。
+	var lv := clampi(GameState.level, 1, 5)
+	var base: Array = FLOOR_ROLES.get(lv, FLOOR_ROLES[1])
 	var area_cells: int = map.gw * map.gh
-	var count: int = 7 + (GameState.level - 1) + clampi(int((area_cells - 3000) / 1200.0), 0, 6)
-	count = clampi(count, 7, 16)
+	var extra: int = clampi(int((area_cells - 3000) / 1600.0), 0, 3)
+	var count: int = mini(base.size() + extra, FLOOR_POP_MAX)
 	var spots: Array[Vector2] = map.spawn_points(count, true)
-	var roles: Array[String] = ["student", "student", "student", "juan", "juan", "teacher", "guard"]
-	# 怪物按世界层启用：第一层是「正常学校」，只出学生/老师/保安（认知污染还没开始）
-	# 第二层（地牢）才混入骷髅/僵尸/傀儡/牛头人/随机怪/史莱姆，见 student.gd 的 ROLE_* 表
-	var chosen: Array[String] = []
-	if WORLD_LAYER >= 2:
+	var roles: Array[String] = []
+	for i in count:
+		roles.append(String(base[i]) if i < base.size() else "student")
+	# 第二层（地牢，6F 起）才混入怪物；第一层是正常学校，一个人形之外的东西都不该有
+	if GameState.world >= 2:
+		var chosen: Array[String] = []
 		match GameState.level:
-			2:
+			6:
 				chosen = ["slime"]
-			3:
+			7:
 				chosen = ["slime", "skeleton", "zombie"]
-			4:
+			8:
 				chosen = ["slime", "skeleton", "puppet", "grotesque"]
-			5:
+			9:
 				chosen = ["slime", "zombie", "puppet", "minotaur"]
 			_:
 				chosen = []
-	for k in chosen.size():
-		if k < roles.size():
-			roles[k] = chosen[k]
+		for k in chosen.size():
+			if k < roles.size():
+				roles[k] = chosen[k]
 	roles.shuffle()
 	for i in count:
 		var student: CharacterBody2D = student_scene.new()
@@ -710,15 +729,15 @@ func _spawn_students() -> void:
 		student.setup(map, player)
 
 	# 宝箱怪只属于第二层（地牢），第一层不生成
-	if WORLD_LAYER >= 2:
+	if GameState.world >= 2:
 		_spawn_mimics()
 
 ## 宝箱怪：藏在储物间的箱子堆里，玩家靠近才醒（第一层不调用）。
 func _spawn_mimics() -> void:
 	var mimic_n := 0
-	if GameState.level >= 2:
+	if GameState.level >= 6:
 		mimic_n = 1
-	if GameState.level >= 4:
+	if GameState.level >= 8:
 		mimic_n = 2
 	var mimic_spots: Array[Vector2] = []
 	for br in map.box_rects:
@@ -1780,8 +1799,11 @@ func _on_level_cleared() -> void:
 		quiz.close()
 	hud.set_prompt("")
 	hud.toast("第 %d 层目标达成！" % GameState.level)
-	if GameState.level >= GameState.MAX_LEVEL:
-		GameState.game_cleared = true
+	if GameState.is_last_level_of_world():
+		# 只有「本世界的最后一层」才算通关：第一层 5F / 第二层 10F。
+		# 第二层结尾只是走出地牢，第三层（11~15F）以后再接。
+		if GameState.world >= 3:
+			GameState.game_cleared = true
 	var star_run: int = GameState.evaluate_stars(GameState.level, GameState.level_time, GameState.caught_count)
 	last_run_stars = star_run
 	last_star_gain = GameState.award_stars(GameState.level, star_run)
@@ -1878,7 +1900,7 @@ func _show_clear_panel() -> void:
 	detail.modulate = Color(0.78, 0.8, 0.86)
 	detail.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(detail)
-	if GameState.level >= GameState.MAX_LEVEL:
+	if GameState.is_last_level_of_world():
 		var end_tex: Texture2D = load("res://art/cutscene/ending_placeholder.png") if ResourceLoader.exists("res://art/cutscene/ending_placeholder.png") else null
 		if end_tex != null:
 			var art := TextureRect.new()
@@ -1889,14 +1911,19 @@ func _show_clear_panel() -> void:
 			art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 			vbox.add_child(art)
 		var end := Label.new()
-		end.text = "全部通关 / 毕业\n（结局与制作名单占位）"
+		if GameState.world >= 3:
+			end.text = "全部通关 / 毕业\n（结局与制作名单占位）"
+		elif GameState.world == 2:
+			end.text = "第二层通关 / 走出地牢\n（第三层地狱尚未开放）"
+		else:
+			end.text = "第一层通关 / 放学\n第二层 · 地牢 已解锁"
 		end.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		end.modulate = Color(1.0, 0.85, 0.6)
 		vbox.add_child(end)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(row)
-	if GameState.level < GameState.MAX_LEVEL:
+	if not GameState.is_last_level_of_world():
 		var next := Button.new()
 		next.text = "下一关（上楼）"
 		next.custom_minimum_size = Vector2(150, 40)
@@ -1986,11 +2013,11 @@ func _obstacle_ahead(p: Vector2) -> bool:
 func _leave_clear_to_menu() -> void:
 	if transitioning:
 		return
-	if GameState.level < GameState.MAX_LEVEL:
+	if not GameState.is_last_level_of_world():
 		GameState.set_level(GameState.level + 1)
 		GameState.warnings = 0
 		GameState.emptiness = maxf(40.0, GameState.emptiness)
-	else:
+	elif GameState.world >= 3:
 		GameState.game_cleared = true
 	SaveManager.save_run()
 	if clear_layer != null and is_instance_valid(clear_layer):
@@ -2669,7 +2696,16 @@ func _menu_info_text() -> String:
 		out += "　　" + credit
 	return out
 
-func _show_level_select() -> void:
+func _show_level_select(p_world: int = 0) -> void:
+	# 世界分页：第一层 1~5F（学校） / 第二层 6~10F（地牢）。
+	# p_world = 0 表示自动（第二层已解锁就直接显示第二层）。
+	var world: int = p_world
+	if world <= 0:
+		world = 2 if _world_unlocked(2) else 1
+	world = clampi(world, 1, 2)
+	var lv_first: int = 1 if world == 1 else 6
+	var lv_last: int = GameState.last_level_of_world(lv_first)
+
 	var layer := CanvasLayer.new()
 	_push_modal(layer)
 	_build_menu_background(layer)
@@ -2698,6 +2734,40 @@ func _show_level_select() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
+	# 世界页签：第一层 / 第二层。未解锁的第二层显示灰色，点了给提示。
+	var tabs := HBoxContainer.new()
+	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+	tabs.add_theme_constant_override("separation", 10)
+	vbox.add_child(tabs)
+	for w in [1, 2]:
+		var open: bool = _world_unlocked(w)
+		var tab := Button.new()
+		tab.text = String(GameState.WORLD_NAMES.get(w, "第 %d 层" % w))
+		tab.custom_minimum_size = Vector2(220, 40)
+		tab.add_theme_font_size_override("font_size", 18)
+		tab.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var accent := UiTheme.get_button_color(0 if w == 1 else 2)
+		if w == world:
+			tab.add_theme_stylebox_override("normal", UiTheme.accent_button_style(accent, true))
+			tab.add_theme_stylebox_override("hover", UiTheme.accent_button_style(accent, true))
+			tab.add_theme_stylebox_override("pressed", UiTheme.accent_button_style(accent.darkened(0.2), true))
+			tab.add_theme_color_override("font_color", Color(0.05, 0.03, 0.10))
+		else:
+			tab.add_theme_stylebox_override("normal", UiTheme.accent_button_style(accent.darkened(0.35) if open else Color(0.35, 0.33, 0.42)))
+			tab.add_theme_stylebox_override("hover", UiTheme.accent_button_style(accent, false))
+			tab.add_theme_stylebox_override("pressed", UiTheme.accent_button_style(accent.darkened(0.25), true))
+			tab.add_theme_color_override("font_color", UiTheme.COL_TEXT_DIM if not open else UiTheme.COL_TEXT)
+		tab.pressed.connect(func():
+			if w == world:
+				return
+			AudioManager.kick()
+			if not _world_unlocked(w):
+				hud.toast("通关第一层 5F 后解锁第二层")
+				return
+			_pop_modal(layer)
+			_show_level_select(w))
+		tabs.add_child(tab)
+
 	var tip := Label.new()
 	tip.text = "通关第 n 层永久解锁第 n+1 层"
 	if DevMode.enabled and DevMode.unlock_all_levels:
@@ -2713,7 +2783,7 @@ func _show_level_select() -> void:
 	vbox.add_child(cards)
 	var card_nodes: Array[Control] = []
 
-	for lv in range(1, GameState.MAX_LEVEL + 1):
+	for lv in range(lv_first, lv_last + 1):
 		var accent := UiTheme.get_button_color(lv - 1)
 		var unlocked: bool = GameState.is_level_unlocked(lv)
 		var best: int = GameState.star_best(lv)
@@ -2815,6 +2885,15 @@ func _show_level_select() -> void:
 		ct.parallel().tween_property(c, "scale", Vector2.ONE, 0.16)
 
 	_spawn_menu_lightning(layer)
+
+## 世界层是否已解锁：第一层永远开；第二层要 5F 通关（max_cleared_level >= 6）或开发者版全开。
+func _world_unlocked(p_world: int) -> bool:
+	if p_world <= 1:
+		return true
+	if DevMode.enabled and DevMode.unlock_all_levels:
+		return true
+	var first: int = 6 if p_world == 2 else 11
+	return GameState.max_cleared_level >= first
 
 func _on_level_card_pressed(lv: int) -> void:
 	AudioManager.kick()

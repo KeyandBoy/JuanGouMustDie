@@ -1,12 +1,12 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-08
-- 最后操作：opencode
+- 更新时间：2026-11-14 20:30
+- 最后操作：opencode（第二层 P0）
 - 分支：main
-- 当前 HEAD：`fb9e48e`（第三层世界 11~15F 设计文档）
-- 已推送 origin/main：`5edbe9f`（`fb9e48e` 待推送；纯文档）
-- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `intro.gd` / `art/cutscene` 属于另一窗口，**不要误提交**。
-- 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
+- 当前 HEAD：本轮收工提交（P0 第二层骨架），见下方「本轮提交」
+- 已推送 origin/main：本轮收工已推送
+- 工作区：**另一个窗口同时在改 `scripts/main.gd` / `scripts/student.gd`**（第一层名单 `FLOOR_ROLES`、角色数值 `ROLE_STATS`、`base_catch_radius`）。20:13 曾把 `scripts/*.gd` 整批还原过一次，P0 改动已重新落盘并提交；明天开工前先 `git status` 看是否还有并行改动，别互相覆盖。
+- 另外：`tests/shot_*.png` 被另一窗口重拍，**本轮未提交**；`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
 ## 最简用法（推荐）
 
@@ -239,17 +239,16 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **角色素材收尾（下一步优先，本轮刚做完）**：`art/sprites/lpc/actions/` 已有每人 29 组全动作，但游戏还没接攻击/施法；如果后续给暴君加技能或给玩家加动作，直接按 `index.json` 取条带。另：老师/保安/学生/卷狗现在只在追击者里出现，若后续加对话，头像已在 `dialogue_db.PORTRAITS` 登记。
-2. **Phase 5 手感微调**：拿 `_big_probe` 输出的每间房课桌/家具数量，把装饰密度往「8~12 件」收、确认大教室里课桌不空、确认敌人 7~16 的曲线；觉得房间还不够好认时优先补「墙面特征」（黑板/画框/出口标识），不要加新系统。
-3. **套间/环路手感**：里间门口的「门」现在和普通门一样（E 开关）；如果玩家根本找不到，考虑给套间门加一点视觉提示（半开/门牌），但别破坏「探索才找到」的意图；环路门洞目前是墙上的 2 格缺口，可考虑加门框描边。
-4. **家具贴图是原型**：`art/furniture/README.md` 已写明来源与「授权未确认，发布前替换」；确认授权或自绘后按同名覆盖即可（代码按 rect 拉伸，尺寸可不同）。
-5. **EFG 剩余大件**（每项先确认再动）：E1 模板插门、E6 SubViewport 小地图（本轮小地图是 Control 直接画，需复核是否还要独立 Viewport）、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
-6. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
-7. **A10 / A8 接线**：音频窗口按 `Breath.state` 播放呼吸循环（`assets/sfx/breath/breath_{tense,panic,blind}.ogg` 已预留）；拾取「叮」在 `main._on_item_picked()` 接 `AudioManager.play_sfx`。
-8. **D6 追逐鼓点层**：仍需与 `chase_electro` 同 BPM 的分轨素材；D8 三套脚步采样已齐。
-9. **测试命令**：十二套（flow / _b / _fx / _settings / _c_ui / _d / _e / _f / _g / student→BAD_FRAMES=0 / tutorial / _stalker）+ 本轮新增 `_map_probe` / `_big_probe`；截图用 `screenshot.tscn`（非 headless），套间样张用 `_nested_shot.tscn`。
-10. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
-11. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+1. **第二层（地牢 6~10F）P0 已完成，P1 开工**：骨架已落地（`GameState.world` 推导、`MAX_LEVEL=10`、6~10F 目标 16/20/24/28/32、存档 v4、楼层选择按世界分页、5F 通关解锁第二层、`is_last_level_of_world()` 取代 `MAX_LEVEL` 判通关）。
+   P1 = `school_map.gd` 的 `world=2` 区域制大地图：28~34 房 / 3~4 区 / 区间长走廊+门 / 13 房型（现有 10 种换皮 + `cell`/`torture`/`altar`）/ 石砌:校园配比 7:3→3:7 / 安全屋 2 间。
+2. **P2 污染链**：空虚衰减接 `GameState.emptiness_decay_rate()`（现在是固定 1.0/s，见 `main.gd` 第 955 行附近）、HUD 污染条、黑白 shader、症状 25/50/75/100。
+3. **P3 50% 钥匙门禁**：`STUDY_GATE_RATIO` 已定义未接线；难度三项（档位偏移 / 每题限时 14→10s / 收益 ×0.75~0.9）与 4 种降难度道具。
+4. **P4/P5 敌人**：伪人 `corrupt` 角色（`student.gd` 的 `ROLE_*` 还没有该项）+ 三角头；样张先给用户确认再批量。
+5. **P6/P7**：仓库/携带格/旧笔记本/小地图只画当前区域、安全屋、被抓 4 特效。
+6. **并行窗口冲突**：开工先 `git status`；`scripts/main.gd`、`scripts/student.gd` 是两个窗口共用文件，改前先看有没有未提交改动，改完立刻 commit。
+7. **测试命令**：`flow_test` / `_stalkerprobe` / `student_test` / `tutorial_test` 四套必跑；本轮新增 `tests/_world_probe.tscn`（世界层/污染/存档往返，改 `game_state.gd` 或楼层逻辑后跑它）。
+8. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）

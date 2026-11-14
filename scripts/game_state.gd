@@ -11,18 +11,33 @@ signal stars_changed
 signal level_changed(value: int)
 signal hot_changed(level: int)
 signal state_changed(key: StringName)
+signal contamination_changed(value: float)
 
 const DASH_MAX := 100.0
 const HOT_THRESHOLDS: Array[int] = [3, 6, 9]
 const HOT_MULTIPLIERS: Array[float] = [1.0, 1.1, 1.2, 1.3]
-const MAX_LEVEL := 5
+## 第一层 1~5F（学校）+ 第二层 6~10F（地牢）；第三层 11~15F 等后续再往上加。
+const MAX_LEVEL := 10
 const LEVEL_GOALS := {
 	1: 5.0,
 	2: 8.0,
 	3: 11.0,
 	4: 15.0,
 	5: 20.0,
+	6: 16.0,
+	7: 20.0,
+	8: 24.0,
+	9: 28.0,
+	10: 32.0,
 }
+## 每个世界层的最后一层：1=学校(5F)，2=地牢(10F)，3=地狱(15F)
+const WORLD_LAST_LEVEL := {1: 5, 2: 10, 3: 15}
+const WORLD_NAMES := {1: "第一层 · 学校", 2: "第二层 · 地牢", 3: "第三层 · 地狱"}
+## 旧笔记本电量（秒/层）与电池恢复量
+const NOTEBOOK_FUEL_MAX := 15.0
+const NOTEBOOK_BATTERY_GAIN := 5.0
+## 第二层学习值硬卡：到 50% 必须找到本层钥匙才能继续
+const STUDY_GATE_RATIO := 0.5
 const ITEM_CAPACITY := 3
 const BASE_ITEM_CAPACITY := 1
 
@@ -92,6 +107,8 @@ var subjects: Array[String] = ["math"]:
 		state_changed.emit(&"subjects")
 
 var level: int = 1
+## 世界层（1=学校 / 2=地牢 / 3=地狱），由 level 自动推导，不要手写。
+var world: int = 1
 var study_goal: float = 5.0
 var study: float = 0.0:
 	set(v):
@@ -103,6 +120,18 @@ var emptiness: float = 50.0:
 	set(v):
 		emptiness = clampf(v, 0.0, 100.0)
 		emptiness_changed.emit(emptiness)
+
+## 认知污染：只有第二层（world == 2）会涨，0~100。
+var contamination: float = 0.0:
+	set(v):
+		contamination = clampf(v, 0.0, 100.0)
+		contamination_changed.emit(contamination)
+
+## 玩家是否在第二层安全屋里。由 main 每帧/进出门时维护；
+## AudioManager 用它决定 幻听静音 / 安全屋 BGM。
+var in_safe_room := false
+## 旧笔记本剩余电量（秒），每层重置。
+var notebook_fuel: float = NOTEBOOK_FUEL_MAX
 
 var max_warnings: int = 3
 var warnings: int = 0:
@@ -167,10 +196,50 @@ func _ready() -> void:
 
 func set_level(p_level: int) -> void:
 	level = clampi(p_level, 1, MAX_LEVEL)
+	world = world_of_level(level)
 	study_goal = float(LEVEL_GOALS.get(level, 5.0))
 	study = clampf(study, 0.0, study_goal)
 	level_changed.emit(level)
 	study_goal_changed.emit(study_goal)
+
+## 楼层 → 世界层：1~5 学校，6~10 地牢，11~15 地狱。
+static func world_of_level(p_level: int) -> int:
+	if p_level >= 11:
+		return 3
+	if p_level >= 6:
+		return 2
+	return 1
+
+## 该层所在世界的最后一层（第一层 5F、第二层 10F、第三层 15F）。
+static func last_level_of_world(p_level: int) -> int:
+	return int(WORLD_LAST_LEVEL.get(world_of_level(p_level), MAX_LEVEL))
+
+## 是不是「本世界的最后一关」——通关面板 / 上楼按钮用它，而不是 MAX_LEVEL。
+func is_last_level_of_world(p_level: int = -1) -> bool:
+	var lv := level if p_level < 0 else p_level
+	return lv >= last_level_of_world(lv)
+
+## 世界层名（UI 用），如「第二层 · 地牢」。
+static func world_title(p_level: int) -> String:
+	return String(WORLD_NAMES.get(world_of_level(p_level), ""))
+
+## 认知污染倍率 0~1，给黑白/低通/敌人强化用。
+func contamination_ratio() -> float:
+	return contamination / 100.0
+
+## 空虚每秒衰减：第一层恒定 1.0；第二层被污染驱动（0.4 → 2.0）。
+func emptiness_decay_rate() -> float:
+	if world != 2:
+		return 1.0
+	return 0.4 + 1.6 * contamination_ratio()
+
+func damage_contamination(amount: float) -> void:
+	if tutorial_active or world != 2:
+		return
+	contamination = contamination + amount
+
+func restore_contamination(amount: float) -> void:
+	contamination = contamination - amount
 
 func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"]) -> void:
 	grade_id = p_grade
@@ -182,6 +251,8 @@ func start_run(p_grade: String = "junior", p_subjects: Array[String] = ["math"])
 	set_level(1)
 	study = 0.0
 	emptiness = 50.0
+	contamination = 0.0
+	notebook_fuel = NOTEBOOK_FUEL_MAX
 	warnings = 0
 	dash_energy = 0.0
 	correct_streak = 0
@@ -221,6 +292,8 @@ func begin_next_level() -> void:
 		return
 	set_level(level + 1)
 	study = 0.0
+	contamination = maxf(0.0, contamination - 15.0)
+	notebook_fuel = NOTEBOOK_FUEL_MAX
 	warnings = 0
 	dash_energy = 0.0
 	correct_streak = 0
