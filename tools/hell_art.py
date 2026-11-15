@@ -88,7 +88,7 @@ def style_stone(x, y, v, seed):
     rows = 2
     row = int(y * rows)
     off = 0.5 if row % 2 else 0.0
-    bx = (x + off) * 2.0
+    bx = (x + off) * 1.0
     fx, fy = bx - int(bx), y * rows - row
     mortar = 1.0
     if fy < 0.10 or fy > 0.93 or fx < 0.045 or fx > 0.955:
@@ -110,7 +110,8 @@ def style_flesh(x, y, v, seed):
     edge = abs(fbm(x, y, seed + 91 + v, 2, 6) - 0.5) * 2.0
     val = 0.82 + 0.11 * ridge + 0.07 * n
     val -= 0.06 * max(0.0, 0.20 - edge) / 0.20
-    return max(0.62, min(1.0, val))
+    val += (_h(int(x * 20), int(y * 20), seed + 5) - 0.5) * 0.07
+    return max(0.60, min(1.0, val))
 
 
 def style_vessel(x, y, v, seed):
@@ -126,7 +127,8 @@ def style_vessel(x, y, v, seed):
         base *= 0.80
     elif d < 0.20:
         base *= 0.92
-    return max(0.62, min(1.0, base))
+    base += (_h(int(x * 20), int(y * 20), seed + 9) - 0.5) * 0.06
+    return max(0.60, min(1.0, base))
 
 
 def style_bone(x, y, v, seed):
@@ -145,13 +147,13 @@ def style_bone(x, y, v, seed):
 def style_mucosa(x, y, v, seed):
     """粘膜：平滑斑块 + 高光点。"""
     n = fbm(x, y, seed + v, 3, 2)
-    val = 0.76 + 0.18 * n
+    blot = fbm(x, y, seed + 31 + v, 2, 3)
+    val = 0.84 + 0.10 * n - 0.06 * blot
     hi = fbm(x, y, seed + 77 + v, 2, 7)
-    if hi > 0.82:
-        val += 0.05
-    if hi < 0.18:
-        val -= 0.04
-    return max(0.68, min(1.0, val))
+    if hi > 0.84:
+        val += 0.04
+    val += (_h(int(x * 20), int(y * 20), seed + 13) - 0.5) * 0.09
+    return max(0.66, min(1.0, val))
 
 
 def style_acid(x, y, v, seed):
@@ -180,7 +182,7 @@ VARIANTS = 6
 def build_atlas():
     img = Image.new("L", (TILE * VARIANTS, TILE * len(STYLES)), 0)
     px = img.load()
-    vmul = [1.00, 0.96, 1.03, 0.94, 1.02, 0.97]
+    vmul = [1.000, 0.987, 1.012, 0.980, 1.006, 0.993]
     vshift = [(0.00, 0.00), (0.37, 0.11), (0.71, 0.53), (0.19, 0.83), (0.55, 0.29), (0.88, 0.67)]
     for si, (_, fn) in enumerate(STYLES):
         for v in range(VARIANTS):
@@ -223,16 +225,14 @@ def corrupt_furniture():
                 tr = tint[0] * (0.45 + 0.72 * lum)
                 tg = tint[1] * (0.45 + 0.72 * lum)
                 tb = tint[2] * (0.45 + 0.72 * lum)
-                nr = tr * 0.70 + r * 0.30
-                ng = tg * 0.70 + g * 0.30
-                nb = tb * 0.70 + b * 0.30
+                nr = tr * 0.55 + r * 0.45
+                ng = tg * 0.55 + g * 0.45
+                nb = tb * 0.55 + b * 0.45
                 # 淤斑：低频噪声压暗
                 blot = pnoise(x / max(1, w), y / max(1, h), 4, seed)
                 if blot < 0.40:
-                    k = 0.84 + blot * 0.4
+                    k = 0.90 + blot * 0.3
                     nr, ng, nb = nr * k, ng * k, nb * k
-                # 轻微去高光
-                nr, ng, nb = nr * 0.96, ng * 0.96, nb * 0.96
                 op[x, y] = (
                     max(0, min(255, int(nr))),
                     max(0, min(255, int(ng))),
@@ -498,6 +498,33 @@ class Mock:
             d.rectangle([(x1) * TILE - 2, cy * TILE, (x1) * TILE - 1, cy * TILE + TILE - 1],
                         fill=(int(top_col[0] * 0.45), int(top_col[1] * 0.45), int(top_col[2] * 0.45), 255))
 
+    def veins(self, rect, count, seed, color, width=7):
+        """在房间地面画几条粗血管（对应以后的地面装饰 sprite），不越出房间。"""
+        x0, y0, x1, y1 = rect
+        w, h = self.img.size
+        layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        d = ImageDraw.Draw(layer)
+        rng = random.Random(seed)
+        for i in range(count):
+            x = rng.uniform(x0 + 1, x1 - 1) * TILE
+            y = rng.uniform(y0 + 1, y1 - 1) * TILE
+            pts = [(x, y)]
+            a = rng.uniform(0, math.pi * 2)
+            for _ in range(rng.randrange(6, 12)):
+                a += rng.uniform(-0.6, 0.6)
+                step = rng.uniform(30, 70)
+                x += math.cos(a) * step
+                y += math.sin(a) * step
+                pts.append((x, y))
+            d.line(pts, fill=color, width=width, joint="curve")
+            d.line([(px, py + 2) for px, py in pts], fill=(0, 0, 0, 70), width=2)
+        # 只保留房间内部
+        mask = Image.new("L", (w, h), 0)
+        ImageDraw.Draw(mask).rectangle(
+            [x0 * TILE, y0 * TILE, x1 * TILE - 1, y1 * TILE - 1], fill=255)
+        layer.putalpha(Image.composite(layer.getchannel("A"), Image.new("L", (w, h), 0), mask))
+        self.img.alpha_composite(layer)
+
     def prop(self, name, cx, cy):
         p = _furn_path(name)
         if not os.path.exists(p):
@@ -550,7 +577,7 @@ class Mock:
 def make_mocks():
     # ---- 地牢风：石砌 + 焦黑墙 + 炭盆 + 铁栅 + 祭坛；右下角留一张没塌的课桌
     m = Mock(52, 29)
-    m.room((2, 3, 50, 27), 0, (0.62, 0.48, 0.47), 0, (0.34, 0.26, 0.33), C("bone", 0.38)[:3])
+    m.room((2, 3, 50, 27), 0, (0.55, 0.44, 0.45), 0, (0.33, 0.26, 0.34), C("bone", 0.34)[:3])
     for cy in (4, 10, 16, 22):
         m.prop("bars", 3, cy)
     m.prop("altar", 23, 12)
@@ -570,7 +597,8 @@ def make_mocks():
 
     # ---- 器官风：肉褶地面 + 肉墙 + 眼球 + 酸池 + 骨梁
     m = Mock(52, 29)
-    m.room((2, 3, 50, 27), 4, (0.86, 0.55, 0.50), 1, (0.52, 0.26, 0.30), C("flesh", 0.85)[:3])
+    m.room((2, 3, 50, 27), 2, (0.80, 0.48, 0.45), 1, (0.42, 0.22, 0.32), C("flesh", 0.72)[:3])
+    m.veins((2, 3, 50, 27), 6, 20261115, C("blood", 0.75), 7)
     m.prop("eye", 22, 10)
     m.prop("acid_pool", 4, 20)
     m.prop("acid_pool", 38, 19)
@@ -582,7 +610,7 @@ def make_mocks():
     m.prop("stool_b", 32, 14)
     m.prop("desk_small", 44, 14)       # 偶现课桌：不腐化
     m.monster("puppet", 14, 15)
-    m.light(24, 13, 17, (110, 170, 120), 0.32)
+    m.light(24, 13, 16, (110, 170, 120), 0.22)
     m.save(os.path.join(ROOT, "tests", "art_hell_organ.png"))
 
 
