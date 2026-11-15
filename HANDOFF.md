@@ -3,9 +3,9 @@
 - 更新时间：2026-11-15
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`73ab611`（第二层 P1 + 文档收尾）
-- 已推送 origin/main：`73ab611`（已同步）
-- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`scripts/audio_manager.gd` / `assets/music` / `assets/sfx` / `_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**。
+- 当前 HEAD：`a01819c`（文档收尾；其上 `3d54106` 是第二层音频 P0 素材）
+- 已推送 origin/main：`a01819c`（已同步；`git -c http.proxy= -c https.proxy= push` 可用）
+- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
 ## 最简用法（推荐）
@@ -35,6 +35,11 @@
 
 ## 本轮已完成
 
+- **第二层音频 P0：同 BPM BGM 对 + 拖刀 / 耳鸣 / 4 种被抓（2026-11-15，opencode，`3d54106`）**：
+  - 素材全部 Freesound **CC0**，只做切片 / 交叉淡化 / 叠轨（无合成音色）：`dungeon_calm`（80 BPM Industrial Ambient）与 `dungeon_chase`（同一条底曲 −4dB + 80 BPM Industrial Drum 离线预混）→ **构造上同 BPM 同长度 23.6s**；`sfx/pyramid/blade_drag_loop`、`sfx/dungeon/{tinnitus_loop,whisper_loop,whisper_hit,door_far}`、`sfx/caught/{face_slam,dragged,vhs_tear,freeze_frame}`（0.7~0.9s）。
+  - `audio_manager.gd`：`play_caught(kind, by)` / `caught_kind_for()`（学生→脸部扑屏、暴君→被拖走、三角头→VHS、其它→定格帧，同时 duck BGM）、`play_blade_drag()`；`main.gd` 的 `_punish_effect` 与 `_on_tyrant_hit` 各加一行。
+  - 授权：`assets/sfx/LICENSE_freesound_dungeon.txt` + `CREDITS.txt` 第二层小节；catalog 两首补 `license` 块。
+  - 验证：`_dungeon_audio_probe` ALL PASSED，13 套全绿。已知取舍：Freesound 免费预览只有 24 kHz（耳鸣 10 kHz 贴奈奎斯特、金属偏闷）；三角头节点未做，被抓类型按节点名兜底。
 - **第二层 P1：区域制大地图 + 13 房型（2026-11-15，opencode，`c25148a`）**：
   - `school_map.gd`：`TYPE_ORDER` 追加 `cell` / `torture` / `altar`（`weight: 0`，只由 `_pick_dungeon_type()` 选出，eff 0.8 / 0.5 / 1.6，地板走石块行）；新增 `dungeon_stone_ratio()`（6F 30% → 10F 70%）与 `_pick_dungeon_type()`（石砌池 cell 60% / torture 25% / altar 15%，其余从 8 种校园房型抽）。
   - 新增 `_generate_dungeon()`：**2×2 四区**（中庭 / 西翼 / 东翼 / 深处），每区 4 北 + 4 南 = 8 房共 **32 房**；每区中间 6 格宽走廊，四区走廊由中央 6 格宽「主脊」串联，接口各一道 2 格门 → `doors.size() == rooms.size() + 4`。hall 固定首区北排第一间、stair 固定末区第二间。
@@ -256,9 +261,10 @@
 1. **第二层 P2 污染链（下一轮优先）**：①HUD 污染条（0~100，四档刻度）；②画面黑白（`saturation = 1 - 污染/100`，落在 `world_modulate` 或后处理）；③敌人强化 `1 + 0.4×污染/100`、抓人圈 `1 + 0.2×污染/100`（在 `student.gd` / `tyrant.gd` 重算基础数值处乘）；④四档症状 25 错视 / 50 幻听 / 75 篡改 / 100 同化（假小地图标记、幻听音效、地图篡改、同化演出）。**满 100 不硬失败**。
 2. **第二层 P3**：学习值 50% 硬卡 + 钥匙生成（`STUDY_GATE_RATIO` 已在 `game_state.gd` 备好）、楼梯门禁、难度三项叠加（档位上移 / 每题限时 / 单题收益），以及 4 种降难度道具。
 3. **第二层 P4~P7**：伪人（`student.gd` 的 corrupt / gaze / 模仿 / 同步）→ 三角头（听觉锁定 + 慢速追击）→ 背包（1 特殊 + 2 普通，上限 2+4）/ 旧笔记本（15s/层、电池 +5s、打开暂停、污染篡改地图）/ 常驻小地图（只显示当前区域）→ 安全屋 AI 排除、被抓 4 特效、6~10F 铺层。
-4. **音频窗口对接点**（已写进 `协作_分文件方案.md`）：`AudioManager.set_world / set_contamination / set_zone / duck / play_caught`，本窗口用 `has_method()` 保护调用；`GameState.in_safe_room` 每帧可读。
+4. **音频：下一步 P1/P2 素材**（骨架 + P0 已落地，见 `3d54106`）：`dungeon_alert` / `dungeon_quiz` / `pyramid` / `dungeon_safe` 四首曲子（前三首尽量也走 looplicator 的 80 BPM 系列，方便和 calm/chase 互切）、污染跨档 4 个音效、区域切换 `zone_shift`、拾取三连、笔记本开合、安全屋循环、`dungeon_clear` / `dungeon_gameover`。三角头节点做出来之后把 `play_blade_drag()` 接到它移动逻辑上，并把 `caught_kind_for()` 的名字兜底换成真类型。
+5. **音频窗口对接点**（已写进 `协作_分文件方案.md`）：P0 之后 `play_caught(kind, by)` / `duck_music()` / `play_blade_drag(pos)` 已是真实 API；`set_world / set_contamination / set_zone` 这一层仍按 `has_method()` 保护。`GameState.in_safe_room` 每帧可读。
 5. **文档风险（已踩过）**：11-15 另一窗口改写 `开发记录.md` 时把「第二层 P0」整条覆盖掉了，已按 `699f6ce` 原文补回。**两边同时改 `开发记录.md` / `HANDOFF.md` 时先读最新内容、只在顶部追加，不要整段重写。**
-6. **第一层遗留（不急）**：EFG 剩余大件 E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12；A9 击败暴君接 `Fx.slowmo`；A10 呼吸循环接线；D6 同 BPM 追逐鼓点层等分轨素材。
+6. **第一层遗留（不急）**：EFG 剩余大件 E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12；A9 击败暴君接 `Fx.slowmo`；A10 呼吸循环接线；D6 同 BPM 追逐鼓点层——第二层已用「底曲 + 鼓点离线预混」解决（`dungeon_chase`），第一层仍等分轨素材。
 7. **家具贴图是原型**：`art/furniture/README.md` 已注明「授权未确认，发布前替换」；代码按 rect 拉伸，同名覆盖即可。
 8. **测试命令**：见下节「测试状态」，第二层加了 `_dungeon_probe`；截图探针 `tests/_dungeon_shot.tscn` **不要加 `--headless`**。
 9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push（本机代理没起时用 `git -c http.proxy= -c https.proxy= push`）。
@@ -306,6 +312,7 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --headless --path . --quit-after 90000 res://tests/_big_probe.tscn       # BIG_PROBE seeds=8 failures=0（家具落位）
 & $G --headless --path . --quit-after 60000 res://tests/_world_probe.tscn      # WORLD_PROBE: ALL PASSED（世界层 / 6~10F / 存档 v4）
 & $G --headless --path . --quit-after 180000 res://tests/_dungeon_probe.tscn   # DUNGEON_PROBE: ALL PASSED（6~10F 区域制布局 / 安全屋 / 导航连通）
+& $G --headless --path . --quit-after 25000 res://tests/_dungeon_audio_probe.tscn  # DUNGEON_AUDIO_PROBE: ALL PASSED（第二层音频：总线/路由/污染/状态机/回退/duck/幻听/素材）
 & $G --path . --resolution 1280x720 res://tests/screenshot.tscn               # 重拍 shot_*.png
 & $G --path . res://tests/_dungeon_shot.tscn                                   # shot_dungeon_play / _map / shot_level_select_w1|w2（不要 headless）
 & $G --path . --resolution 1280x720 res://tests/_nested_shot.tscn             # 套间三张样张
