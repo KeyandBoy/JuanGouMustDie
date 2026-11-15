@@ -137,11 +137,11 @@ def style_bone(x, y, v, seed):
     b = fbm(x + 0.37, y + 0.21, seed + 13 + v, 3, 3)
     plate = 0.5 + 0.5 * math.sin((a - b) * 8.0)
     seam = abs(a - b)
-    val = 0.66 + 0.28 * plate
+    val = 0.80 + 0.14 * plate
     if seam < 0.035:
-        val *= 0.62
-    val += 0.08 * fbm(x, y, seed + 41 + v, 2, 8)
-    return max(0.40, min(1.0, val))
+        val *= 0.86
+    val += 0.05 * fbm(x, y, seed + 41 + v, 2, 8)
+    return max(0.62, min(1.0, val))
 
 
 def style_mucosa(x, y, v, seed):
