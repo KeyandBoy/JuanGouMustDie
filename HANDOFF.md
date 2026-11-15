@@ -3,8 +3,8 @@
 - 更新时间：2026-11-15
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`c25148a`（第二层 P1：区域制大地图 + 13 房型）
-- 已推送 origin/main：`96ffa9b`；`c25148a` **还没推**（本机代理 `127.0.0.1:7897` 没起，`git push` 报 443 连接失败，网络恢复后直接推）
+- 当前 HEAD：`73ab611`（第二层 P1 + 文档收尾）
+- 已推送 origin/main：`73ab611`（已同步）
 - 工作区：`tests/shot_*.png` 已重拍但故意不提交；`scripts/audio_manager.gd` / `assets/music` / `assets/sfx` / `_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
