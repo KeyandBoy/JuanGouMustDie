@@ -117,7 +117,6 @@ var room_heat_cd: Array[float] = []
 var room_heat_tier: Array[int] = []
 var rustle_timer := 0.0
 var visited_rooms := {}
-var safe_room_used := false
 var item_spawn_script := load("res://scripts/pickup.gd")
 var tyrant_script := load("res://scripts/tyrant.gd")
 var portal_anchor := Vector2.INF
@@ -592,7 +591,6 @@ func _setup_level(p_spawn_random := false) -> void:
 	camera.reset_smoothing()
 	camera.global_position = player.global_position
 	visited_rooms.clear()
-	safe_room_used = false
 	if minimap != null and minimap.has_method("reset_discovered"):
 		minimap.reset_discovered()
 	room_heat.clear()
@@ -935,6 +933,13 @@ func _process(delta: float) -> void:
 	_layout_minimap()
 	map.explore_room_at(player.position)
 
+	# 第二层安全屋：进入后按秒回理智 / 降污染（设计 §8）；音频窗口也读这个字段。
+	var in_safe: bool = map.is_safe_room_at(player.position)
+	GameState.in_safe_room = in_safe
+	if in_safe and GameState.world >= 2 and GameState.run_state == GameState.RunState.EXPLORING:
+		GameState.restore_emptiness(6.0 * delta)
+		GameState.restore_contamination(6.0 * delta)
+
 	var rs := GameState.run_state
 	if rs == GameState.RunState.GAMEOVER:
 		_on_game_over()
@@ -970,11 +975,13 @@ func _process(delta: float) -> void:
 			sprint_noise_timer = 0.0
 		if active_study:
 			_study_noise_tick(delta)
-		elif not GameState.tutorial_active:
-			emptiness_timer += delta
+		elif not GameState.tutorial_active and not GameState.in_safe_room:
+			# 第二层：空虚衰减速度跟污染挂钩（0.4~2.0/s），第一层恒 1.0/s
+			emptiness_timer += GameState.emptiness_decay_rate() * delta
 			if emptiness_timer >= 1.0:
-				emptiness_timer = 0.0
-				GameState.damage_emptiness(1.0)
+				var ticks := int(emptiness_timer)
+				emptiness_timer -= float(ticks)
+				GameState.damage_emptiness(float(ticks))
 		_mark_drift_tick(delta)
 	elif rs == GameState.RunState.QUIZ and active_study:
 		_study_noise_tick(delta)
@@ -1359,19 +1366,13 @@ func _on_room_entered(index: int) -> void:
 			GameState.exam_hint = true
 			hud.toast("探索度已达 60%：解锁「考试范围」，答题会排除一个错误选项")
 	hud.toast("进入 %s" % String(map.room_names[index]))
-	if map.safe_room_index == index:
+	if map.is_safe_room_index(index):
 		_enter_safe_room(index)
 
-## 安全屋：每层一次，回理智 + 存档；不刷新题、不刷怪
+## 安全屋：第二层每层 2 间，停留时持续回理智 / 降污染（_process 里按秒结算）；
+## 不能答题，怪物后续由 P7 的 AI 规则排除进入。
 func _enter_safe_room(_index: int) -> void:
-	if safe_room_used:
-		hud.toast("安全屋已经用过了——这一层不会再回理智")
-		return
-	safe_room_used = true
-	GameState.restore_emptiness(8.0)
-	hud.toast("安全屋：理智 +8（本层仅一次）。这里不能答题，休息一下就走吧")
-	if hud != null and player != null:
-		hud.pop_number(player.global_position + Vector2(0.0, -34.0), "理智 +8", "gain")
+	hud.toast("安全屋：停留时理智 +6/秒、污染 -6/秒。这里不能答题，休息一下就走吧")
 	SaveManager.save_run()
 
 func _on_door_slam() -> void:

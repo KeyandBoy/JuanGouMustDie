@@ -13,13 +13,26 @@ const SAFE_ROOM_MIN_LEVEL := 6
 const WALL_EXT := 1
 const WALL_INT := 1
 const DOOR_W := 2
+## 第二层（地牢）区域制布局参数（设计文档 §6/§12）。
+## 2×2 四区，每区 4 北 + 4 南 = 8 房（共 32 房）；每区中间一条 6 格宽走廊，
+## 四个区的走廊由中央 6 格宽「主脊」串联，接口处设门（= 区间连接走廊 + 门）。
+const DUNGEON_ROOMS_PER_ROW := 4
+const DUNGEON_ZONES := 4
+const DUNGEON_CORRIDOR_H := 6
+const DUNGEON_SPINE_W := 6
+const DUNGEON_ROW_GAP := 6
+const DUNGEON_ROOM_W_MIN := 24
+const DUNGEON_ROOM_W_MAX := 34
+const DUNGEON_ROOM_D_MIN := 20
+const DUNGEON_ROOM_D_MAX := 26
 const SOLID := 0
 const FLOOR := 1
 
-## 房型全集（顺序 = 地砖图集的列序，别乱改）。
+## 房型全集（顺序 = 地砖图集的列序，别乱改；只能往后追加）。
 const TYPE_ORDER := [
 	"classroom", "lab", "library", "medical", "office",
 	"storage", "broadcast", "toilet", "stair", "hall",
+	"cell", "torture", "altar",
 ]
 const CORRIDOR_TYPE := "corridor"
 ## 地板图案种类：6 个随机变体（贴图来自 tools/tilemancer_tiles.py，Tilemancer 风格光照）
@@ -32,6 +45,15 @@ const FLOOR_STYLE_CONCRETE := 2
 const FLOOR_STYLE_STONE := 3
 const FLOOR_STYLE_SAND := 4
 const FLOOR_STYLE_CARPET := 5
+## 地狱图集（第三层）：行序 0 石砌 / 1 肉褶 / 2 血管 / 3 骨板 / 4 粘膜 / 5 酸蚀。
+## 和学校图集一样是**灰度**图案，运行时乘房型颜色，所以换色不需要重画贴图。
+const HELL_ATLAS := preload("res://art/sprites/floor/hell_styles.png")
+const HELL_STYLE_STONE := 0
+const HELL_STYLE_FLESH := 1
+const HELL_STYLE_VESSEL := 2
+const HELL_STYLE_BONE := 3
+const HELL_STYLE_MUCOSA := 4
+const HELL_STYLE_ACID := 5
 
 const CORRIDOR_COLOR := Color(0.88, 0.90, 0.86)
 const CORRIDOR_WALL := Color(0.66, 0.69, 0.73)
@@ -56,6 +78,11 @@ var exit_pos := Vector2.ZERO
 
 var corridor_rect := Rect2()
 var tail_corridor_rect := Rect2()
+## 第二层（地牢）：一个区一条走廊。这里存所有走廊；第一层为空，仍走 corridor_rect 单走廊路径。
+var corridor_rects: Array[Rect2] = []
+## 第二层：每个区的包围盒 + 区名（小地图/笔记本/区域切换用）。
+var zone_rects: Array[Rect2] = []
+var zone_names: Array[String] = []
 var is_l_shape := false
 
 ## 地图四周补的「建筑实体」实心格数：镜头把最外圈房间摆到屏幕正中时，
@@ -114,6 +141,8 @@ var passage_other: Array[int] = []
 var room_roles: Array[String] = []
 var room_depth: Array[int] = []
 var safe_room_index := -1
+## 第二层每层 2 间安全屋；safe_room_index 保留为「第一间」的兼容别名。
+var safe_room_indices: Array[int] = []
 var entry_room_index := -1
 var boss_room_index := -1
 var treasure_room_index := -1
@@ -147,12 +176,21 @@ var type_defs: Dictionary = {
 	"toilet":    {"name": "厕所",     "weight": 2, "color": Color(0.62, 0.83, 0.89), "wall": Color(0.66, 0.85, 0.91), "w_min": 24, "w_max": 30, "eff": 0.0, "desk": 999.0},
 	"stair":     {"name": "楼梯间",   "weight": 1, "color": Color(0.81, 0.83, 0.86), "wall": Color(0.76, 0.79, 0.83), "w_min": 24, "w_max": 30, "eff": 0.0, "desk": 999.0},
 	"hall":      {"name": "大厅楼梯", "weight": 0, "color": Color(0.95, 0.81, 0.52), "wall": Color(0.91, 0.81, 0.63), "w_min": 30, "w_max": 40, "eff": 1.05, "desk": 150.0},
+	# —— 第二层（地牢）专属：weight 恒 0，只能由 _pick_dungeon_type() 选出，不会混进第一层 ——
+	"cell":      {"name": "牢房",     "weight": 0, "color": Color(0.52, 0.55, 0.60), "wall": Color(0.42, 0.45, 0.50), "w_min": 24, "w_max": 32, "eff": 0.80, "desk": 90.0},
+	"torture":   {"name": "刑房",     "weight": 0, "color": Color(0.45, 0.33, 0.33), "wall": Color(0.35, 0.26, 0.27), "w_min": 26, "w_max": 34, "eff": 0.50, "desk": 999.0},
+	"altar":     {"name": "祭坛",     "weight": 0, "color": Color(0.38, 0.30, 0.45), "wall": Color(0.30, 0.24, 0.36), "w_min": 30, "w_max": 40, "eff": 1.60, "desk": 60.0},
 }
 
 func generate(p_seed: int, room_count: int = 0) -> void:
 	level_seed = p_seed
 	rng.seed = p_seed
 	_reset()
+
+	# 第二层（地牢 6~10F）：区域制大地图，走独立布局
+	if GameState.world >= 2 and room_count <= 0:
+		_generate_dungeon()
+		return
 
 	var n := rng.randi_range(6, 10)
 	if room_count > 0:
@@ -325,6 +363,11 @@ func generate(p_seed: int, room_count: int = 0) -> void:
 	_carve_nested_room()
 	_carve_loop_passage()
 
+	_finalize_layout()
+
+## 布局 → 可玩地图：楼梯收集、补边、出生点、墙/碰撞/导航/门/地砖/角色/家具/寻路。
+## 第一层（单走廊）和第二层（多区多走廊）都走这里，别再各写一份。
+func _finalize_layout() -> void:
 	for i in rooms.size():
 		if room_types[i] == "stair":
 			stair_rects.append(rooms[i])
@@ -431,6 +474,7 @@ func _reset() -> void:
 	room_roles.clear()
 	room_depth.clear()
 	safe_room_index = -1
+	safe_room_indices.clear()
 	entry_room_index = -1
 	boss_room_index = -1
 	treasure_room_index = -1
@@ -474,6 +518,9 @@ func _reset() -> void:
 	tail_corridor_rect = Rect2()
 	corridor_segments.clear()
 	corridor_explored.clear()
+	corridor_rects.clear()
+	zone_rects.clear()
+	zone_names.clear()
 	exploration_version += 1
 	exit_pos = Vector2.ZERO
 	is_l_shape = false
@@ -493,6 +540,176 @@ func _pick_type() -> String:
 			return k
 	return "classroom"
 
+## 第二层：校园变质与石砌同层共存。石砌房型占比 6F 30% → 10F 70%（设计文档 §12.2）。
+func dungeon_stone_ratio() -> float:
+	if GameState.world < 2:
+		return 0.0
+	return clampf(0.3 + 0.1 * float(GameState.level - 6), 0.3, 0.7)
+
+## 第二层的房型抽取：先按石砌比例决定「石砌 / 校园残留」，再在各自池子里抽。
+func _pick_dungeon_type() -> String:
+	if rng.randf() < dungeon_stone_ratio():
+		var roll := rng.randf()
+		if roll < 0.15:
+			return "altar"
+		if roll < 0.40:
+			return "torture"
+		return "cell"
+	var school_pool: Array[String] = [
+		"classroom", "lab", "library", "office",
+		"medical", "broadcast", "storage", "toilet",
+	]
+	return school_pool[rng.randi_range(0, school_pool.size() - 1)]
+
+## 第二层（地牢）区域制布局。
+##
+## 几何（单位为格，最后再整体 pad 20 格实心墙）：
+##   ┌───────────┬──┬───────────┐
+##   │ 中庭 8 房 │主│ 西翼 8 房 │   ← 每区 4 北 + 4 南，中间 6 格走廊
+##   ├───────────┤脊├───────────┤
+##   │ 东翼 8 房 │6 │ 深处 8 房 │
+##   └───────────┴──┴───────────┘
+## 四个区的走廊都接到中央主脊，接口各有一道 2 格门（区间连接走廊 + 门）。
+## 房间数固定 32（设计范围 28~34），区数 4，hall 在首区、stair 在末区。
+func _generate_dungeon() -> void:
+	is_l_shape = false
+
+	# --- 1. 四区宽度：每区 4 间房随机 24~34 格，决定整个区宽 ---
+	# 同列上下两区共用一套宽度，保证 2×2 网格对齐。
+	var zone_w: Array[int] = []
+	var zone_rooms_w: Array = []
+	for col in 2:
+		var ws: Array[int] = []
+		var total := 0
+		for i in DUNGEON_ROOMS_PER_ROW:
+			var w := rng.randi_range(DUNGEON_ROOM_W_MIN, DUNGEON_ROOM_W_MAX)
+			ws.append(w)
+			total += w
+			if i < DUNGEON_ROOMS_PER_ROW - 1:
+				total += WALL_INT
+		zone_rooms_w.append(ws)
+		zone_w.append(total)
+
+	var left_x := WALL_EXT
+	var spine_x := left_x + zone_w[0] + WALL_INT
+	var right_x := spine_x + DUNGEON_SPINE_W + WALL_INT
+	gw = right_x + zone_w[1] + WALL_EXT
+	var zone_x: Array[int] = [left_x, right_x, left_x, right_x]
+
+	# --- 2. 上下两排的进深（同排两区对齐）---
+	var row_n: Array[int] = []
+	var row_s: Array[int] = []
+	for r in 2:
+		row_n.append(rng.randi_range(DUNGEON_ROOM_D_MIN, DUNGEON_ROOM_D_MAX))
+		row_s.append(rng.randi_range(DUNGEON_ROOM_D_MIN, DUNGEON_ROOM_D_MAX))
+	var row_y: Array[int] = []
+	var corr_y: Array[int] = []
+	var south_y: Array[int] = []
+	var row_end: Array[int] = []
+	var y := WALL_EXT
+	for r in 2:
+		row_y.append(y)
+		corr_y.append(y + row_n[r] + WALL_INT)
+		south_y.append(corr_y[r] + DUNGEON_CORRIDOR_H + WALL_INT)
+		row_end.append(south_y[r] + row_s[r])
+		y = row_end[r] + DUNGEON_ROW_GAP
+	gh = row_end[1] + WALL_EXT
+
+	grid.resize(gw * gh)
+	grid.fill(SOLID)
+	_room_cell.resize(gw * gh)
+	_room_cell.fill(-1)
+	world_rect = Rect2(0, 0, gw * CELL, gh * CELL)
+
+	# --- 3. 区走廊 + 中央主脊 ---
+	corridor_rects.clear()
+	zone_rects.clear()
+	zone_names.clear()
+	var names := ["中庭", "西翼", "东翼", "深处"]
+	for z in DUNGEON_ZONES:
+		var col := z % 2
+		var row := int(z / 2)
+		var zx := zone_x[z]
+		var wz := zone_w[col]
+		_carve_rect(zx, corr_y[row], zx + wz, corr_y[row] + DUNGEON_CORRIDOR_H)
+		corridor_rects.append(Rect2(zx * CELL, corr_y[row] * CELL, wz * CELL, DUNGEON_CORRIDOR_H * CELL))
+		zone_rects.append(Rect2(zx * CELL, row_y[row] * CELL, wz * CELL, (row_end[row] - row_y[row]) * CELL))
+		zone_names.append(names[z])
+
+	# 主脊：从第一排走廊顶一直连到第二排走廊底（在两列区之间的 x 间隙里，不穿房间）
+	var spine_y0 := corr_y[0]
+	var spine_y1 := corr_y[1] + DUNGEON_CORRIDOR_H
+	_carve_rect(spine_x, spine_y0, spine_x + DUNGEON_SPINE_W, spine_y1)
+	corridor_rects.append(Rect2(spine_x * CELL, spine_y0 * CELL,
+			DUNGEON_SPINE_W * CELL, (spine_y1 - spine_y0) * CELL))
+
+	corridor_rect = corridor_rects[0]
+	for i in range(1, corridor_rects.size()):
+		corridor_rect = corridor_rect.merge(corridor_rects[i])
+
+	# --- 4. 开凿 32 间房 + 每间一道门（doors 与 rooms 必须同长同序）---
+	for z in DUNGEON_ZONES:
+		var col := z % 2
+		var row := int(z / 2)
+		var zx := zone_x[z]
+		var ws: Array = zone_rooms_w[col]
+		var first_room := rooms.size()
+		for side in 2:
+			var ry: int = row_y[row] if side == 0 else south_y[row]
+			var room_h: int = row_n[row] if side == 0 else row_s[row]
+			var x := zx
+			for i in DUNGEON_ROOMS_PER_ROW:
+				var rw: int = ws[i]
+				_carve_rect(x, ry, x + rw, ry + room_h)
+				var ri := rooms.size()
+				rooms.append(Rect2(x * CELL, ry * CELL, rw * CELL, room_h * CELL))
+				var t := ""
+				if z == 0 and ri == first_room:
+					t = "hall"          # 首区（中庭）北排第一间
+				elif z == 3 and ri == first_room + 1:
+					t = "stair"         # 末区（深处）第二间
+				else:
+					t = _pick_dungeon_type()
+				room_types.append(t)
+				room_names.append(String(type_defs[t]["name"]))
+				explored.append(false)
+				for yy in range(ry, ry + room_h):
+					for xx in range(x, x + rw):
+						_room_cell[yy * gw + xx] = ri
+
+				# 门：北排开在下墙，南排开在上墙（与第一层同一套 door 语义）
+				var wall_y := ry + room_h if side == 0 else ry - WALL_INT
+				var dx := rng.randi_range(x + 2, x + rw - DOOR_W - 1)
+				_carve_rect(dx, wall_y, dx + DOOR_W, wall_y + WALL_INT)
+				doors.append({
+					"pos": Vector2((dx + DOOR_W * 0.5) * CELL, (wall_y + 0.5) * CELL),
+					"axis": "h",
+					"dir": -1.0 if side == 0 else 1.0,
+					"width": DOOR_W * CELL,
+				})
+				x += rw + WALL_INT
+
+	# --- 5. 区走廊 ↔ 主脊：每区一道 2 格门（区间连接走廊 + 门）---
+	for z in DUNGEON_ZONES:
+		var col := z % 2
+		var row := int(z / 2)
+		var wall_x := 0
+		if col == 0:
+			wall_x = zone_x[z] + zone_w[col]        # 左区右墙 = 主脊左墙
+		else:
+			wall_x = spine_x + DUNGEON_SPINE_W      # 右区左墙 = 主脊右墙
+		var oy := rng.randi_range(corr_y[row] + 1, corr_y[row] + DUNGEON_CORRIDOR_H - DOOR_W)
+		for k in DOOR_W:
+			grid[(oy + k) * gw + wall_x] = FLOOR
+		doors.append({
+			"pos": Vector2((wall_x + 0.5) * CELL, (oy + DOOR_W * 0.5) * CELL),
+			"axis": "v",
+			"dir": 1.0 if col == 0 else -1.0,
+			"width": DOOR_W * CELL,
+		})
+
+	_finalize_layout()
+
 ## 计算房间的「纵深」并分配角色。
 ##
 ## 关键：深度必须与布局无关。这里用导航图（nav_points / nav_links）做多源 BFS，
@@ -508,6 +725,7 @@ func _compute_roles(allow_safe := true) -> void:
 	room_depth.resize(rooms.size())
 	room_depth.fill(-1)
 	safe_room_index = -1
+	safe_room_indices.clear()
 	entry_room_index = -1
 	boss_room_index = -1
 	treasure_room_index = -1
@@ -615,43 +833,54 @@ func _compute_roles(allow_safe := true) -> void:
 	if not allow_safe:
 		return
 
-	# 安全屋：从第 6 层起才启用；前五层不出现，保持基础关卡的压迫感
+	# 安全屋：从第 6 层起才启用；前五层不出现，保持基础关卡的压迫感。
+	# 第二层每层 2 间（设计 §8），固定远离主路径；第一层保持原来的 1 间。
 	if GameState.level >= SAFE_ROOM_MIN_LEVEL:
-		var best := -1
-		var best_score := 1.0e9
-		for i in rooms.size():
-			if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index or room_roles[i] == "boss":
-				continue
-			if i == nested_room_index:
-				continue
-			if room_depth[i] < 0:
-				continue
-			var r := float(room_depth[i]) / float(maxd)
-			if r < 0.33 or r > 0.62:
-				continue
-			var score := absf(r - 0.47)
-			if score < best_score:
-				best_score = score
-				best = i
-		# 兜底：没有落在中段比率的房间时，取最接近 0.47 的那间，
-		# 保证第 6 层起一定有安全屋（房间数少、套间占位时也能出）
-		if best < 0:
+		var want := 2 if GameState.world >= 2 else 1
+		var strict_main := GameState.world >= 2
+		var picked: Array[int] = []
+		while picked.size() < want:
+			var best := -1
+			var best_score := 1.0e9
 			for i in rooms.size():
-				if room_roles[i] == "stair" or room_roles[i] == "hall" or i == entry_room_index:
+				if room_roles[i] == "stair" or room_roles[i] == "hall" or room_roles[i] == "boss":
 					continue
-				if i == nested_room_index or room_roles[i] == "boss":
+				if i == entry_room_index or i == nested_room_index or picked.has(i):
 					continue
 				if room_depth[i] <= 0:
 					continue
-				var r2 := float(room_depth[i]) / float(maxd)
-				var score2 := absf(r2 - 0.47)
-				if score2 < best_score:
-					best_score = score2
+				if strict_main and main_path_rooms.has(i):
+					continue
+				var r := float(room_depth[i]) / float(maxd)
+				var score := absf(r - 0.47)
+				if picked.is_empty():
+					# 第一间：沿用第一层的中段偏好（0.33~0.62），范围外重罚而不直接排除
+					if r < 0.33 or r > 0.62:
+						score += 5.0
+				else:
+					# 第二间：放宽到 0.26~0.74，并尽量与第一间拉开距离
+					if r < 0.26 or r > 0.74:
+						score += 5.0
+					for s in picked:
+						var d := rooms[i].get_center().distance_to(rooms[s].get_center())
+						if d < CELL * 26.0:
+							score += 3.0 * (1.0 - d / (CELL * 26.0))
+				if score < best_score:
+					best_score = score
 					best = i
-		if best >= 0:
+			if best < 0:
+				# 极端图（主路占满/房间太少）：放宽「远离主路」再试一次
+				if strict_main:
+					strict_main = false
+					continue
+				break
+			picked.append(best)
 			room_roles[best] = "safe"
-			safe_room_index = best
 			room_names[best] = "安全屋（禁止答题）"
+		for i in picked:
+			safe_room_indices.append(i)
+		if not picked.is_empty():
+			safe_room_index = picked[0]
 
 	# 套间（里间）= 隐藏奖励：直接当宝箱房，不再按主路/深度挑
 	if nested_room_index >= 0 and nested_room_index < rooms.size():
@@ -733,7 +962,15 @@ func is_main_path(i: int) -> bool:
 	return main_path_rooms.has(i)
 
 func is_safe_room_at(pos: Vector2) -> bool:
-	return safe_room_index >= 0 and room_index_at(pos) == safe_room_index
+	return is_safe_room_index(room_index_at(pos))
+
+## 第二层每层 2 间安全屋：判定某个房间下标是否安全屋。
+func is_safe_room_index(i: int) -> bool:
+	if i < 0:
+		return false
+	if safe_room_indices.has(i):
+		return true
+	return safe_room_index >= 0 and i == safe_room_index
 
 ## 安全屋不能做题：给学生一个"喘息点"，但代价是不能刷题
 func study_allowed_at(pos: Vector2) -> bool:
@@ -1018,6 +1255,10 @@ func _pad_map(pad: int) -> void:
 		rooms[i] = Rect2(rooms[i].position + off, rooms[i].size)
 	corridor_rect = Rect2(corridor_rect.position + off, corridor_rect.size)
 	tail_corridor_rect = Rect2(tail_corridor_rect.position + off, tail_corridor_rect.size)
+	for i in corridor_rects.size():
+		corridor_rects[i] = Rect2(corridor_rects[i].position + off, corridor_rects[i].size)
+	for i in zone_rects.size():
+		zone_rects[i] = Rect2(zone_rects[i].position + off, zone_rects[i].size)
 	for i in doors.size():
 		doors[i]["pos"] = Vector2(doors[i]["pos"]) + off
 	for i in windows.size():
@@ -1206,6 +1447,10 @@ func _floor_pat(t: String) -> Array:
 			return [1, 3, 5]
 		"hall":
 			return [0, 2, 3, 4]
+		"cell", "torture":
+			return [1, 3, 5]
+		"altar":
+			return [3, 3, 4, 5]
 	return [0, 1, 3, 4]
 
 ## 房间类型 -> Tilemancer 图集行（木/方砖/水泥/石块/沙/地毯）
@@ -1221,6 +1466,8 @@ func _floor_style(t: String) -> int:
 			return FLOOR_STYLE_CARPET
 		"corridor":
 			return FLOOR_STYLE_TILE
+		"cell", "torture", "altar":
+			return FLOOR_STYLE_STONE
 	return FLOOR_STYLE_CONCRETE
 
 ## 从 Tilemancer 风格图集取一块地砖，按房间基色着色后贴进目标图。
@@ -1307,59 +1554,129 @@ func _build_collision() -> void:
 		body.add_child(shape)
 
 func _build_nav() -> void:
-	var door_nodes: Array[int] = []
+	# 房间门节点 + 房中心。doors 与 rooms 同长同序（第一层/第二层都成立）。
+	var door_nav: Array[int] = []
+	var door_axis: Array[String] = []
 	for i in rooms.size():
 		var d: Vector2 = doors[i]["pos"]
 		var di := _add_nav_point(d, true)
 		var c := _walkable_center(rooms[i], i)
 		var ci := _add_nav_point(c, false)
 		_link(di, ci)
-		door_nodes.append(di)
+		door_nav.append(di)
+		door_axis.append(String(doors[i].get("axis", "h")))
+	# 第二层：区走廊→主脊的额外门不占房间索引，但同样要有门节点，
+	# 否则两条走廊的导航链会各自断开（深度 BFS / 刷怪点都会失效）。
+	for i in range(rooms.size(), doors.size()):
+		var di := _add_nav_point(Vector2(doors[i]["pos"]), true)
+		door_nav.append(di)
+		door_axis.append(String(doors[i].get("axis", "h")))
 
-	var corr_nodes: Array[int] = []
-	var cy := (corridor_rect.position.y + corridor_rect.end.y) * 0.5
-	var x := corridor_rect.position.x + CELL
-	while x < corridor_rect.end.x - CELL * 0.5:
-		var p := Vector2(x, cy)
-		if is_walkable(p):
-			var idx := _add_nav_point(p, true)
-			if not corr_nodes.is_empty():
-				_link(corr_nodes[corr_nodes.size() - 1], idx)
-			corr_nodes.append(idx)
-		x += CELL * 3.0
+	# 走廊导航链：第二层逐条 corridor_rects；第一层退回单走廊 + L 形尾巴。
+	if not corridor_rects.is_empty():
+		for r in corridor_rects:
+			_nav_chain_for_rect(r)
+	else:
+		var main_chain := _nav_chain_for_rect(corridor_rect)
+		if is_l_shape and tail_corridor_rect.size.y > CELL:
+			var tail_chain := _nav_chain_for_rect(tail_corridor_rect)
+			if not tail_chain.is_empty():
+				var first := tail_chain[0]
+				var best := -1
+				var bd := INF
+				for ci in main_chain:
+					var d := nav_points[first].distance_to(nav_points[ci])
+					if d < bd and line_clear(nav_points[first], nav_points[ci]):
+						bd = d
+						best = ci
+				if best < 0 and not main_chain.is_empty():
+					best = main_chain[main_chain.size() - 1]
+				if best >= 0:
+					_link(first, best)
 
-	if is_l_shape and tail_corridor_rect.size.y > CELL:
-		var tx := (tail_corridor_rect.position.x + tail_corridor_rect.end.x) * 0.5
-		var ty := tail_corridor_rect.position.y + CELL
-		var prev := -1
-		var first := -1
-		while ty < tail_corridor_rect.end.y - CELL * 0.5:
-			var p := Vector2(tx, ty)
+	# 每道门往「门两侧」各连一个最近走廊节点：
+	# 房间门只有一侧是走廊（另一侧靠房中心连线），区间门两侧都是走廊。
+	for k in door_nav.size():
+		var di := door_nav[k]
+		var axis := door_axis[k]
+		var p := nav_points[di]
+		var a := _nearest_nav_side(p, true, di, axis, -1)
+		var b := _nearest_nav_side(p, true, di, axis, 1)
+		if a >= 0:
+			_link(di, a)
+		if b >= 0 and b != a:
+			_link(di, b)
+		if a < 0 and b < 0:
+			var j := _nearest_nav(p, true, di)
+			if j >= 0:
+				_link(di, j)
+
+## 沿一条走廊的中心线铺导航点（每 3 格一个），并把相邻点连起来。
+## 横走廊取 y 中心、竖走廊取 x 中心；返回这条链的节点下标。
+func _nav_chain_for_rect(r: Rect2) -> Array[int]:
+	var out: Array[int] = []
+	if r.size.x <= 0.0 or r.size.y <= 0.0:
+		return out
+	if r.size.x >= r.size.y:
+		var cy := (r.position.y + r.end.y) * 0.5
+		var x := r.position.x + CELL
+		while x < r.end.x - CELL * 0.5:
+			var p := Vector2(x, cy)
 			if is_walkable(p):
 				var idx := _add_nav_point(p, true)
-				if first < 0:
-					first = idx
-				if prev >= 0:
-					_link(prev, idx)
-				prev = idx
-			ty += CELL * 3.0
-		if first >= 0:
-			var best := -1
-			var bd := INF
-			for ci in corr_nodes:
-				var d := nav_points[first].distance_to(nav_points[ci])
-				if d < bd and line_clear(nav_points[first], nav_points[ci]):
-					bd = d
-					best = ci
-			if best < 0 and not corr_nodes.is_empty():
-				best = corr_nodes[corr_nodes.size() - 1]
-			if best >= 0:
-				_link(first, best)
+				if not out.is_empty():
+					_link(out[out.size() - 1], idx)
+				out.append(idx)
+			x += CELL * 3.0
+	else:
+		var cx := (r.position.x + r.end.x) * 0.5
+		var y := r.position.y + CELL
+		while y < r.end.y - CELL * 0.5:
+			var p := Vector2(cx, y)
+			if is_walkable(p):
+				var idx := _add_nav_point(p, true)
+				if not out.is_empty():
+					_link(out[out.size() - 1], idx)
+				out.append(idx)
+			y += CELL * 3.0
+	return out
 
-	for di in door_nodes:
-		var j := _nearest_nav(nav_points[di], true, di)
-		if j >= 0:
-			_link(di, j)
+## 门节点专用：只在门轴的一侧找走廊节点（side = -1 / +1）。
+func _nearest_nav_side(p: Vector2, corridor_only: bool, exclude: int, axis: String, side: int) -> int:
+	var best := -1
+	var bd := INF
+	for i in nav_points.size():
+		if i == exclude:
+			continue
+		if corridor_only and not nav_is_corridor[i]:
+			continue
+		var q := nav_points[i]
+		var off := (q.y - p.y) if axis == "h" else (q.x - p.x)
+		if off * side < 0.0:
+			continue
+		if p.distance_to(q) <= CELL * 0.6:
+			continue
+		var d := p.distance_to(q)
+		if d < bd and line_clear(p, q):
+			bd = d
+			best = i
+	if best >= 0:
+		return best
+	# 兜底：忽略视线，避免个别门（贴墙/门洞）没有导航连线
+	for i in nav_points.size():
+		if i == exclude:
+			continue
+		if corridor_only and not nav_is_corridor[i]:
+			continue
+		var q := nav_points[i]
+		var off := (q.y - p.y) if axis == "h" else (q.x - p.x)
+		if off * side < 0.0:
+			continue
+		var d := p.distance_to(q)
+		if d < bd:
+			bd = d
+			best = i
+	return best
 
 func _add_nav_point(p: Vector2, is_corr: bool) -> int:
 	nav_points.append(p)
@@ -1472,6 +1789,22 @@ func _spawn_furniture() -> void:
 						break
 					_mark_furniture(br)
 					box_rects.append(br)
+			"cell":
+				# 牢房：低效学习点（0.8）+ 箱子（宝箱怪会藏在这里）
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.2, "牢房")
+				for j in rng.randi_range(1, 3):
+					var cbr := _pick_box_rect(i)
+					if cbr.size.x <= 0.0:
+						break
+					_mark_furniture(cbr)
+					box_rects.append(cbr)
+			"torture":
+				# 刑房：负向学习点（0.5），靠得越近越写不下去
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.4, "刑具")
+			"altar":
+				# 祭坛：全层最高效（1.6），代价是污染（main 按房型加）
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "祭坛")
+				_place_desk_grid(i, eff, false, 2)
 			_:
 				pass
 	_build_box_collision()
@@ -2034,6 +2367,12 @@ func _decor_kinds(t: String) -> Array[String]:
 			return ["poster", "bin", "chair", "paper"]
 		"toilet":
 			return ["bin", "paper", "puddle"]
+		"cell":
+			return ["paper", "bin", "puddle", "chair"]
+		"torture":
+			return ["puddle", "paper", "chair"]
+		"altar":
+			return ["paper", "books", "puddle"]
 	return ["paper"]
 
 func _draw_decor() -> void:
@@ -2544,50 +2883,69 @@ func is_connected_plan() -> bool:
 	return true
 
 ## 把走廊切成「门到门 / 路口到路口」的段落，探索按整段点亮。
+## 第二层有多条走廊（corridor_rects），逐条切；第一层仍是单走廊 + L 形尾巴。
 func _build_corridor_segments() -> void:
 	corridor_segments.clear()
 	corridor_explored.clear()
-	if corridor_rect.size.x > CELL and corridor_rect.size.y > 0.0:
+	if not corridor_rects.is_empty():
+		for r in corridor_rects:
+			_append_corridor_segments(r)
+	else:
+		_append_corridor_segments(corridor_rect)
+		if tail_corridor_rect.size.y > CELL and tail_corridor_rect.size.x > 0.0:
+			_append_corridor_segments(tail_corridor_rect)
+	exploration_version += 1
+
+## 单条走廊按门的位置切段：横走廊按 x 切、竖走廊按 y 切。
+func _append_corridor_segments(r: Rect2) -> void:
+	if r.size.x <= 0.0 or r.size.y <= 0.0:
+		return
+	if r.size.x >= r.size.y:
 		var xs: Array[float] = []
 		for d in doors:
 			var p: Vector2 = d["pos"]
-			if p.y >= corridor_rect.position.y - CELL and p.y <= corridor_rect.end.y + CELL:
-				xs.append(p.x)
+			if p.y < r.position.y - CELL or p.y > r.end.y + CELL:
+				continue
+			if p.x < r.position.x - CELL or p.x > r.end.x + CELL * 2.0:
+				continue
+			xs.append(p.x)
 		xs.sort()
-		var splits: Array[float] = [corridor_rect.position.x]
+		var splits: Array[float] = [r.position.x]
 		for i in range(1, xs.size()):
 			var m: float = (xs[i - 1] + xs[i]) * 0.5
-			if m - splits[splits.size() - 1] > CELL * 0.8:
+			if m - splits[splits.size() - 1] > CELL * 0.8 and m < r.end.x - 1.0:
 				splits.append(m)
-		if corridor_rect.end.x - splits[splits.size() - 1] > 1.0:
-			splits.append(corridor_rect.end.x)
+		if r.end.x - splits[splits.size() - 1] > 1.0:
+			splits.append(r.end.x)
 		for i in range(splits.size() - 1):
 			var w: float = splits[i + 1] - splits[i]
 			if w < 4.0:
 				continue
-			corridor_segments.append(Rect2(splits[i], corridor_rect.position.y, w, corridor_rect.size.y))
+			corridor_segments.append(Rect2(splits[i], r.position.y, w, r.size.y))
 			corridor_explored.append(false)
-	if tail_corridor_rect.size.y > CELL and tail_corridor_rect.size.x > 0.0:
+	else:
 		var ys: Array[float] = []
 		for d in doors:
 			var p: Vector2 = d["pos"]
-			if p.x >= tail_corridor_rect.position.x - CELL and p.x <= tail_corridor_rect.end.x + CELL:
-				ys.append(p.y)
+			if p.x < r.position.x - CELL or p.x > r.end.x + CELL:
+				continue
+			if p.y < r.position.y - CELL or p.y > r.end.y + CELL * 2.0:
+				continue
+			ys.append(p.y)
 		ys.sort()
-		var ysplits: Array[float] = [tail_corridor_rect.position.y]
+		var ysplits: Array[float] = [r.position.y]
 		for i in range(1, ys.size()):
 			var m: float = (ys[i - 1] + ys[i]) * 0.5
-			if m - ysplits[ysplits.size() - 1] > CELL * 0.8:
+			if m - ysplits[ysplits.size() - 1] > CELL * 0.8 and m < r.end.y - 1.0:
 				ysplits.append(m)
-		if tail_corridor_rect.end.y - ysplits[ysplits.size() - 1] > 1.0:
-			ysplits.append(tail_corridor_rect.end.y)
+		if r.end.y - ysplits[ysplits.size() - 1] > 1.0:
+			ysplits.append(r.end.y)
 		for i in range(ysplits.size() - 1):
 			var h: float = ysplits[i + 1] - ysplits[i]
 			if h < 4.0:
 				continue
-			corridor_segments.append(Rect2(tail_corridor_rect.position.x, ysplits[i], tail_corridor_rect.size.x, h))
+			corridor_segments.append(Rect2(r.position.x, ysplits[i], r.size.x, h))
 			corridor_explored.append(false)
-	exploration_version += 1
 
 ## 走廊整段点亮：站在哪一段就把那一段永久揭开。
 func explore_corridor_at(pos: Vector2) -> bool:
@@ -2675,6 +3033,20 @@ func room_index_at(pos: Vector2) -> int:
 		if rooms[i].has_point(pos):
 			return i
 	return -1
+
+## 该点属于第二层的哪个区（-1 = 不在任何区 / 第一层）。
+## 区矩形含房间 + 区走廊；主脊不属于任何区（返回 -1）。
+func zone_index_at(pos: Vector2) -> int:
+	for i in zone_rects.size():
+		if zone_rects[i].has_point(pos):
+			return i
+	return -1
+
+func zone_name_at(pos: Vector2) -> String:
+	var zi := zone_index_at(pos)
+	if zi < 0 or zi >= zone_names.size():
+		return ""
+	return zone_names[zi]
 
 func _draw() -> void:
 	if gw <= 0:
