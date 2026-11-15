@@ -1,11 +1,11 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-14
+- 更新时间：2026-11-15
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`c45d10f`（第一层难度曲线 P0）
-- 已推送 origin/main：`c45d10f`
-- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `intro.gd` / `art/cutscene` 属于另一窗口，**不要误提交**。
+- 当前 HEAD：`c25148a`（第二层 P1：区域制大地图 + 13 房型）
+- 已推送 origin/main：`96ffa9b`；`c25148a` **还没推**（本机代理 `127.0.0.1:7897` 没起，`git push` 报 443 连接失败，网络恢复后直接推）
+- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`scripts/audio_manager.gd` / `assets/music` / `assets/sfx` / `_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 
 ## 最简用法（推荐）
@@ -20,22 +20,29 @@
 ## 当前目标
 
 **世界观已定稿**：游戏主旨是「认知污染」，三层世界分别是学校（真实的人）→ 地牢（伪人 + 怪物）→ 地狱（全是怪物）。
-本仓库目前只做了**第一层这五关**：不刷任何怪物（`WORLD_LAYER = 1`），五关只靠难度递进区分，暴君是第一层唯一裂缝。
 
-**下一步 = 第三层（11~15F）**：设计文档已出（`设计_第三层世界_11-15F.md`），等用户确认 §13 的待定项
-（11F 进入方式 / 第三层安全屋 / 楼层标题）后，按里程碑 **M2（色板 + `tools/hell_recolor.py` + 地狱图集样张）** 开工。
-第二层 6~10F 排在第三层之后。
+**当前主线 = 第二层（地牢 6~10F）**，按 P0→P7 推进：
 
-大工程「连续卷轴大地图 + 房间区分度 + 探索感」的 **Phase 1~4 已完成并提交**：单张连通大地图、
-10 房型放大、死区相机、三态探索迷雾、小地图启用、房型专属家具、套间/环路 + 隐藏奖励。
+- **P0 世界层骨架**（`world` / 6~10F / 存档 v4 / 世界分页选层）—— 已提交 `699f6ce`
+- **P1 区域制大地图 + 13 房型**（2×2 四区 / 32 房 / 区间门 / 每层 2 间安全屋）—— 已提交 `c25148a`
+- **下一步 P2 污染链**：HUD 污染条、画面黑白（`saturation = 1 - 污染/100`）、敌人强化 `1 + 0.4×污染/100` 与抓人圈 `1 + 0.2×污染/100`、四档症状（25 错视 / 50 幻听 / 75 篡改 / 100 同化）
+- P3 学习值 50% 硬卡 + 钥匙、难度三项叠加 → P4 伪人（`student.gd` 的 corrupt / gaze / 模仿 / 同步）→ P5 三角头 → P6 背包 / 旧笔记本 / 常驻小地图 → P7 安全屋 AI 排除、被抓 4 特效、铺层
 
-接下来是 **Phase 5 收尾**：只看真实手感做微调（装饰/课桌/敌人密度、房间辨识度），
-以及把 EFG 剩余大件逐个单独立项（E1 模板插门、E6 SubViewport 小地图、F5 情报共享、F6 Boss 多阶段、
-G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表）。
-D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点层**需等分轨素材。
+设计与音频规格：`C:\Users\43590\.opencode\plan\第二层世界_设计文档.md`（v2.0）/ `第二层世界_音频规格.md`；两个 AI 的文件分工见 `协作_分文件方案.md`。
+第一层五关保持现状（不刷怪、只靠难度递进）；第三层（11~15F）设计文档已出，排在第二层之后。
+
+第一层的大地图「Phase 1~4」已完成并提交（单张连通大地图、10 房型、死区相机、三态探索迷雾、小地图、房型家具、套间/环路）；EFG 剩余大件（E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12）各自单独立项，别在第二层期间顺手插进来。
 
 ## 本轮已完成
 
+- **第二层 P1：区域制大地图 + 13 房型（2026-11-15，opencode，`c25148a`）**：
+  - `school_map.gd`：`TYPE_ORDER` 追加 `cell` / `torture` / `altar`（`weight: 0`，只由 `_pick_dungeon_type()` 选出，eff 0.8 / 0.5 / 1.6，地板走石块行）；新增 `dungeon_stone_ratio()`（6F 30% → 10F 70%）与 `_pick_dungeon_type()`（石砌池 cell 60% / torture 25% / altar 15%，其余从 8 种校园房型抽）。
+  - 新增 `_generate_dungeon()`：**2×2 四区**（中庭 / 西翼 / 东翼 / 深处），每区 4 北 + 4 南 = 8 房共 **32 房**；每区中间 6 格宽走廊，四区走廊由中央 6 格宽「主脊」串联，接口各一道 2 格门 → `doors.size() == rooms.size() + 4`。hall 固定首区北排第一间、stair 固定末区第二间。
+  - `_build_nav()` 泛化为逐条 `corridor_rects` 铺导航链（`_nav_chain_for_rect()` / `_nearest_nav_side()`），门节点自动连「门两侧」；第一层单走廊 + L 形尾巴老路径保留。`_build_corridor_segments()` 拆出 `_append_corridor_segments()` 逐条切段，迷雾/小地图不用改。
+  - `_pad_map` / `_reset` 处理 `corridor_rects` / `zone_rects` / `zone_names`；新增 `zone_index_at()` / `zone_name_at()` / `is_safe_room_index()`；`_compute_roles()` 第二层选 **2 间**安全屋（避开主路、彼此 ≥26 格），第一层仍 1 间且判定不变。
+  - `main.gd`：安全屋改成**停留式**（`GameState.in_safe_room` 每帧写入，+6 空虚 / −6 污染 每秒），删掉 `safe_room_used`；空虚计时改读 `GameState.emptiness_decay_rate()`。
+  - 新探针：`tests/_dungeon_probe.tscn`（6~10F 全量断言）/ `tests/_dungeon_shot.tscn`（`shot_dungeon_play` / `_map` / `shot_level_select_w1|w2`）。9 套测试全绿 + `_dungeon_probe` ALL PASSED，石砌房型数 6F~10F = `[12, 19, 19, 21, 23]`。
+- **第二层 P0（`699f6ce`）**：`MAX_LEVEL` 10、6~10F 学习目标 16/20/24/28/32、`GameState.world` 自动推导、`contamination` / `notebook_fuel`、存档 v4 + v3 迁移、世界分页选层（第二层开发者版直开、正式版 5F 通关解锁）。详见 `开发记录.md`。
 - **第三层设计 v2.0 + M2 第一版色板（2026-11-14，opencode）**：
   - `设计_第三层世界_11-15F.md` 整份重写，与第二层设计对齐：区域制大地图（28~34 房 / 3~4 区 / 宽约 3 倍）、50% 钥匙门禁、楼梯放最后区域、存档 v5、`world = 3`；污染条取消（内部基线 55→85，只靠画面表达）；10F→11F 学校断崖归零；新增残影（环境演出，非敌人）。
   - `tools/hell_art.py`：`art/sprites/floor/hell_styles.png`（6 行灰度图案 × 6 变体）、`art/furniture/hell/`（46 张腐化家具 + 10 个新道具）、两张色板样张 `tests/art_hell_dungeon.png` / `tests/art_hell_organ.png`。
@@ -238,27 +245,25 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 未提交改动
 
-- `tests/shot_*.png`：本轮 `screenshot.tscn` 重拍产生的基线变化，故意不提交（经常被重拍）。
-- `tests/_blob_probe.*` / `tests/_blob_a|b.png` 等：来自另一窗口的探针文件，**不要误提交**。
-- 其余本轮的代码 / 工具 / `art/` 资源已随本次提交入库。
+- `scripts/audio_manager.gd`、`assets/music/*`（含 `dungeon_calm.ogg` / `dungeon_chase.ogg` / `catalog.json` / `CATALOG.md` / `CREDITS.txt`）、`assets/sfx/{caught,dungeon,pyramid}`、`tests/_dungeon_audio_probe.*`：**属于音频窗口**，本窗口不碰、不提交。
+- `scripts/main.gd` 里另一窗口的 `AudioManager.play_caught(...)` 两行仍在工作区、**未暂存**（本窗口的 P1 hunk 已单独提交）。提交前先确认 `play_caught` 已在 HEAD 的 `audio_manager.gd` 里，否则 HEAD 会引用不存在的 API。
+- `tests/_blob_probe.*` / `tests/_blob_a|b.png` / `tests/_mon_demo.*`：同样来自另一窗口，**不要误提交**。
+- `tests/shot_*.png`：截图基线，故意不提交。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
-1. **难度曲线 P1（下一轮优先）**：P0 已落地（角色解锁 + 人类差异 + 人数曲线）。P1 三件还没做，需先跟用户点头：①空虚衰减按层 0.80/0.91/1.02/1.13/1.24（`game_state.gd:emptiness_decay_rate`）；②题目档位加楼层项 `tier_shift = hot_level() + FLOOR_TIER[level]`（0/0/1/1/2，`main.gd` 取题处）；③暴君从 4F 挪回 5F（`main.gd:_maybe_spawn_tyrant`）。
-2. **难度曲线 P2**：卷狗举报联动（发现玩家后把 alert 分享给 `hear_range` 内同伴，即 F5 情报共享）、老师查座、保安手电锥/搜藏身点。这三件是「角色性格」大件，各自单独立项。
-3. **待补验证**：本轮只跑了 15 套 headless，**还没拍 5 层截图**；下次开工先跑 `tests/screenshot.tscn` 目视确认 2F~5F 没有怪物残留、人数密度合适。
-4. **角色素材收尾**：`art/sprites/lpc/actions/` 已有每人 29 组全动作，但游戏还没接攻击/施法；如果后续给暴君加技能或给玩家加动作，直接按 `index.json` 取条带。
-2. **Phase 5 手感微调**：拿 `_big_probe` 输出的每间房课桌/家具数量，把装饰密度往「8~12 件」收、确认大教室里课桌不空、确认敌人 7~16 的曲线；觉得房间还不够好认时优先补「墙面特征」（黑板/画框/出口标识），不要加新系统。
-3. **套间/环路手感**：里间门口的「门」现在和普通门一样（E 开关）；如果玩家根本找不到，考虑给套间门加一点视觉提示（半开/门牌），但别破坏「探索才找到」的意图；环路门洞目前是墙上的 2 格缺口，可考虑加门框描边。
-4. **家具贴图是原型**：`art/furniture/README.md` 已写明来源与「授权未确认，发布前替换」；确认授权或自绘后按同名覆盖即可（代码按 rect 拉伸，尺寸可不同）。
-5. **EFG 剩余大件**（每项先确认再动）：E1 模板插门、E6 SubViewport 小地图（本轮小地图是 Control 直接画，需复核是否还要独立 Viewport）、F5 情报共享、F6 Boss 多阶段、G1 12 格背包、G2 点选放置、G8 护符、G12 掉落权重表。
-6. **A9 接调用点**：等「击败暴君」流程落地后，在暴君死亡演出第一帧调 `Fx.slowmo(0.3, 0.4)`（命中仍用 `Fx.hitstop`，两者共用 `time_scale`、不会叠加）。
-7. **A10 / A8 接线**：音频窗口按 `Breath.state` 播放呼吸循环（`assets/sfx/breath/breath_{tense,panic,blind}.ogg` 已预留）；拾取「叮」在 `main._on_item_picked()` 接 `AudioManager.play_sfx`。
-8. **D6 追逐鼓点层**：仍需与 `chase_electro` 同 BPM 的分轨素材；D8 三套脚步采样已齐。
-9. **测试命令**：十二套（flow / _b / _fx / _settings / _c_ui / _d / _e / _f / _g / student→BAD_FRAMES=0 / tutorial / _stalker）+ 本轮新增 `_map_probe` / `_big_probe`；截图用 `screenshot.tscn`（非 headless），套间样张用 `_nested_shot.tscn`。
-10. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push。
-11. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+1. **第二层 P2 污染链（下一轮优先）**：①HUD 污染条（0~100，四档刻度）；②画面黑白（`saturation = 1 - 污染/100`，落在 `world_modulate` 或后处理）；③敌人强化 `1 + 0.4×污染/100`、抓人圈 `1 + 0.2×污染/100`（在 `student.gd` / `tyrant.gd` 重算基础数值处乘）；④四档症状 25 错视 / 50 幻听 / 75 篡改 / 100 同化（假小地图标记、幻听音效、地图篡改、同化演出）。**满 100 不硬失败**。
+2. **第二层 P3**：学习值 50% 硬卡 + 钥匙生成（`STUDY_GATE_RATIO` 已在 `game_state.gd` 备好）、楼梯门禁、难度三项叠加（档位上移 / 每题限时 / 单题收益），以及 4 种降难度道具。
+3. **第二层 P4~P7**：伪人（`student.gd` 的 corrupt / gaze / 模仿 / 同步）→ 三角头（听觉锁定 + 慢速追击）→ 背包（1 特殊 + 2 普通，上限 2+4）/ 旧笔记本（15s/层、电池 +5s、打开暂停、污染篡改地图）/ 常驻小地图（只显示当前区域）→ 安全屋 AI 排除、被抓 4 特效、6~10F 铺层。
+4. **音频窗口对接点**（已写进 `协作_分文件方案.md`）：`AudioManager.set_world / set_contamination / set_zone / duck / play_caught`，本窗口用 `has_method()` 保护调用；`GameState.in_safe_room` 每帧可读。
+5. **文档风险（已踩过）**：11-15 另一窗口改写 `开发记录.md` 时把「第二层 P0」整条覆盖掉了，已按 `699f6ce` 原文补回。**两边同时改 `开发记录.md` / `HANDOFF.md` 时先读最新内容、只在顶部追加，不要整段重写。**
+6. **第一层遗留（不急）**：EFG 剩余大件 E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12；A9 击败暴君接 `Fx.slowmo`；A10 呼吸循环接线；D6 同 BPM 追逐鼓点层等分轨素材。
+7. **家具贴图是原型**：`art/furniture/README.md` 已注明「授权未确认，发布前替换」；代码按 rect 拉伸，同名覆盖即可。
+8. **测试命令**：见下节「测试状态」，第二层加了 `_dungeon_probe`；截图探针 `tests/_dungeon_shot.tscn` **不要加 `--headless`**。
+9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push（本机代理没起时用 `git -c http.proxy= -c https.proxy= push`）。
+10. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+11. **禁止** `git checkout -- .` / `git restore` / `git stash` / `git clean`；提交只用显式路径；`main.gd` 有并行改动时用 `git apply --cached` 只暂存自己的 hunk。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -281,7 +286,7 @@ D8 脚步采样已补齐（Kenney CC0）；**只剩 D6 的同 BPM 追逐鼓点�
 
 ## 测试状态
 
-2026-11-07 全绿（角色全动作 / 地板 / 肖像后）：
+2026-11-15 全绿（第二层 P1 之后；第二层相关的 `_dungeon_probe` / `_world_probe` 在末尾）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -299,7 +304,10 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --headless --path . --quit-after 30000 res://tests/_b_probe.tscn         # B_PROBE: ALL PASSED
 & $G --headless --path . --quit-after 60000 res://tests/_map_probe.tscn       # MAP_PROBE: ALL PASSED（地图/相机/迷雾/小地图/套间）
 & $G --headless --path . --quit-after 90000 res://tests/_big_probe.tscn       # BIG_PROBE seeds=8 failures=0（家具落位）
+& $G --headless --path . --quit-after 60000 res://tests/_world_probe.tscn      # WORLD_PROBE: ALL PASSED（世界层 / 6~10F / 存档 v4）
+& $G --headless --path . --quit-after 180000 res://tests/_dungeon_probe.tscn   # DUNGEON_PROBE: ALL PASSED（6~10F 区域制布局 / 安全屋 / 导航连通）
 & $G --path . --resolution 1280x720 res://tests/screenshot.tscn               # 重拍 shot_*.png
+& $G --path . res://tests/_dungeon_shot.tscn                                   # shot_dungeon_play / _map / shot_level_select_w1|w2（不要 headless）
 & $G --path . --resolution 1280x720 res://tests/_nested_shot.tscn             # 套间三张样张
 ```
 
