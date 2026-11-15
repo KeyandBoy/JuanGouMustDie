@@ -594,6 +594,19 @@
 - 楼层系数仍沿用 +8% 视野 / +5% 速度每层，再乘角色差异；实测 5F 学生视野 180、老师 232、保安 201（玩家走 160 / 冲刺 260）
 - 待定（P1）：空虚衰减要不要跟着楼层涨（0.80→1.24）、题目档位要不要加楼层项、暴君是否从 4F 挪回 5F
 
+【第二层音频 P0（2026-11-15）】
+- 规格书：`C:\Users\43590\.opencode\plan\第二层世界_音频规格.md`（v1.0）；目标给地牢 6~10F 一套独立音频，**不改第一层听感**
+- 素材原则（用户明确）：**不合成，一律找现成素材**；优先 CC0 / 可商用，避开 CC BY-NC。本批全部 Freesound CC0
+- 已接入：
+  - BGM：`dungeon_calm` / `dungeon_chase`，**同一条 80 BPM 底曲**（looplicator "80 BPM Industrial Ambient"），chase 额外叠 "80 BPM Industrial Drum" 离线预混 → 数学上同 BPM 同长度 23.6s
+  - 拖刀循环 `sfx/pyramid/blade_drag_loop.ogg`（MetalScrapeLoop1）、耳鸣层 `sfx/dungeon/tinnitus_loop.ogg`（10kHz）
+  - 耳语循环 / 耳语一击 / 远处关门（幻听素材）
+  - 4 种被抓音效 `sfx/caught/{face_slam,dragged,vhs_tear,freeze_frame}.ogg`（0.7~0.9s，末尾留静音）
+  - `stone` 脚步 ×5（Mixkit 真实石块行走切片）
+- 代码：`play_caught(kind, by)` + `caught_kind_for()`；`main.gd` 的 `_punish_effect` / `_on_tyrant_hit` 各加一行
+- 待定 / 取舍：Freesound 免费预览只有 24kHz（耳鸣 10kHz 贴奈奎斯特，金属偏闷）；三角头节点未做，被抓类型暂按节点名兜底
+- 未做：`dungeon_alert` / `dungeon_quiz` / `pyramid` / `dungeon_safe` 四首、污染跨档音效、区域切换 / 拾取 / 笔记本、安全屋循环、`dungeon_clear` / `dungeon_gameover`
+
 【第三层世界设计定稿（2026-11-08）】
 - 详细方案见 `设计_第三层世界_11-15F.md`；本轮只出文档，不动代码
 - 范围：**11~15F**，还是"上楼"（第一层 1~5F 学校 / 第二层 6~10F 地牢 / 第三层 11~15F 地狱）

@@ -1401,6 +1401,7 @@ func _pop_caught_numbers() -> void:
 func _punish_effect(by: Node2D) -> void:
 	if breath != null:
 		breath.notify_hurt()
+	AudioManager.play_caught("", by)
 	if player != null:
 		Fx.shake(self, 2)
 		Fx.sprite_flash(player.sprite)
@@ -1558,6 +1559,7 @@ func _on_tyrant_hit() -> void:
 	GameState.tyrant_hits += 1
 	if breath != null:
 		breath.notify_hurt()
+	AudioManager.play_caught("dragged")
 	if quiz.is_open:
 		quiz.close()
 	_stop_study()

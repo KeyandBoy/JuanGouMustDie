@@ -639,8 +639,8 @@
     {
       "id": "dungeon_calm",
       "title": "Lower Halls",
-      "file": null,
-      "status": "missing",
+      "file": "res://assets/music/dungeon_calm.ogg",
+      "status": "active",
       "slots": [
         "dungeon_calm"
       ],
@@ -649,7 +649,8 @@
       ],
       "emotion": "压抑、空旷",
       "intensity": 2,
-      "bpm": null,
+      "bpm": 80,
+      "duration_sec": 23.6,
       "loop": true,
       "level_scope": [
         6,
@@ -661,11 +662,18 @@
       "layer_role": "base",
       "elements": [
         "低频 drone",
-        "滴水",
-        "远处脚步"
+        "金属房间回响",
+        "工业脉冲"
       ],
-      "notes": "第二层平时探索。参考 90~120s；**必须和 dungeon_chase 同 BPM**，否则叠鼓点接不上。规格见 .opencode/plan/第二层世界_音频规格.md",
-      "license": null
+      "notes": "第二层平时探索。freesound \"80 BPM Industrial Ambient\"（looplicator, CC0）原 24s loop，两端 0.4s 交叉淡化接回 23.6s。与 dungeon_chase 同为 80 BPM 同一条底曲，chase 只是多叠一层鼓点，所以两首天然对得上。",
+      "license": {
+        "type": "CC0 1.0",
+        "commercial_ok": true,
+        "attribution_required": false,
+        "author": "looplicator",
+        "source": "https://freesound.org/people/looplicator/sounds/873846/",
+        "modified": true
+      }
     },
     {
       "id": "dungeon_alert",
@@ -701,8 +709,8 @@
     {
       "id": "dungeon_chase",
       "title": "Dragged Below",
-      "file": null,
-      "status": "missing",
+      "file": "res://assets/music/dungeon_chase.ogg",
+      "status": "active",
       "slots": [
         "dungeon_chase"
       ],
@@ -711,7 +719,8 @@
       ],
       "emotion": "急促",
       "intensity": 4,
-      "bpm": null,
+      "bpm": 80,
+      "duration_sec": 23.6,
       "loop": true,
       "level_scope": [
         6,
@@ -726,8 +735,15 @@
         "低频脉冲",
         "金属拖拽"
       ],
-      "notes": "第二层追逐。参考 45~60s；必须和 dungeon_calm 同 BPM，D6 鼓点层才有意义。",
-      "license": null
+      "notes": "第二层追逐。= dungeon_calm 的底曲（-4dB）+ freesound \"80 BPM Industrial Drum\"（looplicator, CC0）在 0dB 附近叠成一条预混轨，所以和 calm 严格同 BPM（80）同长度（23.6s），切进切出不会错拍。",
+      "license": {
+        "type": "CC0 1.0",
+        "commercial_ok": true,
+        "attribution_required": false,
+        "author": "looplicator",
+        "source": "https://freesound.org/people/looplicator/sounds/867779/",
+        "modified": true
+      }
     },
     {
       "id": "dungeon_quiz",

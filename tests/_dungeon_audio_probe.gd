@@ -33,6 +33,8 @@ func _ready() -> void:
 	var old_safe: bool = GameState.in_safe_room
 
 	# ---------- 1. 曲库条目 ----------
+	## 已接入的两首：必须 active 且 80 BPM 同长；其余仍 missing 等素材。
+	var active_ids := ["dungeon_calm", "dungeon_chase"]
 	var want := ["dungeon_calm", "dungeon_alert", "dungeon_chase", "dungeon_quiz",
 		"pyramid", "dungeon_safe", "dungeon_clear", "dungeon_gameover"]
 	var tracks: Array = am.get("_tracks")
@@ -53,11 +55,28 @@ func _ready() -> void:
 				_check(scope_ok and scope.size() == 5, "catalog: %s level_scope 6~10 (%s)" % [id, scope])
 			else:
 				_check(false, "catalog: %s level_scope 不是数组" % id)
-			_check(String(d.get("status", "")) == "missing",
-				"catalog: %s 先标 missing" % id)
+			var status := String(d.get("status", ""))
+			if active_ids.has(id):
+				_check(status == "active", "catalog: %s 已接入应为 active (%s)" % [id, status])
+				_check(not String(d.get("file", "")).is_empty(), "catalog: %s 有文件" % id)
+				_check(ResourceLoader.exists(String(d.get("file", ""))), "catalog: %s 文件存在" % id)
+				_check(String(d.get("file", "")).begins_with("res://assets/music/"),
+					"catalog: %s 放在 assets/music" % id)
+				_check(int(d.get("bpm", 0)) == 80, "catalog: %s 标了 80 BPM (%s)" % [id, d.get("bpm")])
+				_check(d.get("license") is Dictionary, "catalog: %s 有 license 块" % id)
+			else:
+				_check(status == "missing", "catalog: %s 先标 missing (%s)" % [id, status])
 			var inten = d.get("intensity")
 			_check((inten is int or inten is float) and float(inten) >= 1.0 and float(inten) <= 5.0,
 				"catalog: %s intensity 1~5 (%s)" % [id, inten])
+	# 同 BPM 同长度（规格 3：chase 要能和 calm 叠）
+	var calm: Dictionary = by_id.get("dungeon_calm", {})
+	var chase: Dictionary = by_id.get("dungeon_chase", {})
+	_check(int(calm.get("bpm", 0)) == int(chase.get("bpm", -1)), "catalog: calm/chase 同 BPM")
+	var d_calm := float(calm.get("duration_sec", 0.0))
+	var d_chase := float(chase.get("duration_sec", 0.0))
+	_check(absf(d_calm - d_chase) < 0.05 and d_calm > 10.0,
+		"catalog: calm/chase 同长度 (%s vs %s)" % [d_calm, d_chase])
 
 	# ---------- 2. 总线与效果 ----------
 	_check(AudioServer.get_bus_index(am.BUS_DUNGEON_REVERB) >= 0, "bus: DungeonReverb 存在")
@@ -186,6 +205,49 @@ func _ready() -> void:
 	_check(corridor_room > safe_room, "reverb: corridor 比 safe 更长")
 	_check(am.current_zone_preset() == "safe", "reverb: 当前预设可读")
 	am.set_reverb_preset("room", true)
+
+	# ---------- 11. P0 素材就位 ----------
+	var assets := [
+		"res://assets/music/dungeon_calm.ogg",
+		"res://assets/music/dungeon_chase.ogg",
+		"res://assets/sfx/dungeon/tinnitus_loop.ogg",
+		"res://assets/sfx/dungeon/whisper_loop.ogg",
+		"res://assets/sfx/dungeon/whisper_hit.ogg",
+		"res://assets/sfx/dungeon/door_far.ogg",
+		"res://assets/sfx/pyramid/blade_drag_loop.ogg",
+	]
+	for p in assets:
+		_check(ResourceLoader.exists(p), "asset: %s 已就位" % p)
+		_check(am._exists(p), "asset: %s 可被 AudioManager 看见" % p)
+	_check(am.BLADE_DRAG_PATH == "res://assets/sfx/pyramid/blade_drag_loop.ogg", "asset: 拖刀路径常量")
+	_check(am.play_blade_drag(Vector2.ZERO, -30.0), "asset: 拖刀循环能播")
+
+	# ---------- 12. 被抓 4 连 ----------
+	var kinds := ["face_slam", "dragged", "vhs_tear", "freeze"]
+	for k in kinds:
+		var path := String(am.CAUGHT_PATHS.get(k, ""))
+		_check(ResourceLoader.exists(path), "caught: %s 文件存在 (%s)" % [k, path])
+		_check(am.play_caught(k) or am.play_caught(k),
+			"caught: %s 能播（同名限流 3，重试一次）" % k)
+		await get_tree().process_frame
+	# 每种时长 0.7~0.9s（规格 8）；素材缺失也不该崩
+	for k in kinds:
+		var stream: AudioStream = load(String(am.CAUGHT_PATHS.get(k, "")))
+		if stream != null:
+			var len_s: float = stream.get_length()
+			_check(len_s >= 0.6 and len_s <= 1.0, "caught: %s 时长 %.2fs 落在 0.6~1.0" % [k, len_s])
+	# 来源推断：学生=脸部扑屏，暴君=被拖走，杂项=定格帧
+	var dummy := Node2D.new()
+	dummy.name = "FakePyramid"
+	add_child(dummy)
+	dummy.add_to_group("tyrants")
+	_check(am.caught_kind_for(dummy) == "vhs_tear", "caught: 三角头 → vhs_tear (%s)" % am.caught_kind_for(dummy))
+	dummy.name = "Tyrant"
+	_check(am.caught_kind_for(dummy) == "dragged", "caught: 暴君 → dragged (%s)" % am.caught_kind_for(dummy))
+	dummy.remove_from_group("tyrants")
+	_check(am.caught_kind_for(dummy) == "freeze", "caught: 其它 → freeze (%s)" % am.caught_kind_for(dummy))
+	dummy.queue_free()
+	_check(am.caught_kind_for(null) == "freeze", "caught: 空来源 → freeze")
 
 	# 还原
 	GameState.world = old_world

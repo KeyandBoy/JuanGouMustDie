@@ -66,6 +66,23 @@ assets/sfx/step/LICENSE_kenney_impact_sounds.txt 与
 assets/sfx/step/LICENSE_mixkit_stone.txt。
 
 ================================================================
+以下为第二层（地牢 6~10F）专用素材（Freesound，CC0 1.0，可商用，无需署名）
+================================================================
+- assets/music/dungeon_calm.ogg          "80 BPM Industrial Ambient" by looplicator  https://freesound.org/people/looplicator/sounds/873846/
+- assets/music/dungeon_chase.ogg         "80 BPM Industrial Drum" + 上述底曲       by looplicator  https://freesound.org/people/looplicator/sounds/867779/
+- assets/sfx/dungeon/tinnitus_loop.ogg   "Tinnitus 10kHz"            by Kinoton     https://freesound.org/people/Kinoton/sounds/419748/
+- assets/sfx/dungeon/whisper_loop.ogg    "Ghostly Whispering"        by qubodup     https://freesound.org/people/qubodup/sounds/194628/
+- assets/sfx/dungeon/whisper_hit.ogg     "whisper.wav"               by IanStarGem  https://freesound.org/people/IanStarGem/sounds/341841/
+- assets/sfx/dungeon/door_far.ogg        "door slam distant room"    by kyles       https://freesound.org/people/kyles/sounds/450791/
+- assets/sfx/pyramid/blade_drag_loop.ogg "MetalScrapeLoop1.wav"      by warrenXG    https://freesound.org/people/warrenXG/sounds/278139/
+- assets/sfx/caught/face_slam.ogg        尖叫（NiGo.13）+ 耳鸣（Kinoton）+ VHS 抖动（Assetsmith）
+- assets/sfx/caught/dragged.ogg          低频 drone（gerainsan）+ 金属摩擦（warrenXG）+ 门砰（thesecretmachine）
+- assets/sfx/caught/vhs_tear.ogg         VHS Glitch（Sassaby）+ 磁带抖动（Assetsmith）+ 尖叫降调（NiGo.13）
+- assets/sfx/caught/freeze_frame.ogg     心跳（daandraait）+ 闷响（thesecretmachine）
+处理：切片 / 淡入淡出 / 交叉淡化循环 / 峰值归一 / 叠轨，无合成音色。
+逐条地址见 assets/sfx/LICENSE_freesound_dungeon.txt。
+
+================================================================
 以下为非音频素材（一并登记，便于发布前核查授权）
 ================================================================
 

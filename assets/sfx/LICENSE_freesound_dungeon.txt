@@ -1,0 +1,27 @@
+第二层（地牢）音效素材来源与授权
+==================================
+全部来自 Freesound，许可均为 **CC0 1.0（公共领域贡献）**：
+可商用、可修改、无需署名（本项目仍然在这里登记作者与原始地址）。
+
+| 本项目文件 | 原始素材 | 作者 | 原始地址 |
+|---|---|---|---|
+| sfx/dungeon/tinnitus_loop.ogg | Tinnitus 10kHz (14.8s) | Kinoton | https://freesound.org/people/Kinoton/sounds/419748/ |
+| sfx/dungeon/whisper_loop.ogg | Ghostly Whispering (90s) | qubodup | https://freesound.org/people/qubodup/sounds/194628/ |
+| sfx/dungeon/whisper_hit.ogg | whisper.wav (9.5s) | IanStarGem | https://freesound.org/people/IanStarGem/sounds/341841/ |
+| sfx/dungeon/door_far.ogg | door slam distant room (21.7s) | kyles | https://freesound.org/people/kyles/sounds/450791/ |
+| sfx/pyramid/blade_drag_loop.ogg | MetalScrapeLoop1.wav (4.0s) | warrenXG | https://freesound.org/people/warrenXG/sounds/278139/ |
+| sfx/caught/face_slam.ogg | Short scream sfx.wav + 上述耳鸣 + VHS 抖动 | NiGo.13 / Kinoton / Assetsmith | https://freesound.org/people/NiGo.13/sounds/697439/ |
+| sfx/caught/dragged.ogg | Horror Pulsating Drone + 金属摩擦 + SLAM_1-2 | gerainsan / warrenXG / thesecretmachine | https://freesound.org/people/gerainsan/sounds/457046/ |
+| sfx/caught/vhs_tear.ogg | VHS Glitch + VHS Tape Glitch Warble + 尖叫降调 | Sassaby / Assetsmith / NiGo.13 | https://freesound.org/people/Sassaby/sounds/264935/ |
+| sfx/caught/freeze_frame.ogg | SLOW HEARTBEAT + SLAM_1-2 | daandraait / thesecretmachine | https://freesound.org/people/daandraait/sounds/249716/ |
+| music/dungeon_calm.ogg | 80 BPM Industrial Ambient (24s) | looplicator | https://freesound.org/people/looplicator/sounds/873846/ |
+| music/dungeon_chase.ogg | 上述底曲 + 80 BPM Industrial Drum (24s) | looplicator | https://freesound.org/people/looplicator/sounds/867779/ |
+
+处理说明（都属于 CC0 允许的修改）：
+- 用的是 Freesound 的 lq 预览文件（24 kHz），转成 44.1 kHz / OGG Vorbis。
+- 循环素材：切段后做 0.25~0.4s 等功率交叉淡化，接回开头，去掉源文件末尾的淡出。
+- 一次性素材：取最响窗口、淡入淡出、峰值归一化到 -2~-4 dBFS。
+- 4 种被抓音效 = 2~4 段真实录音叠加/升降调，未做合成器音色。
+
+注意：不要把这些文件单独再分发（放进游戏里没问题）；CC0 本身允许再分发，
+这只是项目一贯的素材管理约定。

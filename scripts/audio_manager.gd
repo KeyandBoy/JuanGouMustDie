@@ -911,6 +911,51 @@ func _exists(path: String) -> bool:
 		_file_exists[path] = ResourceLoader.exists(path)
 	return bool(_file_exists[path])
 
+# ---------------------------------------------------------------- 被抓（规格第 8 节）
+
+## 4 种被抓音效：脸部扑屏 / 主观被拖走 / VHS 撕裂 / 定格帧。
+## 素材都是真实录音的剪辑拼接（CC0），时长 0.7~0.9s，末尾留静音余量。
+const CAUGHT_PATHS := {
+	"face_slam": "res://assets/sfx/caught/face_slam.ogg",
+	"dragged": "res://assets/sfx/caught/dragged.ogg",
+	"vhs_tear": "res://assets/sfx/caught/vhs_tear.ogg",
+	"freeze": "res://assets/sfx/caught/freeze_frame.ogg",
+}
+const CAUGHT_DB := -2.0
+
+## 从「谁抓的」推断音效类型：
+##   伪人（students 组）→ 脸部扑屏；暴君/三角头（tyrants 组）→ 被拖走 / VHS 撕裂；
+##   其它非人怪 → 定格帧。
+## 三角头目前还没有独立节点，用名字兜底（含 pyramid / 三角）。
+func caught_kind_for(by: Node) -> String:
+	if by == null or not is_instance_valid(by):
+		return "freeze"
+	if by.is_in_group("tyrants"):
+		var n := String(by.name).to_lower()
+		if n.contains("pyramid") or n.contains("三角") or n.contains("helmet"):
+			return "vhs_tear"
+		return "dragged"
+	if by.is_in_group("students"):
+		return "face_slam"
+	return "freeze"
+
+
+## 播被抓音效 + 压低 BGM。kind 留空时按 by 推断。
+## 返回是否真的播出了（素材缺失时不打断后续逻辑）。
+func play_caught(kind := "", by: Node = null) -> bool:
+	var k := kind if not kind.is_empty() else caught_kind_for(by)
+	if not CAUGHT_PATHS.has(k):
+		k = "freeze"
+	duck_music()
+	return play_sfx(String(CAUGHT_PATHS[k]), CAUGHT_DB)
+
+## 拖刀循环（三角头移动时用，2D 定位）。走 SFX 池，同名限流 3。
+const BLADE_DRAG_PATH := "res://assets/sfx/pyramid/blade_drag_loop.ogg"
+
+func play_blade_drag(world_pos: Vector2, volume_db := -6.0) -> bool:
+	return play_sfx_2d(BLADE_DRAG_PATH, world_pos, 700.0, volume_db)
+
+
 
 ## 当前某个音效正在响的数量（调试 / 自测用）。
 func sfx_active_count(path: String) -> int:
