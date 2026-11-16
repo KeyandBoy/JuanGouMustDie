@@ -16,6 +16,10 @@
 | sfx/caught/freeze_frame.ogg | SLOW HEARTBEAT + SLAM_1-2 | daandraait / thesecretmachine | https://freesound.org/people/daandraait/sounds/249716/ |
 | music/dungeon_calm.ogg | 80 BPM Industrial Ambient (24s) | looplicator | https://freesound.org/people/looplicator/sounds/873846/ |
 | music/dungeon_chase.ogg | 上述底曲 + 80 BPM Industrial Drum (24s) | looplicator | https://freesound.org/people/looplicator/sounds/867779/ |
+| music/dungeon_alert.ogg | 80 BPM Industrial Ambient (24s) | looplicator | https://freesound.org/people/looplicator/sounds/851229/ |
+| music/dungeon_quiz.ogg | 80 BPM Industrial Ambient (24s) | looplicator | https://freesound.org/people/looplicator/sounds/831354/ |
+| music/dungeon_safe.ogg | SLOW HEARTBEAT (14.6s) + 上述底曲 -16dB | daandraait / looplicator | https://freesound.org/people/daandraait/sounds/249716/ |
+| music/pyramid.ogg | 34 BPM Industrial Horror (56.5s) | looplicator | https://freesound.org/people/looplicator/sounds/845798/ |
 
 处理说明（都属于 CC0 允许的修改）：
 - 用的是 Freesound 的 lq 预览文件（24 kHz），转成 44.1 kHz / OGG Vorbis。

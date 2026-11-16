@@ -70,6 +70,10 @@ assets/sfx/step/LICENSE_mixkit_stone.txt。
 ================================================================
 - assets/music/dungeon_calm.ogg          "80 BPM Industrial Ambient" by looplicator  https://freesound.org/people/looplicator/sounds/873846/
 - assets/music/dungeon_chase.ogg         "80 BPM Industrial Drum" + 上述底曲       by looplicator  https://freesound.org/people/looplicator/sounds/867779/
+- assets/music/dungeon_alert.ogg         "80 BPM Industrial Ambient" by looplicator  https://freesound.org/people/looplicator/sounds/851229/
+- assets/music/dungeon_quiz.ogg          "80 BPM Industrial Ambient" by looplicator  https://freesound.org/people/looplicator/sounds/831354/
+- assets/music/dungeon_safe.ogg          "SLOW HEARTBEAT" + 上述底曲 -16dB     by daandraait / looplicator  https://freesound.org/people/daandraait/sounds/249716/
+- assets/music/pyramid.ogg               "34 BPM Industrial Horror"  by looplicator  https://freesound.org/people/looplicator/sounds/845798/
 - assets/sfx/dungeon/tinnitus_loop.ogg   "Tinnitus 10kHz"            by Kinoton     https://freesound.org/people/Kinoton/sounds/419748/
 - assets/sfx/dungeon/whisper_loop.ogg    "Ghostly Whispering"        by qubodup     https://freesound.org/people/qubodup/sounds/194628/
 - assets/sfx/dungeon/whisper_hit.ogg     "whisper.wav"               by IanStarGem  https://freesound.org/people/IanStarGem/sounds/341841/

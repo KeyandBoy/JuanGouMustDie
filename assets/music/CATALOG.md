@@ -3,7 +3,7 @@
 > 由 `tools/music_catalog.py` 从 `assets/music/catalog.json` 生成，最后更新：2026-11-04。
 > 要加歌/换歌/补缺口，改 JSON 再跑一次脚本，**不要直接改这个文件**。
 
-**统计**：在用 12 首 · 备用 4 首 · 待补 11 条
+**统计**：在用 16 首 · 备用 4 首 · 待补 7 条
 
 ## 一、在用曲目
 
@@ -20,7 +20,11 @@
 | `gameover_somber` | Somber | 悲壮 | 2 | gameover | gameover | base | all | 下沉低音、低沉弦乐、空洞回响 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
 | `amb_tyrant_drone` | Horror Drone #1 | 压迫 | 3 | tyrant | pressure | pressure | all | 低频轰鸣、嗡鸣、不安持续音 | CC BY 4.0 / Jason Shaw (Audionautix) / 需署名 |
 | `dungeon_calm` | Lower Halls | 压抑、空旷 | 2 | explore_calm | dungeon_calm | base | 6、7、8、9、10 | 低频 drone、金属房间回响、工业脉冲 | CC0 1.0 / looplicator |
+| `dungeon_alert` | Shifting Stone | 不安 | 3 | explore_alert | dungeon_alert | base | 6、7、8、9、10 | 不协和弦乐、金属摩擦、远处回响 | CC0 1.0 / looplicator |
 | `dungeon_chase` | Dragged Below | 急促 | 4 | chase | dungeon_chase | base | 6、7、8、9、10 | 急促鼓点、低频脉冲、金属拖拽 | CC0 1.0 / looplicator |
+| `dungeon_quiz` | Cold Chalk | 荒诞退化为窒息 | 2 | quiz | dungeon_quiz | base | 6、7、8、9、10 | 失真高频、滴水、金属房间 | CC0 1.0 / looplicator |
+| `pyramid` | The Helmet | 沉重、逼近 | 4 | tyrant | pyramid | base | 6、7、8、9、10 | 拖刀金属、低频脉冲、脚步逼近 | CC0 1.0 / looplicator |
+| `dungeon_safe` | Thin Silence | 短暂安宁 | 1 | safe | dungeon_safe | base | 6、7、8、9、10 | 心跳、轻微房间底噪 | CC0 1.0 / daandraait / looplicator |
 
 ## 二、备用曲目（已入库，未接入）
 
@@ -40,10 +44,6 @@
 | 走廊喘息/呼吸环境层 | explore_calm、explore_alert、tyrant | 恐怖 | 2 | ambience | all | 喘息、呼吸、极轻的风声 | 很轻、非旋律、可长时间循环。Freesound 找单声道采样自己拼，注意授权逐条查（避开 CC BY-NC）。 |
 | 钟声 / 下课铃环境层 | menu、explore_calm、cleared | 诡异 | 2 | ambience | all | 钟声、下课铃、远处回响 | 校舍氛围点题用。可做成几十秒一次的点缀（accent），不必整段循环。 |
 | L5 灯管闪烁 / 电流嗡鸣层 | tyrant | 压迫 | 3 | ambience | 5 | 电流嗡鸣、灯管爆闪、高频颤动 | 配合 L5 的灯光闪烁机制，随机触发短段比长循环更自然。Freesound 找 electrical hum / fluorescent buzz。 |
-| Shifting Stone | explore_alert | 不安 | 3 | base | 6、7、8、9、10 | 不协和弦乐、金属摩擦、远处回响 | 污染 ≥50 或警觉状态。参考 60~90s。 |
-| Cold Chalk | quiz | 荒诞退化为窒息 | 2 | base | 6、7、8、9、10 | 失真钢琴、滴水、粉笔声 | 地牢答题：保留一点答题怪感，但更冷。参考 60s。 |
-| The Helmet | tyrant | 沉重、逼近 | 4 | base | 6、7、8、9、10 | 拖刀金属、低频脉冲、脚步逼近 | 三角头在场（听觉型追逐者）。拖刀声当节奏基底，参考 60s。 |
-| Thin Silence | safe | 短暂安宁 | 1 | base | 6、7、8、9、10 | 心跳、呼吸、轻白噪 | 第二层安全屋，参考 45s。音量压低，别盖过脚步声。 |
 | Hollow Victory | cleared | 空洞的胜利 | 3 | base | 6、7、8、9、10 | 失真弦乐、长回响、低频收尾 | 第二层通关短句，8~12s，和第一层 clear_victory 明确区分。 |
 | Swallowed | gameover | 下沉 | 2 | base | 6、7、8、9、10 | 低频下沉、磁带减速、远处关门 | 第二层失败短句，8~12s，比 gameover_somber 更『被吞掉』。 |
 
@@ -52,13 +52,13 @@
 - **chase**：Chase!（active）、Assault（standby）、追逐节奏层（加鼓点）（missing）、Dragged Below（active）
 - **cleared**：Big Intro #2（active）、钟声 / 下课铃环境层（missing）、Hollow Victory（missing）
 - **cutscene**：The Childrens Room（active）
-- **explore_alert**：Vicegrip of Pursuit（active）、The Fridge is Hungry（standby）、Night Runner（standby）、走廊喘息/呼吸环境层（missing）、Shifting Stone（missing）
+- **explore_alert**：Vicegrip of Pursuit（active）、The Fridge is Hungry（standby）、Night Runner（standby）、走廊喘息/呼吸环境层（missing）、Shifting Stone（active）
 - **explore_calm**：Happy Loop（active）、走廊喘息/呼吸环境层（missing）、钟声 / 下课铃环境层（missing）、Lower Halls（active）
 - **gameover**：Somber（active）、Swallowed（missing）
 - **menu**：Happy Loop（active）、钟声 / 下课铃环境层（missing）
-- **quiz**：Goofy Attitude!（active）、Wacky Wobblings（standby）、Cold Chalk（missing）
-- **safe**：Thin Silence（missing）
-- **tyrant**：Tyrant Dread（active）、Tyrant Dread L5（active）、Horror Drone #1（active）、暴君压迫层（低频轰鸣 + 心跳）（missing）、走廊喘息/呼吸环境层（missing）、L5 灯管闪烁 / 电流嗡鸣层（missing）、The Helmet（missing）
+- **quiz**：Goofy Attitude!（active）、Wacky Wobblings（standby）、Cold Chalk（active）
+- **safe**：Thin Silence（active）
+- **tyrant**：Tyrant Dread（active）、Tyrant Dread L5（active）、Horror Drone #1（active）、暴君压迫层（低频轰鸣 + 心跳）（missing）、走廊喘息/呼吸环境层（missing）、L5 灯管闪烁 / 电流嗡鸣层（missing）、The Helmet（active）
 
 ## 五、按声音元素索引
 
@@ -80,12 +80,12 @@
 - **加速鼓点**：Tyrant Dread L5
 - **压迫感**：Tyrant Dread
 - **口哨**：Goofy Attitude!
-- **呼吸**：走廊喘息/呼吸环境层、Thin Silence
+- **呼吸**：走廊喘息/呼吸环境层
 - **喘息**：暴君压迫层（低频轰鸣 + 心跳）、走廊喘息/呼吸环境层
 - **嗡鸣**：Horror Drone #1
 - **失真弦乐**：Hollow Victory
 - **失真贝斯**：Assault
-- **失真钢琴**：Cold Chalk
+- **失真高频**：Cold Chalk
 - **工业噪音**：Assault
 - **工业脉冲**：Lower Halls
 - **底鼓**：追逐节奏层（加鼓点）
@@ -115,16 +115,16 @@
 - **磁带减速**：Swallowed
 - **稀疏钢琴**：The Childrens Room
 - **空洞回响**：Somber
-- **粉笔声**：Cold Chalk
 - **脚步逼近**：The Helmet
 - **警报音色**：Chase!
 - **走廊回响**：The Childrens Room
 - **踩镲**：追逐节奏层（加鼓点）
+- **轻微房间底噪**：Thin Silence
 - **轻快鼓点**：Happy Loop
-- **轻白噪**：Thin Silence
 - **远处关门**：Swallowed
 - **远处回响**：钟声 / 下课铃环境层、Shifting Stone
 - **重鼓**：Assault
+- **金属房间**：Cold Chalk
 - **金属房间回响**：Lower Halls
 - **金属拖拽**：Dragged Below
 - **金属摩擦**：Shifting Stone
@@ -158,11 +158,11 @@
 | `gap_bell_ambience` | — | — | — | — | — |
 | `gap_l5_flicker_ambience` | — | — | — | — | — |
 | `dungeon_calm` | CC0 1.0 | 是 | 否 | looplicator | https://freesound.org/people/looplicator/sounds/873846/ |
-| `dungeon_alert` | — | — | — | — | — |
+| `dungeon_alert` | CC0 1.0 | 是 | 否 | looplicator | https://freesound.org/people/looplicator/sounds/851229/ |
 | `dungeon_chase` | CC0 1.0 | 是 | 否 | looplicator | https://freesound.org/people/looplicator/sounds/867779/ |
-| `dungeon_quiz` | — | — | — | — | — |
-| `pyramid` | — | — | — | — | — |
-| `dungeon_safe` | — | — | — | — | — |
+| `dungeon_quiz` | CC0 1.0 | 是 | 否 | looplicator | https://freesound.org/people/looplicator/sounds/831354/ |
+| `pyramid` | CC0 1.0 | 是 | 否 | looplicator | https://freesound.org/people/looplicator/sounds/845798/ |
+| `dungeon_safe` | CC0 1.0 | 是 | 否 | daandraait / looplicator | https://freesound.org/people/daandraait/sounds/249716/ |
 | `dungeon_clear` | — | — | — | — | — |
 | `dungeon_gameover` | — | — | — | — | — |
 

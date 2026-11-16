@@ -33,8 +33,10 @@ func _ready() -> void:
 	var old_safe: bool = GameState.in_safe_room
 
 	# ---------- 1. 曲库条目 ----------
-	## 已接入的两首：必须 active 且 80 BPM 同长；其余仍 missing 等素材。
-	var active_ids := ["dungeon_calm", "dungeon_chase"]
+	## 已接入的六首：必须 active；其中 calm/alert/chase/quiz 是同一 80 BPM 系列。
+	## clear / gameover 仍是 missing（短句素材后面补）。
+	var active_ids := ["dungeon_calm", "dungeon_alert", "dungeon_chase", "dungeon_quiz", "pyramid", "dungeon_safe"]
+	var bpm80_ids := ["dungeon_calm", "dungeon_alert", "dungeon_chase", "dungeon_quiz"]
 	var want := ["dungeon_calm", "dungeon_alert", "dungeon_chase", "dungeon_quiz",
 		"pyramid", "dungeon_safe", "dungeon_clear", "dungeon_gameover"]
 	var tracks: Array = am.get("_tracks")
@@ -62,7 +64,9 @@ func _ready() -> void:
 				_check(ResourceLoader.exists(String(d.get("file", ""))), "catalog: %s 文件存在" % id)
 				_check(String(d.get("file", "")).begins_with("res://assets/music/"),
 					"catalog: %s 放在 assets/music" % id)
-				_check(int(d.get("bpm", 0)) == 80, "catalog: %s 标了 80 BPM (%s)" % [id, d.get("bpm")])
+				if bpm80_ids.has(id):
+					_check(int(d.get("bpm", 0)) == 80, "catalog: %s 标了 80 BPM (%s)" % [id, d.get("bpm")])
+				_check(float(d.get("duration_sec", 0.0)) > 5.0, "catalog: %s 标了时长" % id)
 				_check(d.get("license") is Dictionary, "catalog: %s 有 license 块" % id)
 			else:
 				_check(status == "missing", "catalog: %s 先标 missing (%s)" % [id, status])
@@ -150,10 +154,16 @@ func _ready() -> void:
 	_check(am._desired_key() == "happy", "key: 第一层仍是 happy (%s)" % am._desired_key())
 
 	# ---------- 6. 缺素材回退 ----------
+	# 已接入的槽位不再回退；仍缺素材的 clear / gameover 继续借第一层短句。
+	# 曲库条目带 level_scope 6~10，不设楼层 catalog_slot_path 会误判成缺素材。
 	GameState.world = 2
-	_check(am.catalog_slot_path("dungeon_calm").is_empty(), "fallback: dungeon_calm 文件未就位")
-	_check(am._resolve_slot("dungeon_calm") == "cutscene", "fallback: dungeon_calm → cutscene")
-	_check(am._resolve_slot("pyramid") == "tyrant", "fallback: pyramid → tyrant")
+	GameState.level = 6
+	_check(not am.catalog_slot_path("dungeon_calm").is_empty(), "fallback: dungeon_calm 已有文件")
+	_check(am._resolve_slot("dungeon_calm") == "dungeon_calm", "fallback: dungeon_calm 不再回退")
+	_check(am._resolve_slot("pyramid") == "pyramid", "fallback: pyramid 不再回退")
+	_check(am.catalog_slot_path("dungeon_clear").is_empty(), "fallback: dungeon_clear 仍缺")
+	_check(am._resolve_slot("dungeon_clear") == "cleared", "fallback: dungeon_clear → cleared")
+	_check(am._resolve_slot("dungeon_gameover") == "gameover", "fallback: dungeon_gameover → gameover")
 
 	# ---------- 7. duck ----------
 	var base_db := AudioServer.get_bus_volume_db(music_idx)
@@ -210,6 +220,10 @@ func _ready() -> void:
 	var assets := [
 		"res://assets/music/dungeon_calm.ogg",
 		"res://assets/music/dungeon_chase.ogg",
+		"res://assets/music/dungeon_alert.ogg",
+		"res://assets/music/dungeon_quiz.ogg",
+		"res://assets/music/dungeon_safe.ogg",
+		"res://assets/music/pyramid.ogg",
 		"res://assets/sfx/dungeon/tinnitus_loop.ogg",
 		"res://assets/sfx/dungeon/whisper_loop.ogg",
 		"res://assets/sfx/dungeon/whisper_hit.ogg",

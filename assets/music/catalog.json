@@ -678,8 +678,8 @@
     {
       "id": "dungeon_alert",
       "title": "Shifting Stone",
-      "file": null,
-      "status": "missing",
+      "file": "res://assets/music/dungeon_alert.ogg",
+      "status": "active",
       "slots": [
         "dungeon_alert"
       ],
@@ -688,7 +688,8 @@
       ],
       "emotion": "不安",
       "intensity": 3,
-      "bpm": null,
+      "bpm": 80,
+      "duration_sec": 23.6,
       "loop": true,
       "level_scope": [
         6,
@@ -703,8 +704,15 @@
         "金属摩擦",
         "远处回响"
       ],
-      "notes": "污染 ≥50 或警觉状态。参考 60~90s。",
-      "license": null
+      "notes": "污染 ≥50 或警觉状态。freesound \"80 BPM Industrial Ambient\"（looplicator, CC0, 851229）原 24s loop → 交叉淡化 23.6s；和 calm/chase 同为 80 BPM，警报解除时互切不会错拍。",
+      "license": {
+        "type": "CC0 1.0",
+        "commercial_ok": true,
+        "attribution_required": false,
+        "author": "looplicator",
+        "source": "https://freesound.org/people/looplicator/sounds/851229/",
+        "modified": true
+      }
     },
     {
       "id": "dungeon_chase",
@@ -748,8 +756,8 @@
     {
       "id": "dungeon_quiz",
       "title": "Cold Chalk",
-      "file": null,
-      "status": "missing",
+      "file": "res://assets/music/dungeon_quiz.ogg",
+      "status": "active",
       "slots": [
         "dungeon_quiz"
       ],
@@ -758,7 +766,8 @@
       ],
       "emotion": "荒诞退化为窒息",
       "intensity": 2,
-      "bpm": null,
+      "bpm": 80,
+      "duration_sec": 23.6,
       "loop": true,
       "level_scope": [
         6,
@@ -769,18 +778,25 @@
       ],
       "layer_role": "base",
       "elements": [
-        "失真钢琴",
+        "失真高频",
         "滴水",
-        "粉笔声"
+        "金属房间"
       ],
-      "notes": "地牢答题：保留一点答题怪感，但更冷。参考 60s。",
-      "license": null
+      "notes": "地牢答题：同 80 BPM 系列的第三条 ambient（looplicator, CC0, 831354），降 -3dB 让它退到背景。",
+      "license": {
+        "type": "CC0 1.0",
+        "commercial_ok": true,
+        "attribution_required": false,
+        "author": "looplicator",
+        "source": "https://freesound.org/people/looplicator/sounds/831354/",
+        "modified": true
+      }
     },
     {
       "id": "pyramid",
       "title": "The Helmet",
-      "file": null,
-      "status": "missing",
+      "file": "res://assets/music/pyramid.ogg",
+      "status": "active",
       "slots": [
         "pyramid"
       ],
@@ -789,7 +805,8 @@
       ],
       "emotion": "沉重、逼近",
       "intensity": 4,
-      "bpm": null,
+      "bpm": 34,
+      "duration_sec": 55.9,
       "loop": true,
       "level_scope": [
         6,
@@ -804,14 +821,21 @@
         "低频脉冲",
         "脚步逼近"
       ],
-      "notes": "三角头在场（听觉型追逐者）。拖刀声当节奏基底，参考 60s。",
-      "license": null
+      "notes": "三角头在场（听觉型追逐者）。freesound \"34 BPM Industrial Horror\"（looplicator, CC0, 845798）原 56.5s → 55.9s 循环；拖刀本体用 sfx/pyramid/blade_drag_loop 单独做 2D 层。",
+      "license": {
+        "type": "CC0 1.0",
+        "commercial_ok": true,
+        "attribution_required": false,
+        "author": "looplicator",
+        "source": "https://freesound.org/people/looplicator/sounds/845798/",
+        "modified": true
+      }
     },
     {
       "id": "dungeon_safe",
       "title": "Thin Silence",
-      "file": null,
-      "status": "missing",
+      "file": "res://assets/music/dungeon_safe.ogg",
+      "status": "active",
       "slots": [
         "dungeon_safe"
       ],
@@ -821,6 +845,7 @@
       "emotion": "短暂安宁",
       "intensity": 1,
       "bpm": null,
+      "duration_sec": 13.8,
       "loop": true,
       "level_scope": [
         6,
@@ -832,11 +857,17 @@
       "layer_role": "base",
       "elements": [
         "心跳",
-        "呼吸",
-        "轻白噪"
+        "轻微房间底噪"
       ],
-      "notes": "第二层安全屋，参考 45s。音量压低，别盖过脚步声。",
-      "license": null
+      "notes": "第二层安全屋：freesound \"SLOW HEARTBEAT\"（daandraait, CC0, 249716）+ 80 BPM 底曲 -16dB 垫一层房间感，整体再降 6dB，不盖脚步声。",
+      "license": {
+        "type": "CC0 1.0",
+        "commercial_ok": true,
+        "attribution_required": false,
+        "author": "daandraait / looplicator",
+        "source": "https://freesound.org/people/daandraait/sounds/249716/",
+        "modified": true
+      }
     },
     {
       "id": "dungeon_clear",

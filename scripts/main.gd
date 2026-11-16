@@ -939,6 +939,7 @@ func _process(delta: float) -> void:
 	if in_safe and GameState.world >= 2 and GameState.run_state == GameState.RunState.EXPLORING:
 		GameState.restore_emptiness(6.0 * delta)
 		GameState.restore_contamination(6.0 * delta)
+	_update_audio_space(in_safe)
 
 	var rs := GameState.run_state
 	if rs == GameState.RunState.GAMEOVER:
@@ -1368,6 +1369,23 @@ func _on_room_entered(index: int) -> void:
 	hud.toast("进入 %s" % String(map.room_names[index]))
 	if map.is_safe_room_index(index):
 		_enter_safe_room(index)
+
+## 音频空间（规格第 6 节）：安全屋 = 干、走廊 = 长混响、房间 = 短混响。
+## 只在「换了空间」时调一次，AudioManager 内部再做 0.4s 参数插值。
+var _audio_space := ""
+
+func _update_audio_space(in_safe: bool) -> void:
+	if player == null or map == null or not is_instance_valid(player):
+		return
+	var space := "room"
+	if in_safe:
+		space = "safe"
+	elif map.room_index_at(player.position) < 0:
+		space = "corridor"
+	if space == _audio_space:
+		return
+	_audio_space = space
+	AudioManager.set_reverb_preset(space)
 
 ## 安全屋：第二层每层 2 间，停留时持续回理智 / 降污染（_process 里按秒结算）；
 ## 不能答题，怪物后续由 P7 的 AI 规则排除进入。
