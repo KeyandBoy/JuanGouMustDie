@@ -2722,9 +2722,13 @@ func _show_level_select(p_world: int = 0) -> void:
 	# p_world = 0 表示自动（第二层已解锁就直接显示第二层）。
 	var world: int = p_world
 	if world <= 0:
-		world = 2 if _world_unlocked(2) else 1
-	world = clampi(world, 1, 2)
-	var lv_first: int = 1 if world == 1 else 6
+		world = 3 if _world_unlocked(3) else (2 if _world_unlocked(2) else 1)
+	world = clampi(world, 1, 3)
+	var lv_first: int = 1
+	if world == 2:
+		lv_first = 6
+	elif world == 3:
+		lv_first = 11
 	var lv_last: int = GameState.last_level_of_world(lv_first)
 
 	var layer := CanvasLayer.new()
@@ -2760,14 +2764,15 @@ func _show_level_select(p_world: int = 0) -> void:
 	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
 	tabs.add_theme_constant_override("separation", 10)
 	vbox.add_child(tabs)
-	for w in [1, 2]:
+	for w in [1, 2, 3]:
 		var open: bool = _world_unlocked(w)
 		var tab := Button.new()
 		tab.text = String(GameState.WORLD_NAMES.get(w, "第 %d 层" % w))
 		tab.custom_minimum_size = Vector2(220, 40)
 		tab.add_theme_font_size_override("font_size", 18)
 		tab.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var accent := UiTheme.get_button_color(0 if w == 1 else 2)
+		# 第一层红 / 第二层金 / 第三层暗紫（地狱）
+		var accent := UiTheme.get_button_color(0 if w == 1 else (2 if w == 2 else 5))
 		if w == world:
 			tab.add_theme_stylebox_override("normal", UiTheme.accent_button_style(accent, true))
 			tab.add_theme_stylebox_override("hover", UiTheme.accent_button_style(accent, true))
@@ -2783,7 +2788,7 @@ func _show_level_select(p_world: int = 0) -> void:
 				return
 			AudioManager.kick()
 			if not _world_unlocked(w):
-				hud.toast("通关第一层 5F 后解锁第二层")
+				hud.toast("通关第 %d 层的最后一层后解锁下一层" % (w - 1))
 				return
 			_pop_modal(layer)
 			_show_level_select(w))

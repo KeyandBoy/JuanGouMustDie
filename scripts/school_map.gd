@@ -33,6 +33,9 @@ const TYPE_ORDER := [
 	"classroom", "lab", "library", "medical", "office",
 	"storage", "broadcast", "toilet", "stair", "hall",
 	"cell", "torture", "altar",
+	# 第三层（11~15F）追加，只加不重排：图集列序靠它，重排会让旧房间错位
+	"forge", "jailer", "ossuary", "bloodpool",
+	"heart", "stomach", "lung", "marrow", "eye", "womb",
 ]
 const CORRIDOR_TYPE := "corridor"
 ## 地板图案种类：6 个随机变体（贴图来自 tools/tilemancer_tiles.py，Tilemancer 风格光照）
@@ -57,6 +60,34 @@ const HELL_STYLE_ACID := 5
 
 const CORRIDOR_COLOR := Color(0.88, 0.90, 0.86)
 const CORRIDOR_WALL := Color(0.66, 0.69, 0.73)
+## 第三层走廊（血管廊）：学校那套浅色在地狱里太亮，整条脊柱得压暗。
+const HELL_CORRIDOR_COLOR := Color(0.34, 0.29, 0.35)
+const HELL_CORRIDOR_WALL := Color(0.26, 0.22, 0.28)
+
+## 第三层房型色板（设计 6.1：肉底/脏紫/病绿/骨白/焦黑）。
+## 单开一张表而不是改 type_defs：第二层（6~10F）还在用那套颜色，改了会连带变。
+## 地板 = 灰度图案 × 这个色，所以这里给的是"地板色"，比墙亮一档。
+const HELL_ROOM_COLORS := {
+	# —— 延续第二层的 3 种（地狱异化版）——
+	"cell":      {"color": Color(0.42, 0.43, 0.46), "wall": Color(0.31, 0.32, 0.37)},
+	"torture":   {"color": Color(0.40, 0.28, 0.29), "wall": Color(0.30, 0.22, 0.24)},
+	"altar":     {"color": Color(0.35, 0.28, 0.41), "wall": Color(0.26, 0.21, 0.32)},
+	# —— 新 4 种地牢 ——
+	"forge":     {"color": Color(0.41, 0.38, 0.37), "wall": Color(0.31, 0.29, 0.29)},
+	"jailer":    {"color": Color(0.45, 0.39, 0.33), "wall": Color(0.34, 0.30, 0.26)},
+	"ossuary":   {"color": Color(0.55, 0.52, 0.46), "wall": Color(0.42, 0.40, 0.36)},
+	"bloodpool": {"color": Color(0.45, 0.22, 0.23), "wall": Color(0.33, 0.17, 0.19)},
+	# —— 器官 6 种 ——
+	"heart":     {"color": Color(0.53, 0.31, 0.31), "wall": Color(0.38, 0.21, 0.23)},
+	"stomach":   {"color": Color(0.50, 0.47, 0.29), "wall": Color(0.38, 0.36, 0.25)},
+	"lung":      {"color": Color(0.56, 0.40, 0.41), "wall": Color(0.42, 0.30, 0.32)},
+	"marrow":    {"color": Color(0.57, 0.52, 0.44), "wall": Color(0.44, 0.40, 0.35)},
+	"eye":       {"color": Color(0.45, 0.39, 0.50), "wall": Color(0.33, 0.29, 0.40)},
+	"womb":      {"color": Color(0.52, 0.37, 0.40), "wall": Color(0.38, 0.28, 0.32)},
+	# —— 结构件（地狱里也不留学校色）——
+	"hall":      {"color": Color(0.49, 0.45, 0.41), "wall": Color(0.37, 0.34, 0.32)},
+	"stair":     {"color": Color(0.44, 0.45, 0.48), "wall": Color(0.33, 0.34, 0.38)},
+}
 const WALL_COLOR := Color(0.70, 0.73, 0.78)
 const WALL_EDGE_COLOR := Color(0.27, 0.30, 0.35)
 const WALL_TOP_COLOR := Color(0.94, 0.96, 0.98)
@@ -66,6 +97,7 @@ const WINDOW_COLOR := Color(0.52, 0.80, 0.93)
 var rng := RandomNumberGenerator.new()
 var level_seed := 0
 var _floor_atlas_img: Image = null
+var _hell_floor_atlas_img: Image = null
 var rooms: Array[Rect2] = []
 var room_types: Array[String] = []
 var room_names: Array[String] = []
@@ -180,6 +212,18 @@ var type_defs: Dictionary = {
 	"cell":      {"name": "牢房",     "weight": 0, "color": Color(0.52, 0.55, 0.60), "wall": Color(0.42, 0.45, 0.50), "w_min": 24, "w_max": 32, "eff": 0.80, "desk": 90.0},
 	"torture":   {"name": "刑房",     "weight": 0, "color": Color(0.45, 0.33, 0.33), "wall": Color(0.35, 0.26, 0.27), "w_min": 26, "w_max": 34, "eff": 0.50, "desk": 999.0},
 	"altar":     {"name": "祭坛",     "weight": 0, "color": Color(0.38, 0.30, 0.45), "wall": Color(0.30, 0.24, 0.36), "w_min": 30, "w_max": 40, "eff": 1.60, "desk": 60.0},
+	# —— 第三层（地狱 11~15F）专属：weight 恒 0，只能由 _pick_hell_type() 选出 ——
+	# eff = 房型学习点效率（设计 5.6；altar 1.7 为全层最高）；desk 999 = 不摆课桌（地狱没有课桌，只有偶现那一张）
+	"forge":     {"name": "刑具库",   "weight": 0, "color": Color(0.55, 0.50, 0.48), "wall": Color(0.42, 0.38, 0.38), "w_min": 28, "w_max": 36, "eff": 1.10, "desk": 999.0},
+	"jailer":    {"name": "狱吏室",   "weight": 0, "color": Color(0.62, 0.54, 0.45), "wall": Color(0.48, 0.42, 0.36), "w_min": 28, "w_max": 36, "eff": 1.30, "desk": 999.0},
+	"ossuary":   {"name": "骨窟",     "weight": 0, "color": Color(0.78, 0.74, 0.66), "wall": Color(0.62, 0.58, 0.52), "w_min": 28, "w_max": 36, "eff": 1.15, "desk": 999.0},
+	"bloodpool": {"name": "血池",     "weight": 0, "color": Color(0.62, 0.30, 0.30), "wall": Color(0.44, 0.22, 0.24), "w_min": 30, "w_max": 38, "eff": 0.75, "desk": 999.0},
+	"heart":     {"name": "心室",     "weight": 0, "color": Color(0.74, 0.44, 0.42), "wall": Color(0.52, 0.28, 0.30), "w_min": 32, "w_max": 40, "eff": 1.50, "desk": 999.0},
+	"stomach":   {"name": "胃室",     "weight": 0, "color": Color(0.70, 0.66, 0.40), "wall": Color(0.52, 0.50, 0.34), "w_min": 32, "w_max": 42, "eff": 1.20, "desk": 999.0},
+	"lung":      {"name": "肺室",     "weight": 0, "color": Color(0.78, 0.56, 0.56), "wall": Color(0.58, 0.40, 0.42), "w_min": 32, "w_max": 42, "eff": 1.25, "desk": 999.0},
+	"marrow":    {"name": "骨髓腔",   "weight": 0, "color": Color(0.80, 0.72, 0.60), "wall": Color(0.64, 0.56, 0.48), "w_min": 30, "w_max": 38, "eff": 1.30, "desk": 999.0},
+	"eye":       {"name": "眼房",     "weight": 0, "color": Color(0.60, 0.52, 0.66), "wall": Color(0.44, 0.38, 0.52), "w_min": 28, "w_max": 36, "eff": 1.40, "desk": 999.0},
+	"womb":      {"name": "胎室",     "weight": 0, "color": Color(0.72, 0.50, 0.54), "wall": Color(0.52, 0.36, 0.42), "w_min": 30, "w_max": 38, "eff": 1.10, "desk": 999.0},
 }
 
 func generate(p_seed: int, room_count: int = 0) -> void:
@@ -561,6 +605,26 @@ func _pick_dungeon_type() -> String:
 	]
 	return school_pool[rng.randi_range(0, school_pool.size() - 1)]
 
+## 第三层（地狱 11~15F）：石房与器官房的比例。设计 5.1：
+##   11F 7:1 -> 12F 6:2 -> 13F 1:1 -> 14F 3:5 -> 15F 1:3（石 : 器官）
+func hell_stone_ratio() -> float:
+	if GameState.world < 3:
+		return 0.0
+	return clampf(0.875 - 0.15625 * float(GameState.level - 11), 0.25, 0.875)
+
+## 第三层的房型抽取：先按楼层比例决定「石房 / 器官房」，再在池子里等权抽。
+## 石房 7 种 = cell/torture/altar/forge/jailer/ossuary/bloodpool；
+## 器官房 6 种 = heart/stomach/lung/marrow/eye/womb。
+func _pick_hell_type() -> String:
+	var stone_pool: Array[String] = [
+		"cell", "torture", "altar", "forge", "jailer", "ossuary", "bloodpool",
+	]
+	var organ_pool: Array[String] = [
+		"heart", "stomach", "lung", "marrow", "eye", "womb",
+	]
+	var pool: Array[String] = organ_pool if rng.randf() >= hell_stone_ratio() else stone_pool
+	return pool[rng.randi_range(0, pool.size() - 1)]
+
 ## 第二层（地牢）区域制布局。
 ##
 ## 几何（单位为格，最后再整体 pad 20 格实心墙）：
@@ -669,7 +733,7 @@ func _generate_dungeon() -> void:
 				elif z == 3 and ri == first_room + 1:
 					t = "stair"         # 末区（深处）第二间
 				else:
-					t = _pick_dungeon_type()
+					t = _pick_hell_type() if GameState.world >= 3 else _pick_dungeon_type()
 				room_types.append(t)
 				room_names.append(String(type_defs[t]["name"]))
 				explored.append(false)
@@ -1341,23 +1405,33 @@ func _build_tiles() -> void:
 	var solid_col := cols - 1
 	var img := Image.create(cols * c, c * 2, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.12, 0.13, 0.16))
+	# 第三层：走廊与地图外实体整体压暗压紫，别用学校那套浅色
+	var corr_color: Color = HELL_CORRIDOR_COLOR if GameState.world >= 3 else CORRIDOR_COLOR
+	var corr_wall: Color = HELL_CORRIDOR_WALL if GameState.world >= 3 else CORRIDOR_WALL
 
 	# 第 0 行：地板（每个房型 FLOOR_VARIANTS 种图案）
 	for i in TYPE_ORDER.size():
-		var base: Color = type_defs[TYPE_ORDER[i]]["color"]
-		var style := _floor_style(TYPE_ORDER[i])
+		var tname := String(TYPE_ORDER[i])
+		var base: Color = _hell_color(tname, "color") if GameState.world >= 3 \
+			else type_defs[tname]["color"]
+		var style := _floor_style(tname)
 		for v in FLOOR_VARIANTS:
 			_paint_floor_tile(img, i * FLOOR_VARIANTS + v, 0, base, v, level_seed + i * 977 + v * 31, style)
 	for v in FLOOR_VARIANTS:
-		_paint_floor_tile(img, TYPE_ORDER.size() * FLOOR_VARIANTS + v, 0, CORRIDOR_COLOR,
+		_paint_floor_tile(img, TYPE_ORDER.size() * FLOOR_VARIANTS + v, 0, corr_color,
 				v, level_seed + 4242 + v * 31, _floor_style(CORRIDOR_TYPE))
 	# 走廊没被选中的图案位也填上走廊色，避免取到黑格
 	for cx in range(TYPE_ORDER.size() * FLOOR_VARIANTS + FLOOR_VARIANTS, cols):
-		img.fill_rect(Rect2i(cx * c, 0, c, c), CORRIDOR_COLOR)
+		img.fill_rect(Rect2i(cx * c, 0, c, c), corr_color)
 
 	# 第 1 行：墙砖（每个房型 16 种邻接遮罩）
 	for i in slots:
-		var wb: Color = type_defs[TYPE_ORDER[i]]["wall"] if i < TYPE_ORDER.size() else CORRIDOR_WALL
+		var wb: Color
+		if i < TYPE_ORDER.size():
+			var tname := String(TYPE_ORDER[i])
+			wb = _hell_color(tname, "wall") if GameState.world >= 3 else type_defs[tname]["wall"]
+		else:
+			wb = corr_wall
 		for mask in 16:
 			_paint_wall_tile(img, i * 16 + mask, 1, wb, mask)
 	# 最后一列：地图外的「建筑实体」深色砖纹（不是纯黑，避免看着像一块黑幕）
@@ -1436,6 +1510,8 @@ func _build_tiles() -> void:
 
 ## 每种房型允许的地板图案（见 FLOOR_VARIANTS 注释）。
 func _floor_pat(t: String) -> Array:
+	if GameState.world >= 3:
+		return _hell_floor_pat(t)
 	match t:
 		"classroom", "library":
 			return [2, 2, 3, 4, 5]
@@ -1455,6 +1531,10 @@ func _floor_pat(t: String) -> Array:
 
 ## 房间类型 -> Tilemancer 图集行（木/方砖/水泥/石块/沙/地毯）
 func _floor_style(t: String) -> int:
+	# 第三层：整层换地狱图集（灰度行 0 石砌 / 1 肉褶 / 2 血管 / 3 骨板 / 4 粘膜 / 5 酸蚀）。
+	# hall/stair/corridor 是结构件不是「学校房间」，地狱里同样换皮，不留学校残片。
+	if GameState.world >= 3:
+		return _hell_floor_style(t)
 	match t:
 		"classroom", "library":
 			return FLOOR_STYLE_WOOD
@@ -1470,12 +1550,69 @@ func _floor_style(t: String) -> int:
 			return FLOOR_STYLE_STONE
 	return FLOOR_STYLE_CONCRETE
 
+## 第三层房型色：从 HELL_ROOM_COLORS 取，取不到就退回第二层的 type_defs（比如 corridor）。
+func _hell_color(t: String, key: String) -> Color:
+	if HELL_ROOM_COLORS.has(t) and (HELL_ROOM_COLORS[t] as Dictionary).has(key):
+		return (HELL_ROOM_COLORS[t] as Dictionary)[key]
+	return type_defs[t][key] if type_defs.has(t) and type_defs[t].has(key) else Color.WHITE
+
+## 第三层房型 -> 地狱图集行。
+## 石房（牢房/刑房/祭坛/刑具库/狱吏室）用石砌；器官房按器官走肉/血管/骨/粘膜/酸蚀。
+func _hell_floor_style(t: String) -> int:
+	match t:
+		"cell", "torture", "altar", "forge", "jailer":
+			return HELL_STYLE_STONE
+		"ossuary", "marrow":
+			return HELL_STYLE_BONE
+		"bloodpool", "heart":
+			return HELL_STYLE_VESSEL
+		"stomach":
+			return HELL_STYLE_ACID
+		"lung", "womb":
+			return HELL_STYLE_FLESH
+		"eye":
+			return HELL_STYLE_MUCOSA
+		"hall", "stair":
+			return HELL_STYLE_STONE
+		"corridor":
+			# 走廊 11F 起混入血管廊，15F 基本全是（设计 5.4）
+			return HELL_STYLE_VESSEL if GameState.level >= 13 else HELL_STYLE_STONE
+	return HELL_STYLE_STONE
+
+## 第三层地板图案变体：每种房型固定一组，保证同一间房地面是同一种材质。
+func _hell_floor_pat(t: String) -> Array:
+	match t:
+		"cell", "torture", "forge", "jailer", "hall", "stair", "corridor":
+			return [0, 1, 2, 3, 4, 5]
+		"altar":
+			return [2, 2, 3, 4, 5]
+		"ossuary", "marrow":
+			return [1, 2, 3, 4, 5]
+		"bloodpool", "heart":
+			return [0, 1, 2, 4, 5]
+		"stomach":
+			return [1, 2, 3, 4, 5]
+		"lung", "womb":
+			return [0, 1, 3, 4, 5]
+		"eye":
+			return [1, 2, 3, 5]
+	return [0, 1, 2, 3, 4, 5]
+
 ## 从 Tilemancer 风格图集取一块地砖，按房间基色着色后贴进目标图。
 func _paint_floor_tile(img: Image, col: int, row: int, base: Color, variant: int, _seed_v: int, style: int = FLOOR_STYLE_TILE) -> void:
 	var c := int(CELL)
-	if _floor_atlas_img == null:
-		_floor_atlas_img = FLOOR_ATLAS.get_image()
-	var src := _floor_atlas_img.get_region(Rect2i((variant % FLOOR_VARIANTS) * c, style * c, c, c))
+	# 第三层整层换地狱图集（灰度行见 HELL_STYLE_*）；两张图集都是 6 行 x 6 变体，尺寸一致。
+	# 两个缓存分开存，跨层切换（5F -> 11F）时不会拿到上一层的图。
+	var atlas_img: Image
+	if GameState.world >= 3:
+		if _hell_floor_atlas_img == null:
+			_hell_floor_atlas_img = HELL_ATLAS.get_image()
+		atlas_img = _hell_floor_atlas_img
+	else:
+		if _floor_atlas_img == null:
+			_floor_atlas_img = FLOOR_ATLAS.get_image()
+		atlas_img = _floor_atlas_img
+	var src := atlas_img.get_region(Rect2i((variant % FLOOR_VARIANTS) * c, style * c, c, c))
 	if src.get_width() != c or src.get_height() != c:
 		src.resize(c, c, Image.INTERPOLATE_NEAREST)
 	for y in c:
@@ -1805,6 +1942,27 @@ func _spawn_furniture() -> void:
 				# 祭坛：全层最高效（1.6），代价是污染（main 按房型加）
 				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "祭坛")
 				_place_desk_grid(i, eff, false, 2)
+			"forge":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "铁砧")
+			"jailer":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "账本桌")
+			"ossuary":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.1, "骨桌")
+			"bloodpool":
+				# 负向点：池沿湿滑，eff 只有 0.75，站上去不划算
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.4, "池沿")
+			"heart":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.2, "瓣膜石台")
+			"stomach":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "胃壁凹台")
+			"lung":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "支气管平台")
+			"marrow":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "骨梁桌")
+			"eye":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.0, "视神经台")
+			"womb":
+				_add_study_point(_walkable_center(rooms[i], i), eff, 2.1, "胎盘床")
 			_:
 				pass
 	_build_box_collision()
@@ -1945,6 +2103,41 @@ func _spawn_big_items() -> void:
 						float(def["study"]),
 						float(def.get("study_r", 2.0)),
 						String(last.get("sprite", "")))
+	# 第三层：每层恰好一张「没塌的课桌」（设计 5.6）
+	if GameState.world >= 3:
+		_place_intact_desk()
+
+## 偶现课桌：全层唯一还像学校的东西。抽一个非安全屋房间，放**原版**课桌（不腐化），
+## 效率 1.55、半径 1.6——全层第二高效，仅次于祭坛。
+func _place_intact_desk() -> void:
+	var cand: Array[int] = []
+	for i in rooms.size():
+		var role: String = room_roles[i] if i < room_roles.size() else "normal"
+		if role == "safe" or role == "stair" or role == "hall":
+			continue
+		if String(room_types[i]) == "stair":
+			continue
+		if rooms[i].size.x < CELL * 10 or rooms[i].size.y < CELL * 7:
+			continue
+		cand.append(i)
+	if cand.is_empty():
+		return
+	var ri := cand[rng.randi_range(0, cand.size() - 1)]
+	var rect := _pick_desk_rect(ri, true)
+	if rect.size.x <= 0.0:
+		return
+	big_items.append({
+		"sprite": "desk_small",
+		"rect": rect,
+		"room": ri,
+		"solid": true,
+		"decal": false,
+		"floor": false,
+		"raw": true,   # 走原图，不吃 hell/ 腐化版
+	})
+	big_rects.append(rect)
+	_mark_furniture(rect)
+	_add_study_point(rect.get_center(), 1.55, 1.6, "课桌")
 
 ## 第 slot/total 件沿墙均分的位置（同一侧的多件排成一排）。
 func _place_big_slot(room_i: int, def: Dictionary, slot: int, total: int) -> bool:
@@ -1999,6 +2192,10 @@ func _place_big_slot(room_i: int, def: Dictionary, slot: int, total: int) -> boo
 ##   plant_*/barrel/canister/box_*=盆栽、poster_c=风景画、poster_d/fence/clock=空画框、
 ##   rug_*=地毯、bed_*=病床、bed_head=床头板。
 func _big_plan(t: String) -> Array:
+	# 第三层：家具整套换地狱版（贴图取 art/furniture/hell/，见设计 5.6）。
+	# 单开分支而不是改现有条目，免得影响第二层地牢。
+	if GameState.world >= 3:
+		return _hell_big_plan(t)
 	match t:
 		"classroom":
 			# 讲台 + 后墙书柜 + 黑板画（课桌由网格生成）
@@ -2076,6 +2273,124 @@ func _big_plan(t: String) -> Array:
 				{"sprite": "plant_pot2", "w": 1, "h": 1, "side": "w", "count": 1},
 				{"sprite": "poster_d", "w": 1, "h": 2, "side": "s", "decal": true, "solid": false},
 				{"sprite": "rug_a", "w": 4, "h": 3, "side": "c", "floor": true, "solid": false},
+			]
+	return []
+
+## 第三层（11~15F）的家具清单，格式同 `_big_plan`（见设计 5.6）。
+## 贴图取 `art/furniture/hell/<sprite>.png`（_big_texture 在 world>=3 时自动改路径）。
+## 学习点不在这里给：_spawn_furniture 已按房型 eff 统一加，避免一房两点。
+func _hell_big_plan(t: String) -> Array:
+	match t:
+		"cell":
+			# 牢房：铁栅贴北墙、稻草床靠西、便桶靠东、铁链挂墙上
+			return [
+				{"sprite": "bars", "w": 2, "h": 2, "side": "n", "count": 4, "decal": true, "solid": false},
+				{"sprite": "straw_bed", "w": 2, "h": 1, "side": "w", "count": 2},
+				{"sprite": "bucket", "w": 1, "h": 1, "side": "e", "count": 2},
+				{"sprite": "chain", "w": 1, "h": 2, "side": "s", "count": 2, "decal": true, "solid": false},
+			]
+		"torture":
+			# 刑室：刑架 + 铁处女 + 炭盆，吊钩挂顶，血池贴地
+			return [
+				{"sprite": "rack", "w": 3, "h": 2, "side": "n", "count": 1},
+				{"sprite": "iron_maiden", "w": 2, "h": 2, "side": "e", "count": 1},
+				{"sprite": "brazier", "w": 1, "h": 1, "side": "s", "count": 2},
+				{"sprite": "hook", "w": 1, "h": 2, "side": "n", "count": 2, "decal": true, "solid": false},
+				{"sprite": "blood_pool", "w": 4, "h": 3, "side": "c", "floor": true, "solid": false},
+			]
+		"altar":
+			# 祭坛居中（全层最高效），四角烛台、骨堆压两侧
+			return [
+				{"sprite": "altar", "w": 3, "h": 2, "side": "c", "count": 1},
+				{"sprite": "candle_stand", "w": 1, "h": 1, "side": "n", "count": 4},
+				{"sprite": "bone_pile", "w": 2, "h": 1, "side": "s", "count": 2},
+			]
+		"forge":
+			# 刑具库：熔炉靠北、铁砧两座、武器架分列东西、木桶补角
+			return [
+				{"sprite": "furnace", "w": 2, "h": 2, "side": "n", "count": 1},
+				{"sprite": "anvil", "w": 2, "h": 1, "side": "s", "count": 2},
+				{"sprite": "weapon_rack", "w": 2, "h": 2, "side": "w", "count": 2},
+				{"sprite": "barrel", "w": 1, "h": 1, "side": "e", "count": 2},
+			]
+		"jailer":
+			# 狱吏室：唯一有"办公室"感的房——账本桌、衣柜、烛台、头骨架
+			return [
+				{"sprite": "desk_office2", "w": 3, "h": 2, "side": "n", "count": 1, "wall_off": 2},
+				{"sprite": "straw_bed", "w": 2, "h": 1, "side": "w", "count": 1},
+				{"sprite": "cab_tall", "w": 2, "h": 3, "side": "e", "count": 1},
+				{"sprite": "candle_stand", "w": 1, "h": 1, "side": "s", "count": 2},
+				{"sprite": "skull_rack", "w": 2, "h": 1, "side": "s", "count": 1, "decal": true, "solid": false},
+			]
+		"ossuary":
+			# 骨窟：四面骨墙贴墙 + 骨堆/头骨架填中间，骨梁横梁
+			return [
+				{"sprite": "bone_wall", "w": 3, "h": 2, "side": "n", "count": 2, "decal": true, "solid": false},
+				{"sprite": "bone_wall", "w": 3, "h": 2, "side": "s", "count": 2, "decal": true, "solid": false},
+				{"sprite": "bone_pile", "w": 2, "h": 1, "side": "w", "count": 4},
+				{"sprite": "skull_rack", "w": 2, "h": 1, "side": "e", "count": 2},
+				{"sprite": "bone_beam", "w": 4, "h": 1, "side": "c", "floor": true, "solid": false},
+			]
+		"bloodpool":
+			# 血池：大片贴地液体 + 管道爬墙 + 吊钩
+			return [
+				{"sprite": "blood_pool", "w": 4, "h": 3, "side": "c", "floor": true, "solid": false},
+				{"sprite": "pipe", "w": 2, "h": 1, "side": "n", "count": 4, "decal": true, "solid": false},
+				{"sprite": "hook", "w": 1, "h": 2, "side": "e", "count": 2, "decal": true, "solid": false},
+			]
+		"heart":
+			# 心室：主动脉贴地、瓣膜门挡路、肺叶压角
+			return [
+				{"sprite": "aorta", "w": 4, "h": 1, "side": "c", "floor": true, "solid": false},
+				{"sprite": "valve", "w": 2, "h": 2, "side": "w", "count": 2},
+				{"sprite": "lung_lobe", "w": 3, "h": 2, "side": "n", "count": 1},
+				{"sprite": "candle_stand", "w": 1, "h": 1, "side": "s", "count": 2},
+			]
+		"stomach":
+			# 胃室：酸池三滩贴地、牙列横在中间、管道沿墙
+			return [
+				{"sprite": "acid_pool", "w": 3, "h": 2, "side": "c", "floor": true, "solid": false},
+				{"sprite": "teeth_row", "w": 3, "h": 1, "side": "s", "count": 2},
+				{"sprite": "pipe", "w": 2, "h": 1, "side": "n", "count": 2, "decal": true, "solid": false},
+			]
+		"lung":
+			# 肺室：大块肺叶当遮挡（要绕），管道贴墙
+			return [
+				{"sprite": "lung_lobe", "w": 3, "h": 2, "side": "w", "count": 2},
+				{"sprite": "lung_lobe", "w": 3, "h": 2, "side": "e", "count": 2},
+				{"sprite": "pipe", "w": 2, "h": 1, "side": "n", "count": 2, "decal": true, "solid": false},
+			]
+		"marrow":
+			# 骨髓腔：骨梁横贯 + 骨髓池贴地
+			return [
+				{"sprite": "bone_beam", "w": 4, "h": 1, "side": "n", "count": 4},
+				{"sprite": "marrow_pool", "w": 3, "h": 2, "side": "c", "floor": true, "solid": false},
+				{"sprite": "bone_pile", "w": 2, "h": 1, "side": "s", "count": 2},
+			]
+		"eye":
+			# 眼房：正中一只大眼，视神经铺在地上
+			return [
+				{"sprite": "eye", "w": 3, "h": 2, "side": "c", "count": 1},
+				{"sprite": "optic_nerve", "w": 3, "h": 1, "side": "c", "floor": true, "solid": false},
+				{"sprite": "candle_stand", "w": 1, "h": 1, "side": "n", "count": 3},
+			]
+		"womb":
+			# 胎室：胎盘床居中、脐带挂墙、角落一滩酸液
+			return [
+				{"sprite": "placenta", "w": 3, "h": 2, "side": "c", "count": 1},
+				{"sprite": "umbilical", "w": 2, "h": 2, "side": "n", "count": 3, "decal": true, "solid": false},
+				{"sprite": "acid_pool", "w": 3, "h": 2, "side": "c", "floor": true, "solid": false},
+			]
+		"stair":
+			return [
+				{"sprite": "bars", "w": 2, "h": 2, "side": "n", "count": 2, "decal": true, "solid": false},
+				{"sprite": "candle_stand", "w": 1, "h": 1, "side": "s", "count": 2},
+			]
+		"hall":
+			return [
+				{"sprite": "altar", "w": 3, "h": 2, "side": "c", "count": 1},
+				{"sprite": "bone_pile", "w": 2, "h": 1, "side": "w", "count": 2},
+				{"sprite": "bone_pile", "w": 2, "h": 1, "side": "e", "count": 2},
 			]
 	return []
 
@@ -2172,14 +2487,20 @@ func _decal_ok(rect: Rect2) -> bool:
 			return false
 	return true
 
-func _big_texture(name: String) -> Texture2D:
-	if _tex_cache.has(name):
-		return _tex_cache[name]
+func _big_texture(name: String, use_hell := true) -> Texture2D:
+	var key := name if not use_hell else name + "#h"
+	if _tex_cache.has(key):
+		return _tex_cache[key]
 	var tex: Texture2D = null
+	# 第三层优先取腐化版；use_hell=false（"raw": true 的件，如那张没塌的课桌）走原图。
 	var path := "res://art/furniture/%s.png" % name
+	if use_hell and GameState.world >= 3:
+		var hp := "res://art/furniture/hell/%s.png" % name
+		if ResourceLoader.exists(hp):
+			path = hp
 	if ResourceLoader.exists(path):
 		tex = load(path)
-	_tex_cache[name] = tex
+	_tex_cache[key] = tex
 	return tex
 
 ## 贴地件（地毯）：画在最底层，压在地板上、被所有东西盖住。
@@ -2203,7 +2524,8 @@ func _draw_big() -> void:
 			_draw_big_one(it, Color(0.96, 0.97, 1.0, 0.95))
 
 func _draw_big_one(it: Dictionary, tint: Color) -> void:
-	var tex := _big_texture(String(it.get("sprite", "")))
+	# "raw": true = 不要腐化版（那张没塌的课桌），走原图
+	var tex := _big_texture(String(it.get("sprite", "")), not bool(it.get("raw", false)))
 	var rect: Rect2 = it["rect"]
 	if tex != null:
 		draw_texture_rect(tex, rect, false, tint)

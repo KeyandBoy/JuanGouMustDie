@@ -17,7 +17,9 @@ const DASH_MAX := 100.0
 const HOT_THRESHOLDS: Array[int] = [3, 6, 9]
 const HOT_MULTIPLIERS: Array[float] = [1.0, 1.1, 1.2, 1.3]
 ## 第一层 1~5F（学校）+ 第二层 6~10F（地牢）；第三层 11~15F 等后续再往上加。
-const MAX_LEVEL := 10
+## 全局最高楼层（三层合计：学校 1~5 / 地牢 6~10 / 地狱 11~15）。
+## 「本世界最后一层」一律用 last_level_of_world()，别用这个判断。
+const MAX_LEVEL := 15
 const LEVEL_GOALS := {
 	1: 5.0,
 	2: 8.0,
