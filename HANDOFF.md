@@ -1,12 +1,13 @@
 # HANDOFF（双工具交接状态）
 
-- 更新时间：2026-11-15
+- 更新时间：2026-11-17
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`c28e151`（第二层音频 P1：四首曲子 + 区域混响接线；其下 `9545029` 是另一窗口的第三层美术）
-- 已推送 origin/main：`9545029`；`c28e151` 待推（`git -c http.proxy= -c https.proxy= push` 可用）
-- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**。
+- 当前 HEAD：`29c3ae1`（第三层 M3：13 房型 + 地狱图集 + 11F 出图；其下依次 `f4f1a1c`/`c28e151` 第二层音频 P1、`9545029` 第三层美术）
+- 已推送 origin/main：`c28e151`；`29c3ae1` 待推（`git -c http.proxy= -c https.proxy= push` 可用）
+- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**；`tests/shot_dungeon_*.png.import` / `shot_level_select_w1|w2.png.import` / `art_hell_monsters.png.import` 是之前漏掉的导入描述文件，归各自作者。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
+- **分工提醒**：第一层已完工；第二层（6~10F）由另一窗口负责；**本窗口只管第三层（地狱 11~15F）**。同一时间只开一个 AI，`SESSION.lock` 拦第二个。
 
 ## 最简用法（推荐）
 
@@ -21,7 +22,7 @@
 
 **世界观已定稿**：游戏主旨是「认知污染」，三层世界分别是学校（真实的人）→ 地牢（伪人 + 怪物）→ 地狱（全是怪物）。
 
-**当前主线 = 第二层（地牢 6~10F）**，按 P0→P7 推进：
+**当前主线（另一窗口负责）= 第二层（地牢 6~10F）**，按 P0→P7 推进（下面这组条目都是第二层的）：
 
 - **P0 世界层骨架**（`world` / 6~10F / 存档 v4 / 世界分页选层）—— 已提交 `699f6ce`
 - **P1 区域制大地图 + 13 房型**（2×2 四区 / 32 房 / 区间门 / 每层 2 间安全屋）—— 已提交 `c25148a`
@@ -29,12 +30,27 @@
 - P3 学习值 50% 硬卡 + 钥匙、难度三项叠加 → P4 伪人（`student.gd` 的 corrupt / gaze / 模仿 / 同步）→ P5 三角头 → P6 背包 / 旧笔记本 / 常驻小地图 → P7 安全屋 AI 排除、被抓 4 特效、铺层
 
 设计与音频规格：`C:\Users\43590\.opencode\plan\第二层世界_设计文档.md`（v2.0）/ `第二层世界_音频规格.md`；两个 AI 的文件分工见 `协作_分文件方案.md`。
-第一层五关保持现状（不刷怪、只靠难度递进）；第三层（11~15F）设计文档已出，排在第二层之后。
+第一层五关保持现状（不刷怪、只靠难度递进）。
+
+**第三层（地狱 11~15F，本窗口）进度**：
+
+- 设计 v2.0（`设计_第三层世界_11-15F.md`，区域制大地图 / 13 房型 / 污染条取消 / 残影 / 存档 v5）
+- M2 美术：`hell_styles.png` 6 行灰度图案、`art/furniture/hell/` 46 腐化家具 + 30 道具、残影 `art/sprites/echo/`、怪物总览 `tests/art_hell_monsters.png`
+- **M3 引擎接入（已提交 `29c3ae1`）**：`MAX_LEVEL` 10→15、楼层选择第三层页签、`TYPE_ORDER` 追加 10 房型、`HELL_ROOM_COLORS` 单开色板、地狱地板/走廊、`_pick_hell_type()`、`_hell_big_plan()`、每层 1 张原版课桌、`tests/_hell_probe` + `_hell_shot`
+- 下一步见「下一步」**A 组**（三 P1 刷怪 / 三 P2 污染条取消 / 三 P3 家具加量 / 三 P4 存档 v5 / 三 P5 自问题库 / 三 P6 残影）。
 
 第一层的大地图「Phase 1~4」已完成并提交（单张连通大地图、10 房型、死区相机、三态探索迷雾、小地图、房型家具、套间/环路）；EFG 剩余大件（E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12）各自单独立项，别在第二层期间顺手插进来。
 
 ## 本轮已完成
 
+- **第三层 M3：13 房型接进引擎 + 11F 真机出图（2026-11-17，opencode，`29c3ae1`）**：
+  - `game_state.gd`：`MAX_LEVEL` 10 → **15**（`WORLD_LAST_LEVEL{3:15}` / `world_of_level(≥11)=3` 早已就位，只放开上限；判"本世界最后一层"用 `is_last_level_of_world()`，别用 `MAX_LEVEL`）。
+  - `main.gd`：`_show_level_select()` 加**第三层页签**（`for w in [1,2,3]`，暗紫 `UiTheme.get_button_color(5)`），`lv_first` = 1/6/11，默认页签按"已解锁的最高层"推进，锁定提示改成按层通用文案。
+  - `school_map.gd`（本轮主体）：`TYPE_ORDER` **只追加** 10 个地狱房型（`forge/jailer/ossuary/bloodpool/heart/stomach/lung/marrow/eye/womb`，图集列序靠它）；地狱色板**单开** `HELL_ROOM_COLORS`（不动第二层 `type_defs`）；`_floor_style/_floor_pat` 按 `GameState.world >= 3` 分支、`_paint_floor_tile` 换 `hell_styles.png`（独立缓存 `_hell_floor_atlas_img`）；走廊压暗 `HELL_CORRIDOR_COLOR/WALL`；`_pick_hell_type()` + `hell_stone_ratio()`（11F 0.875 → 15F 0.25）；`_big_plan()` 开分支 → `_hell_big_plan()` 13 房型家具（贴图 `_big_texture(name, use_hell)` 改取 `art/furniture/hell/`）；`_place_intact_desk()` 每层 1 张 `raw:true` 原版课桌（1.55 / 半径 1.6）；10 个新房型各自的学习点。
+  - 新探针 `tests/_hell_probe.tscn` → **HELL_PROBE: ALL PASSED**：28~34 房 / 4 区 / 5 走廊、房型零学校残留、石房 11F~15F = `26/22/21/13/9`、家具贴图全在 `hell/` 下、每层恰好 1 张原版课桌、安全屋 2 间禁答、导航连通。
+  - 新截图 `tests/_hell_shot.tscn`（**不要加 `--headless`**）→ `shot_hell_11f_play.png` / `shot_hell_11f_map.png` / `shot_level_select_w3.png`，已目视：走廊压暗成暗紫、房间不再是拼布色、血池房有贴地血池。
+  - 踩坑两条：`study_points` 没有 `room` 字段，判断归属要用房间 Rect 包含 `sp["pos"]`；`hall`（首区中庭）第一二层起就没有学习点，探针里显式排除 `role == "hall"`，别为了探针去改一二层。
+  - 回归全绿：`flow_test` / `_stalkerprobe` / `student_test`(BAD_FRAMES=0) / `tutorial_test` / **`_dungeon_probe`（第二层没被改坏）**。
 - **第二层音频 P1：四首曲子入册 + 区域混响接线（2026-11-15，opencode，`c28e151`）**：
   - 新曲 4 首（全 Freesound CC0，切片 / 交叉淡化 / 叠轨）：`dungeon_alert`（looplicator 851229，23.6s/80BPM）、`dungeon_quiz`（831354，23.6s/80BPM，−3dB）、`dungeon_safe`（SLOW HEARTBEAT 249716 + 底曲 −16dB，13.8s）、`pyramid`（looplicator 845798，55.9s/34BPM）。**calm/alert/chase/quiz 同属 80 BPM 系列，互切不错拍**。
   - catalog：4 条 → `active` + `license` 块，`python tools/music_catalog.py` 通过 → **在用 16 / 备用 4 / 待补 7**（只剩 `dungeon_clear` / `dungeon_gameover` 等短句）；`CREDITS.txt` + `LICENSE_freesound_dungeon.txt` 各补 4 行。
@@ -255,26 +271,40 @@
 
 ## 未提交改动
 
-- `scripts/audio_manager.gd`、`assets/music/*`（含 `dungeon_calm.ogg` / `dungeon_chase.ogg` / `catalog.json` / `CATALOG.md` / `CREDITS.txt`）、`assets/sfx/{caught,dungeon,pyramid}`、`tests/_dungeon_audio_probe.*`：**属于音频窗口**，本窗口不碰、不提交。
-- `scripts/main.gd` 里另一窗口的 `AudioManager.play_caught(...)` 两行仍在工作区、**未暂存**（本窗口的 P1 hunk 已单独提交）。提交前先确认 `play_caught` 已在 HEAD 的 `audio_manager.gd` 里，否则 HEAD 会引用不存在的 API。
-- `tests/_blob_probe.*` / `tests/_blob_a|b.png` / `tests/_mon_demo.*`：同样来自另一窗口，**不要误提交**。
-- `tests/shot_*.png`：截图基线，故意不提交。
+- `tests/_blob_probe.*` / `tests/_blob_a|b.png` / `tests/_mon_demo.*`：**属于另一窗口**，不要误提交。
+- `tests/shot_*.png`：截图基线，故意不提交（新截图 `shot_hell_*` / `shot_level_select_w3` 已随 `29c3ae1` 入库，作为第三层新基线）。
+- `tests/shot_dungeon_*.png.import` / `tests/shot_level_select_w1|w2.png.import` / `tests/art_hell_monsters.png.import`：之前几轮漏提交的 Godot 导入描述文件，归各自作者，本窗口不动。
+- 音频窗口的 `scripts/audio_manager.gd`、`assets/music/*`、`assets/sfx/*`、`tests/_dungeon_audio_probe.*` **已在 `c28e151` 入库**，不再是待提交项。
 
 ## 下一步
 
 <!-- NEXT_STEPS_START -->
+**A. 第三层（地狱 11~15F，本窗口的主线）**
+
+1. **三 P1 刷怪（下一轮优先）**：`main._spawn_students()` 还是第二层逻辑，11~15F 要换成纯怪物名单（`art/sprites/reserve/` 11 种候选；注意 `巨头婴/f01.png` 是占位图，需 `tools/monster_sheet.py` 的 `best_frame()` 挑帧）。第三层**没有任何人类单位**，`_spawn_mimics()` 也按 `world` 收口。
+2. **三 P2 污染条取消（设计已拍板，代码未接）**：`contamination` 数据保留，但第三层 HUD 不画进度条，只用画面/声音表达（画面饱和度、音效档位）。
+3. **三 P3 房间家具加量**：俯瞰时房间偏空（`_hell_big_plan` 每房 2~4 件），按设计 §5.6 表补足贴墙件与贴地件。
+4. **三 P4 存档 v5**：设计要求（`world=3` 的解锁状态与第三层进度）；当前存档是 v4，加迁移 + `.bak`。
+5. **三 P5 自问题库**：「答对了算什么」——11F 9:1 → 15F 1:9 的学科题/自我审问渐变，**需要用户拍板后**再动。
+6. **三 P6 残影演出**：`art/sprites/echo/` 素材已出（`tools/echo_frames.py`），尚未接进 `main.gd` 当环境演出。
+
+**B. 第二层（地牢 6~10F，另一窗口）**
+
 1. **第二层 P2 污染链（下一轮优先）**：①HUD 污染条（0~100，四档刻度）；②画面黑白（`saturation = 1 - 污染/100`，落在 `world_modulate` 或后处理）；③敌人强化 `1 + 0.4×污染/100`、抓人圈 `1 + 0.2×污染/100`（在 `student.gd` / `tyrant.gd` 重算基础数值处乘）；④四档症状 25 错视 / 50 幻听 / 75 篡改 / 100 同化（假小地图标记、幻听音效、地图篡改、同化演出）。**满 100 不硬失败**。
 2. **第二层 P3**：学习值 50% 硬卡 + 钥匙生成（`STUDY_GATE_RATIO` 已在 `game_state.gd` 备好）、楼梯门禁、难度三项叠加（档位上移 / 每题限时 / 单题收益），以及 4 种降难度道具。
 3. **第二层 P4~P7**：伪人（`student.gd` 的 corrupt / gaze / 模仿 / 同步）→ 三角头（听觉锁定 + 慢速追击）→ 背包（1 特殊 + 2 普通，上限 2+4）/ 旧笔记本（15s/层、电池 +5s、打开暂停、污染篡改地图）/ 常驻小地图（只显示当前区域）→ 安全屋 AI 排除、被抓 4 特效、6~10F 铺层。
 4. **音频：下一步 P2 素材**（骨架 + P0 + P1 四首已落地，见 `c28e151`）：污染跨档 4 个音效、区域切换 `zone_shift`、拾取三连、笔记本开合、安全屋循环、`dungeon_clear` / `dungeon_gameover`（曲库仅剩这 7 条 missing）。三角头节点做出来之后把 `play_blade_drag()` 接到它移动逻辑上，并把 `caught_kind_for()` 的名字兜底换成真类型。
 5. **音频窗口对接点**（已写进 `协作_分文件方案.md`）：P0 之后 `play_caught(kind, by)` / `duck_music()` / `play_blade_drag(pos)` 已是真实 API；`set_world / set_contamination / set_zone` 这一层仍按 `has_method()` 保护。`GameState.in_safe_room` 每帧可读。
-5. **文档风险（已踩过）**：11-15 另一窗口改写 `开发记录.md` 时把「第二层 P0」整条覆盖掉了，已按 `699f6ce` 原文补回。**两边同时改 `开发记录.md` / `HANDOFF.md` 时先读最新内容、只在顶部追加，不要整段重写。**
-6. **第一层遗留（不急）**：EFG 剩余大件 E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12；A9 击败暴君接 `Fx.slowmo`；A10 呼吸循环接线；D6 同 BPM 追逐鼓点层——第二层已用「底曲 + 鼓点离线预混」解决（`dungeon_chase`），第一层仍等分轨素材。
-7. **家具贴图是原型**：`art/furniture/README.md` 已注明「授权未确认，发布前替换」；代码按 rect 拉伸，同名覆盖即可。
-8. **测试命令**：见下节「测试状态」，第二层加了 `_dungeon_probe`；截图探针 `tests/_dungeon_shot.tscn` **不要加 `--headless`**。
-9. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push（本机代理没起时用 `git -c http.proxy= -c https.proxy= push`）。
-10. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
-11. **禁止** `git checkout -- .` / `git restore` / `git stash` / `git clean`；提交只用显式路径；`main.gd` 有并行改动时用 `git apply --cached` 只暂存自己的 hunk。
+
+**C. 两边共用的注意事项**
+
+1. **文档风险（已踩过）**：11-15 另一窗口改写 `开发记录.md` 时把「第二层 P0」整条覆盖掉了，已按 `699f6ce` 原文补回。**两边同时改 `开发记录.md` / `HANDOFF.md` 时先读最新内容、只在顶部追加，不要整段重写。**`HANDOFF` 的 HEAD 也可能被对方覆盖，push 前先 `git log` 看一眼。
+2. **第一层遗留（不急）**：EFG 剩余大件 E1 / E6 / F5 / F6 / G1 / G2 / G8 / G12；A9 击败暴君接 `Fx.slowmo`；A10 呼吸循环接线；D6 同 BPM 追逐鼓点层——第二层已用「底曲 + 鼓点离线预混」解决（`dungeon_chase`），第一层仍等分轨素材。
+3. **家具贴图是原型**：`art/furniture/README.md` 已注明「授权未确认，发布前替换」；代码按 rect 拉伸，同名覆盖即可。
+4. **测试命令**：见下节「测试状态」；第二层探针 `_dungeon_probe`、第三层探针 `_hell_probe`；截图探针 `tests/_dungeon_shot.tscn` / `_hell_shot.tscn` **不要加 `--headless`**。
+5. 每次收工必须更新本文件、追加 `开发记录.md`、commit + push（本机代理没起时用 `git -c http.proxy= -c https.proxy= push`）。
+6. **禁止用 PowerShell `Get-Content/Set-Content` 改中文源文件**（会按 GBK 重写成乱码并吃掉引号）；一律用 edit/write 工具。
+7. **禁止** `git checkout -- .` / `git restore` / `git stash` / `git clean`；提交只用显式路径；`main.gd` 有并行改动时用 `git apply --cached` 只暂存自己的 hunk。
 <!-- NEXT_STEPS_END -->
 
 ## 已拍板决策（详见 需求汇总.txt）
@@ -297,7 +327,7 @@
 
 ## 测试状态
 
-2026-11-15 全绿（第二层 P1 之后；第二层相关的 `_dungeon_probe` / `_world_probe` 在末尾）：
+2026-11-17 全绿（第三层 M3 之后；第二层 `_dungeon_probe` / `_dungeon_audio_probe` 也复跑过，没被改坏）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -305,6 +335,10 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --headless --path . --quit-after 50000 res://tests/_stalkerprobe.tscn    # STALKER_PROBE: ALL PASSED
 & $G --headless --path . --quit-after 20000 res://tests/student_test.tscn     # BAD_FRAMES=0
 & $G --headless --path . --quit-after 40000 res://tests/tutorial_test.tscn    # TUTORIAL_TEST: ALL PASSED
+# —— 第三层（地狱 11~15F，本窗口）——
+& $G --headless --path . --quit-after 180000 res://tests/_hell_probe.tscn     # HELL_PROBE: ALL PASSED（11~15F 房型/色板/家具/学习点/安全屋）
+& $G --path . res://tests/_hell_shot.tscn                                      # shot_hell_11f_play / _map / shot_level_select_w3（不要 headless）
+# —— 第二层（地牢 6~10F）——
 & $G --headless --path . --quit-after 15000 res://tests/_fx_probe.tscn        # FX_PROBE: ALL PASSED
 & $G --headless --path . --quit-after 15000 res://tests/_settings_probe.tscn  # SETTINGS_PROBE: ALL PASSED
 & $G --headless --path . --quit-after 30000 res://tests/_c_ui_probe.tscn      # C_UI_PROBE: ALL PASSED
@@ -328,7 +362,9 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 > 探索遮罩现在是「纹理 + 着色器」，断言请用 `fog.zone_alpha(zone)`，不要再找 ColorRect。
 > 套间/走廊样张用 `tests/_nested_shot.tscn`（输出 shot_nested_parent / shot_nested_inside / shot_corridor_glow / shot_loop_passage）。
 > 2026-11-07 记：`_e_probe` 有既有偶发性，首次跑曾出现 `e3/e4`（宝箱房判定），单独重跑即 ALL PASSED；不是本轮素材改动引起。
-> 新增 `art/sprites/lpc/`、`art/sprites/floor/`、`art/portraits/` 后必须先 `& $G --headless --import --path .`，否则 `preload` 会报找不到资源。
+> 新增 `art/sprites/lpc/`、`art/sprites/floor/`、`art/portraits/` 后必须先 `& $G --headless --import --path .`，否则 `preload` 会报找不到资源；第三层的 `art/furniture/hell/`、`art/sprites/echo/` 与新截图同理（推完新截图跑一次 `--headless --import` 才有 `.import`）。
+> 2026-11-17 记（第三层）：`study_points` **没有 `room` 字段**，判"这个学习点属于哪间房"要用房间 Rect 包含 `sp["pos"]`；`hall`（首区中庭）从第一层起就没有学习点，探针里排除 `role == "hall"`，别为探针去改一/二层行为。
+> 单跑 `& $G --headless --check-only --script res://scripts/school_map.gd` 必报 `Identifier not found: GameState`（没有 autoload），属正常；要靠场景探针（`_hell_probe` / `_dungeon_probe`）验证。
 
 ## 环境
 
