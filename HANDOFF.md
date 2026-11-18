@@ -3,8 +3,8 @@
 - 更新时间：2026-11-17
 - 最后操作：opencode
 - 分支：main
-- 当前 HEAD：`29c3ae1`（第三层 M3：13 房型 + 地狱图集 + 11F 出图；其下依次 `f4f1a1c`/`c28e151` 第二层音频 P1、`9545029` 第三层美术）
-- 已推送 origin/main：`b144f62`（含 `29c3ae1`，2026-11-17 实测 `git -c http.proxy= -c https.proxy= push` 成功）
+- 当前 HEAD：`f113cd4`（第三层 P1 刷怪；其下 `29c3ae1` 第三层 M3、`f4f1a1c`/`c28e151` 第二层音频 P1、`9545029` 第三层美术）
+- 已推送 origin/main：见 `git status`（2026-11-17 实测 `git -c http.proxy= -c https.proxy= push` 成功）
 - 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**；`tests/shot_dungeon_*.png.import` / `shot_level_select_w1|w2.png.import` / `art_hell_monsters.png.import` 是之前漏掉的导入描述文件，归各自作者；`tests/_world_probe.gd` 显示 modified 但 `git diff` 为空（换行符差异，内容没变），别误提交。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 - **分工提醒**：第一层已完工；第二层（6~10F）由另一窗口负责；**本窗口只管第三层（地狱 11~15F）**。同一时间只开一个 AI，`SESSION.lock` 拦第二个。
@@ -43,6 +43,14 @@
 
 ## 本轮已完成
 
+- **第三层 P1 刷怪：11~15F 纯怪物名单 + 楼层缩放全局封顶（2026-11-17，opencode，`f113cd4`）**：
+  - `main.gd`：新增 `HELL_PATROL`（11→15F = 12/13/14/15/16，设计 §9）与 `HELL_ROLES`（设计 §7 主力/客串递进；**值是二层已有怪物角色的临时替身**，美术轮只换这张表）。`_spawn_students()` 加 `world >= 3` 分支直接走 `_spawn_bodies(_hell_roles())`，绕开 `clampi(level,1,5)`、**一个人都不刷**；刷怪循环抽成 `_spawn_bodies(roles)` 与 1~10F 共用。`_spawn_mimics()` 按层收口：13F 1 只 / 15F 2 只（11/12F 无）。
+  - `student.gd`：`LEVEL_SPEED_CAP := 1.50` / `LEVEL_VISION_CAP := 1.60` **全局封顶（用户拍板连二层一起修）**——原公式 15F 速度 1.70 / 视野 2.12，骷髅追击 262 > 玩家冲刺 260；封顶后 15F 追击 231。1~5F 不受影响，二层仅 9F/10F 视野 1.72/1.80 → 1.60，速度曲线不变。
+  - `game_state.gd`：`LEVEL_GOALS` 补 11~15 = **36/41/46/51/56**（不补会落默认 5.0，答 5 题就上楼）；`HELL_EMPTINESS{11:1.28…15:1.76}` + `emptiness_decay_rate()` 对 `world==3` 查表（第三层污染条取消，衰减不读 `contamination`；一、二层分支不动）。
+  - `tests/_hell_probe.gd`：逐层断言 巡逻数 = `HELL_PATROL` / 零人类 / 名单全已登记 / 宝箱怪 0/0/1/1/2 / 缩放 ≤ cap / 追击 < 260 / 目标与衰减 = §9；护栏：10F 视野 1.72→1.60、5F 仍 1.20/1.32、5F/10F 衰减公式不变。
+  - `tests/_world_probe.gd`：旧断言「`begin_next_level()` 挡 10F」测的是 `MAX_LEVEL=10`（M3 放开后失效，**M3 漏跑这套探针埋的雷**），改测真实门禁 `is_last_level_of_world()` + 补「15F 是全局终点」。
+  - 验证：`HELL_PROBE`（逐层打印 12/13/14/15/16 怪、目标 36→56、衰减 1.28→1.76、追击 ≤231）+ 四套回归 + `_world_probe`/`_curve_probe`/`_dungeon_probe` + 11 套探针全绿；`_hell_shot` 重出图目视 11F「目标：净答对 36 题」。
+  - 踩坑：`_e_probe` 时间种子**偶发**挂 e3/e4（4 次 1 挂，重跑过，非回归）；`student_test` 的 `ROOMS_VISITED` 非确定（学生选点用全局 `randf()`，10 次里 7 次 `[1,8]`、3 次 `[1,8,3]`，退出码只看 `bad==0`）。
 - **第三层 M3：13 房型接进引擎 + 11F 真机出图（2026-11-17，opencode，`29c3ae1`）**：
   - `game_state.gd`：`MAX_LEVEL` 10 → **15**（`WORLD_LAST_LEVEL{3:15}` / `world_of_level(≥11)=3` 早已就位，只放开上限；判"本世界最后一层"用 `is_last_level_of_world()`，别用 `MAX_LEVEL`）。
   - `main.gd`：`_show_level_select()` 加**第三层页签**（`for w in [1,2,3]`，暗紫 `UiTheme.get_button_color(5)`），`lv_first` = 1/6/11，默认页签按"已解锁的最高层"推进，锁定提示改成按层通用文案。
@@ -281,12 +289,13 @@
 <!-- NEXT_STEPS_START -->
 **A. 第三层（地狱 11~15F，本窗口的主线）**
 
-1. **三 P1 刷怪（下一轮优先）**：`main._spawn_students()` 还是第二层逻辑，11~15F 要换成纯怪物名单（`art/sprites/reserve/` 11 种候选；注意 `巨头婴/f01.png` 是占位图，需 `tools/monster_sheet.py` 的 `best_frame()` 挑帧）。第三层**没有任何人类单位**，`_spawn_mimics()` 也按 `world` 收口。
-2. **三 P2 污染条取消（设计已拍板，代码未接）**：`contamination` 数据保留，但第三层 HUD 不画进度条，只用画面/声音表达（画面饱和度、音效档位）。
-3. **三 P3 房间家具加量**：俯瞰时房间偏空（`_hell_big_plan` 每房 2~4 件），按设计 §5.6 表补足贴墙件与贴地件。
-4. **三 P4 存档 v5**：设计要求（`world=3` 的解锁状态与第三层进度）；当前存档是 v4，加迁移 + `.bak`。
-5. **三 P5 自问题库**：「答对了算什么」——11F 9:1 → 15F 1:9 的学科题/自我审问渐变，**需要用户拍板后**再动。
-6. **三 P6 残影演出**：`art/sprites/echo/` 素材已出（`tools/echo_frames.py`），尚未接进 `main.gd` 当环境演出。
+1. ~~**三 P1 刷怪**~~ **已完成（`f113cd4`）**：11~15F 纯怪物名单（12→16）、宝箱怪 13F 起、楼层缩放全局封顶、目标 36→56、空虚衰减 1.28→1.76 都已接好；`HELL_ROLES` 目前是二层怪物替身。
+2. **三 P1b 美术轮（下一轮优先）**：`art/sprites/reserve/` 11 种怪出 4 方向条带（逐帧散图、方向无一致规律，`巨头婴/f01.png` 是占位图要跳过；程序生成走 `tools/monster_sheet.py` 的 `best_frame()` + `tools/monster_dirs.py` 逻辑）→ `student.gd` 登记 `ROLE_TEX/FRAMES/SCALE/STATS` → **只改 `HELL_ROLES` 表换真名**，刷怪逻辑一行不动。
+3. **三 P2 污染条取消（设计已拍板，代码未接）**：`contamination` 数据保留，但第三层 HUD 不画进度条，只用画面/声音表达（画面饱和度、音效档位）。
+4. **三 P3 房间家具加量**：俯瞰时房间偏空（`_hell_big_plan` 每房 2~4 件），按设计 §5.6 表补足贴墙件与贴地件。
+5. **三 P4 存档 v5**：设计要求（`world=3` 的解锁状态与第三层进度）；当前存档是 v4，加迁移 + `.bak`。
+6. **三 P5 自问题库**：「答对了算什么」——11F 9:1 → 15F 1:9 的学科题/自我审问渐变，**需要用户拍板后**再动。
+7. **三 P6 残影演出**：`art/sprites/echo/` 素材已出（`tools/echo_frames.py`），尚未接进 `main.gd` 当环境演出。
 
 **B. 第二层（地牢 6~10F，另一窗口）**
 
@@ -327,7 +336,7 @@
 
 ## 测试状态
 
-2026-11-17 全绿（第三层 M3 之后；第二层 `_dungeon_probe` / `_dungeon_audio_probe` 也复跑过，没被改坏）：
+2026-11-17 全绿（第三层 P1 刷怪之后；第二层 `_dungeon_probe` / `_dungeon_audio_probe` 也复跑过，没被改坏）：
 
 ```powershell
 $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
@@ -336,7 +345,7 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 & $G --headless --path . --quit-after 20000 res://tests/student_test.tscn     # BAD_FRAMES=0
 & $G --headless --path . --quit-after 40000 res://tests/tutorial_test.tscn    # TUTORIAL_TEST: ALL PASSED
 # —— 第三层（地狱 11~15F，本窗口）——
-& $G --headless --path . --quit-after 180000 res://tests/_hell_probe.tscn     # HELL_PROBE: ALL PASSED（11~15F 房型/色板/家具/学习点/安全屋）
+& $G --headless --path . --quit-after 180000 res://tests/_hell_probe.tscn     # HELL_PROBE: ALL PASSED（房型/色板/家具/学习点/安全屋 + 三 P1 刷怪 12→16 / 零人类 / 目标 36→56）
 & $G --path . res://tests/_hell_shot.tscn                                      # shot_hell_11f_play / _map / shot_level_select_w3（不要 headless）
 # —— 第二层（地牢 6~10F）——
 & $G --headless --path . --quit-after 15000 res://tests/_fx_probe.tscn        # FX_PROBE: ALL PASSED
@@ -361,7 +370,8 @@ $G = "E:\computerProgram2\tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe"
 > 本轮踩过的坑：headless 视口只有几十像素 —— 一屏格数要按 `display/window/size/viewport_width` 算。
 > 探索遮罩现在是「纹理 + 着色器」，断言请用 `fog.zone_alpha(zone)`，不要再找 ColorRect。
 > 套间/走廊样张用 `tests/_nested_shot.tscn`（输出 shot_nested_parent / shot_nested_inside / shot_corridor_glow / shot_loop_passage）。
-> 2026-11-07 记：`_e_probe` 有既有偶发性，首次跑曾出现 `e3/e4`（宝箱房判定），单独重跑即 ALL PASSED；不是本轮素材改动引起。
+> 2026-11-07 记：`_e_probe` 有既有偶发性，首次跑曾出现 `e3/e4`（宝箱房判定），单独重跑即 ALL PASSED；不是本轮素材改动引起（2026-11-17 再次复现 4 次 1 挂，仍属时间种子偶发）。
+> 2026-11-17 记：`student_test` 的 `ROOMS_VISITED` 非确定（学生巡逻选点用全局 `randf()`，`randomize()` 是时间种子），7 次 `[1,8]` / 3 次 `[1,8,3]` 都正常，退出码只看 `BAD_FRAMES=0`。
 > 新增 `art/sprites/lpc/`、`art/sprites/floor/`、`art/portraits/` 后必须先 `& $G --headless --import --path .`，否则 `preload` 会报找不到资源；第三层的 `art/furniture/hell/`、`art/sprites/echo/` 与新截图同理（推完新截图跑一次 `--headless --import` 才有 `.import`）。
 > 2026-11-17 记（第三层）：`study_points` **没有 `room` 字段**，判"这个学习点属于哪间房"要用房间 Rect 包含 `sp["pos"]`；`hall`（首区中庭）从第一层起就没有学习点，探针里排除 `role == "hall"`，别为探针去改一/二层行为。
 > 单跑 `& $G --headless --check-only --script res://scripts/school_map.gd` 必报 `Identifier not found: GameState`（没有 autoload），属正常；要靠场景探针（`_hell_probe` / `_dungeon_probe`）验证。
