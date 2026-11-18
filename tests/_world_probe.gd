@@ -76,13 +76,21 @@ func _ready() -> void:
 	_check(is_equal_approx(GameState.contamination, 45.0), "上楼污染 -15（60 → 45）")
 	_check(is_equal_approx(GameState.notebook_fuel, GameState.NOTEBOOK_FUEL_MAX), "上楼电量重置")
 
-	# --- 5. 10F 不能再上楼；5F 可以上到 6F ---
+	# --- 5. 10F 是第二层终点；5F 可以上到 6F ---
+	# 「本世界最后一关不自动上楼」的真正门禁是 is_last_level_of_world()：通关面板据此
+	# 不给「上楼」按钮（main._show_clear_panel 的 `if not is_last_level_of_world()`），
+	# 回菜单也停在本层（_leave_clear_to_menu）。
+	# begin_next_level() 只按 MAX_LEVEL 封顶；M3 把 MAX_LEVEL 放到 15 之后它不再挡 10F，
+	# 但那条路径在游戏里不可达 —— 所以这里改测门禁语义，不再测旧的 MAX_LEVEL 上限。
 	GameState.set_level(10)
-	GameState.begin_next_level()
-	_check(GameState.level == 10, "10F 是第二层终点，不会再上楼")
+	_check(GameState.is_last_level_of_world(), "10F 是第二层终点：通关面板不给「上楼」按钮")
+	_check(GameState.last_level_of_world(10) == 10, "第二层最后一关 = 10F")
 	GameState.set_level(5)
 	GameState.begin_next_level()
 	_check(GameState.level == 6 and GameState.world == 2, "5F 上楼进入第二层 6F")
+	GameState.set_level(15)
+	GameState.begin_next_level()
+	_check(GameState.level == 15, "15F 是全局终点，begin_next_level 不再上楼")
 
 	# --- 6. 存档 v4 往返 ---
 	GameState.set_level(8)

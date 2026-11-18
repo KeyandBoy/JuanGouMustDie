@@ -92,6 +92,14 @@ const WALK_FRAMES := 8
 const WALK_FPS := 9.5
 const VISUAL_SCALE := 0.78
 
+## F8 楼层缩放的**全局上限**（1~15F 通用）。
+## 原公式 `1 + 5%/层`、`1 + 8%/层` 没有上限，15F 会算到 1.70 / 2.12 —— 骷髅追击
+## 140×1.70×1.10 = 262，已经超过玩家冲刺 260，甩不掉；视野 339px ≈ 21 格也太开。
+## 1~5F 碰不到上限（5F = 1.20 / 1.32），第二层只有 9F/10F 的视野被压到 1.60，
+## 第三层从 11F 起速度/视野都顶格 —— 之后的递进靠巡逻数（12→16）与名单强度承担。
+const LEVEL_SPEED_CAP := 1.50
+const LEVEL_VISION_CAP := 1.60
+
 var role := "juan"
 var sprite: Sprite2D
 var shadow
@@ -240,15 +248,15 @@ func setup(p_map: Node2D, p_player: Node2D) -> void:
 	last_seen = position
 	_apply_level_scale()
 
-## F8：按楼层缩放感知与移速（教学关不缩放）。
+## F8：按楼层缩放感知与移速（教学关不缩放），并按 LEVEL_*_CAP 封顶。
 func _apply_level_scale() -> void:
 	if GameState.tutorial_active:
 		level_vision_mult = 1.0
 		level_speed_mult = 1.0
 	else:
 		var lv := maxi(1, GameState.level)
-		level_vision_mult = 1.0 + 0.08 * float(lv - 1)
-		level_speed_mult = 1.0 + 0.05 * float(lv - 1)
+		level_vision_mult = minf(1.0 + 0.08 * float(lv - 1), LEVEL_VISION_CAP)
+		level_speed_mult = minf(1.0 + 0.05 * float(lv - 1), LEVEL_SPEED_CAP)
 	_reset_base_stats()
 
 ## 把速度/视野/听觉/视锥/抓人圈重置成「楼层基准 × 角色差异」。

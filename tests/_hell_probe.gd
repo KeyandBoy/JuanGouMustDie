@@ -159,6 +159,103 @@ func _ready() -> void:
 		"11~15F 归第三层")
 	_check(GameState.last_level_of_world(11) == 15, "第三层最后一关 = 15F")
 
+	# --- 三 P1 刷怪：全怪物 / 零人类 / 数量按 HELL_PATROL / 宝箱怪 13F 起 ---
+	var human_roles := ["student", "juan", "teacher", "guard"]
+	var known_roles := ["skeleton", "zombie", "puppet", "minotaur", "grotesque", "slime"]
+	for lv in range(11, 16):
+		GameState.seed_value = SEED
+		inst._start_level(lv)
+		for i in 12:
+			await get_tree().process_frame
+		var stag := "%dF" % lv
+		var want_n := int(inst.HELL_PATROL.get(lv, 0))
+		var want_mimic := 0
+		if lv >= 13:
+			want_mimic = 1
+		if lv >= 15:
+			want_mimic = 2
+		var patrol := 0
+		var humans := 0
+		var mimics := 0
+		var bad_kind := 0
+		var worst_chase := 0.0
+		var worst_speed_mult := 0.0
+		var worst_vision_mult := 0.0
+		var kinds: Array[String] = []
+		for s in get_tree().get_nodes_in_group("students"):
+			if not is_instance_valid(s):
+				continue
+			var r := String(s.role)
+			if r == "mimic":
+				mimics += 1
+				continue
+			patrol += 1
+			if not (r in kinds):
+				kinds.append(r)
+			if r in human_roles:
+				humans += 1
+			elif not (r in known_roles):
+				bad_kind += 1
+			worst_chase = maxf(worst_chase, float(s.chase_speed))
+			worst_speed_mult = maxf(worst_speed_mult, float(s.level_speed_mult))
+			worst_vision_mult = maxf(worst_vision_mult, float(s.level_vision_mult))
+		_check(want_n > 0 and patrol == want_n,
+			"%s 巡逻数 = 设计 §9 的 %d（实测 %d）" % [stag, want_n, patrol])
+		_check(humans == 0, "%s 零人类（实测 %d 个人形）" % [stag, humans])
+		_check(bad_kind == 0, "%s 名单全是已登记怪物角色（异常 %d）" % [stag, bad_kind])
+		_check(mimics == want_mimic, "%s 宝箱怪 %d 只（实测 %d）" % [stag, want_mimic, mimics])
+		_check(worst_speed_mult <= 1.501 and worst_vision_mult <= 1.601,
+			"%s 楼层缩放已封顶（速度 ×%.2f / 视野 ×%.2f）" % [
+				stag, worst_speed_mult, worst_vision_mult])
+		_check(worst_chase < 260.0,
+			"%s 最快追击 %.0f 仍跑得过玩家冲刺 260" % [stag, worst_chase])
+		# --- 三 P1 顺带补上的第三层数值（设计 §9）---
+		var want_goal := float([36.0, 41.0, 46.0, 51.0, 56.0][lv - 11])
+		_check(is_equal_approx(GameState.study_goal, want_goal),
+			"%s 学习目标 = %.0f（实测 %.0f，不落到默认 5）" % [
+				stag, want_goal, GameState.study_goal])
+		var want_decay := float([1.28, 1.39, 1.52, 1.65, 1.76][lv - 11])
+		_check(is_equal_approx(GameState.emptiness_decay_rate(), want_decay),
+			"%s 空虚衰减 = %.2f/s（实测 %.2f）" % [
+				stag, want_decay, GameState.emptiness_decay_rate()])
+		print("    %s 巡逻 %d [%s] 宝箱怪 %d 追击 %.0f 目标 %.0f 衰减 %.2f" % [
+			stag, patrol, ", ".join(kinds), mimics, worst_chase,
+			GameState.study_goal, GameState.emptiness_decay_rate()])
+
+	# --- 全局封顶的两处副作用，写死在这里当回归护栏 ---
+	# 10F：视野原为 1.72，现在被 cap 到 1.60（速度 1.45 本来就低于 1.50，不变）
+	GameState.seed_value = SEED
+	inst._start_level(10)
+	for i in 12:
+		await get_tree().process_frame
+	var s10 = null
+	for s in get_tree().get_nodes_in_group("students"):
+		if is_instance_valid(s) and String(s.role) != "mimic":
+			s10 = s
+			break
+	_check(s10 != null and absf(float(s10.level_vision_mult) - 1.60) < 0.001
+		and absf(float(s10.level_speed_mult) - 1.45) < 0.001,
+		"10F 封顶后 视野 ×1.60 / 速度 ×1.45（原视野 ×1.72）")
+	# 5F：第一层完全没被碰到（仍是 1.20 / 1.32）
+	inst._start_level(5)
+	for i in 12:
+		await get_tree().process_frame
+	var s5 = null
+	for s in get_tree().get_nodes_in_group("students"):
+		if is_instance_valid(s) and String(s.role) != "mimic":
+			s5 = s
+			break
+	_check(s5 != null and absf(float(s5.level_speed_mult) - 1.20) < 0.001
+		and absf(float(s5.level_vision_mult) - 1.32) < 0.001,
+		"5F 未受影响：速度 ×1.20 / 视野 ×1.32")
+	# 空虚衰减：一、二层不能被第三层的按层查表改到
+	GameState.contamination = 80.0
+	_check(is_equal_approx(GameState.emptiness_decay_rate(), 1.0),
+		"5F 空虚衰减仍是恒定 1.0（不看污染）")
+	GameState.set_level(10)
+	_check(is_equal_approx(GameState.emptiness_decay_rate(), 0.4 + 1.6 * 0.8),
+		"10F 空虚衰减仍由污染驱动（污染 80 → 1.68/s）")
+
 	print("")
 	if failures.is_empty():
 		print("HELL_PROBE: ALL PASSED")

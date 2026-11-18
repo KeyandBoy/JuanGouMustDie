@@ -31,7 +31,15 @@ const LEVEL_GOALS := {
 	8: 24.0,
 	9: 28.0,
 	10: 32.0,
+	# 第三层（设计 §9 难度曲线）：不给这些会落到默认 5.0，答 5 题就上楼
+	11: 36.0,
+	12: 41.0,
+	13: 46.0,
+	14: 51.0,
+	15: 56.0,
 }
+## 第三层空虚衰减基线（设计 §9，每秒）；第三层取消污染条，衰减不再看污染。
+const HELL_EMPTINESS := {11: 1.28, 12: 1.39, 13: 1.52, 14: 1.65, 15: 1.76}
 ## 每个世界层的最后一层：1=学校(5F)，2=地牢(10F)，3=地狱(15F)
 const WORLD_LAST_LEVEL := {1: 5, 2: 10, 3: 15}
 const WORLD_NAMES := {1: "第一层 · 学校", 2: "第二层 · 地牢", 3: "第三层 · 地狱"}
@@ -229,8 +237,12 @@ static func world_title(p_level: int) -> String:
 func contamination_ratio() -> float:
 	return contamination / 100.0
 
-## 空虚每秒衰减：第一层恒定 1.0；第二层被污染驱动（0.4 → 2.0）。
+## 空虚每秒衰减：第一层恒定 1.0；第二层被污染驱动（0.4 → 2.0）；
+## 第三层按楼层走设计 §9 的基线（11F 1.28 → 15F 1.76）——污染条已取消，
+## 衰减不再读 contamination。
 func emptiness_decay_rate() -> float:
+	if world == 3:
+		return float(HELL_EMPTINESS.get(level, 1.28))
 	if world != 2:
 		return 1.0
 	return 0.4 + 1.6 * contamination_ratio()

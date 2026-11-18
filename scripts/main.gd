@@ -31,6 +31,23 @@ const FLOOR_ROLES := {
 }
 ## 第一层人数上限（含面积加成）
 const FLOOR_POP_MAX := 14
+
+## —— 第三层（地狱 11~15F）——
+## 每层巡逻数量（设计 §9 难度曲线：11F 12 → 15F 16）。
+const HELL_PATROL := {11: 12, 12: 13, 13: 14, 14: 15, 15: 16}
+## 每层名单（设计 §7「主力 / 客串」按楼层递进）。
+## 现在的值是第二层已有怪物角色的**临时替身**——reserve 的 11 种怪
+## （骷髅 / 蜘蛛马 / 泥土怪 / 绿球怪 / 寄生猪 / 巨头婴 / 幽灵老师 / 金属史莱姆 / 团状史莱姆）
+## 还没出 4 方向条带，美术那一轮只改这张表（把值换成新角色名），刷怪逻辑一行都不用动。
+## 替身对应关系：骷髅→skeleton、蜘蛛马/幽灵老师→grotesque|puppet、泥土怪→zombie、
+## 绿球怪/金属史莱姆/团状史莱姆→slime、寄生猪/巨头婴→grotesque。
+const HELL_ROLES := {
+	11: ["skeleton", "skeleton", "grotesque", "zombie"],
+	12: ["skeleton", "zombie", "slime", "grotesque"],
+	13: ["slime", "grotesque", "grotesque", "zombie"],
+	14: ["grotesque", "puppet", "slime", "minotaur"],
+	15: ["skeleton", "zombie", "puppet", "minotaur", "grotesque", "slime", "slime"],
+}
 ## 镜头以房间中心为准，最多把镜头从房间中心往玩家方向拉这么多（视口半宽/半高的比例）
 const CAMERA_PLAYER_MAX_OFF := 0.26
 ## 镜头边界就用地图矩形（四周已经补了 MAP_PAD 格实体，不会露出空白）
@@ -681,6 +698,11 @@ func _spawn_students() -> void:
 	for s in get_tree().get_nodes_in_group("students"):
 		s.queue_free()
 	if map.rooms.is_empty(): return
+	# 第三层（地狱 11~15F）：名单与数量单开一张表，一个人都不刷（设计 §1「人：一个都没有」）。
+	if GameState.world >= 3:
+		_spawn_bodies(_hell_roles())
+		_spawn_mimics()
+		return
 	# 楼层构成：先用该层名单（老师/保安不会因为随机而缺席），
 	# 地图比基准（约 3000 格）大就补普通同学，最多 3 个，总数上限 14。
 	var lv := clampi(GameState.level, 1, 5)
@@ -688,7 +710,6 @@ func _spawn_students() -> void:
 	var area_cells: int = map.gw * map.gh
 	var extra: int = clampi(int((area_cells - 3000) / 1600.0), 0, 3)
 	var count: int = mini(base.size() + extra, FLOOR_POP_MAX)
-	var spots: Array[Vector2] = map.spawn_points(count, true)
 	var roles: Array[String] = []
 	for i in count:
 		roles.append(String(base[i]) if i < base.size() else "student")
@@ -710,7 +731,18 @@ func _spawn_students() -> void:
 			if k < roles.size():
 				roles[k] = chosen[k]
 	roles.shuffle()
-	for i in count:
+	_spawn_bodies(roles)
+
+	# 宝箱怪只属于第二层（地牢），第一层不生成
+	if GameState.world >= 2:
+		_spawn_mimics()
+
+## 按名单生成巡逻单位（数量 = 名单长度）。刷怪点不够时落到出生点兜底。
+func _spawn_bodies(roles: Array[String]) -> void:
+	if roles.is_empty():
+		return
+	var spots: Array[Vector2] = map.spawn_points(roles.size(), true)
+	for i in roles.size():
 		var student: CharacterBody2D = student_scene.new()
 		student.collision_layer = 2
 		student.collision_mask = 1
@@ -721,22 +753,37 @@ func _spawn_students() -> void:
 		student.add_child(shape)
 		student.monster_variant = randi_range(1, 20)
 		student.slime_variant = randi_range(1, 15)
-		student.set_role(roles[i % roles.size()])
+		student.set_role(roles[i])
 		student.position = spots[i] if i < spots.size() else map.exit_pos
 		add_child(student)
 		student.setup(map, player)
 
-	# 宝箱怪只属于第二层（地牢），第一层不生成
-	if GameState.world >= 2:
-		_spawn_mimics()
+## 第三层每层的巡逻名单：数量按 HELL_PATROL（12→16），全员怪物、零人类。
+func _hell_roles() -> Array[String]:
+	var lv := clampi(GameState.level, 11, 15)
+	var n := int(HELL_PATROL.get(lv, 12))
+	var pool: Array = HELL_ROLES.get(lv, HELL_ROLES[11])
+	var out: Array[String] = []
+	for i in n:
+		out.append(String(pool[i % pool.size()]))
+	out.shuffle()
+	return out
 
 ## 宝箱怪：藏在储物间的箱子堆里，玩家靠近才醒（第一层不调用）。
 func _spawn_mimics() -> void:
 	var mimic_n := 0
-	if GameState.level >= 6:
-		mimic_n = 1
-	if GameState.level >= 8:
-		mimic_n = 2
+	if GameState.world >= 3:
+		# 第三层按设计 §7 客串列：11~12F 没有宝箱怪，13F 起才出现，15F 两只。
+		# 伪装贴图仍是储物箱，「伪装骨箱」等 reserve 素材那一轮一起改。
+		if GameState.level >= 13:
+			mimic_n = 1
+		if GameState.level >= 15:
+			mimic_n = 2
+	else:
+		if GameState.level >= 6:
+			mimic_n = 1
+		if GameState.level >= 8:
+			mimic_n = 2
 	var mimic_spots: Array[Vector2] = []
 	for br in map.box_rects:
 		mimic_spots.append((br as Rect2).get_center())
