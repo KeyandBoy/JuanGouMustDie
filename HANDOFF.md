@@ -4,8 +4,8 @@
 - 最后操作：opencode
 - 分支：main
 - 当前 HEAD：`29c3ae1`（第三层 M3：13 房型 + 地狱图集 + 11F 出图；其下依次 `f4f1a1c`/`c28e151` 第二层音频 P1、`9545029` 第三层美术）
-- 已推送 origin/main：`c28e151`；`29c3ae1` 待推（`git -c http.proxy= -c https.proxy= push` 可用）
-- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**；`tests/shot_dungeon_*.png.import` / `shot_level_select_w1|w2.png.import` / `art_hell_monsters.png.import` 是之前漏掉的导入描述文件，归各自作者。
+- 已推送 origin/main：`b144f62`（含 `29c3ae1`，2026-11-17 实测 `git -c http.proxy= -c https.proxy= push` 成功）
+- 工作区：`tests/shot_*.png` 已重拍但故意不提交；`_blob_probe` / `_mon_demo` 属于另一窗口，**不要误提交**；`tests/shot_dungeon_*.png.import` / `shot_level_select_w1|w2.png.import` / `art_hell_monsters.png.import` 是之前漏掉的导入描述文件，归各自作者；`tests/_world_probe.gd` 显示 modified 但 `git diff` 为空（换行符差异，内容没变），别误提交。
 - 另外：`素材/` 被 gitignore 且授权不明；`art/furniture/README.md` 已标注「授权未确认，发布前替换」。
 - **分工提醒**：第一层已完工；第二层（6~10F）由另一窗口负责；**本窗口只管第三层（地狱 11~15F）**。同一时间只开一个 AI，`SESSION.lock` 拦第二个。
 
